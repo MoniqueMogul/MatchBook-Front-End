@@ -1,0 +1,21 @@
+:root {
+  /* Colors */
+  --color-primary-green: #55994C;
+  --color-primary-green-dark: #3A6D35;
+  --color-icon-green: #85B87E;
+  --color-icon-bg-green: #EBF3EA;
+
+  --color-text-heading: #333D4D;
+  --color-text-secondary: #4A5568;
+  --color-text-placeholder: #667080;
+
+  --color-bg-white: #FFFFFF;
+  --color-bg-off-white: #F7F8F9;
+  --color-bg-gray-light: #EEF0F2;
+
+  --color-border-gray: #B7BEC7;
+  --color-border-light: #D8DCE1;
+
+  /* Typography */
+  --font-family-main: 'Inter', sans-serif; 
+}
