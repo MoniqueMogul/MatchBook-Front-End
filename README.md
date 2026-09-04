@@ -3,6 +3,7 @@ markdown
 
 ## Overview
 Frontend implementation of the MatchBook Authentication flow, built with React, TypeScript, and Zustand. 
+......
 
 ## Tech Stack
 - **Framework:** React.js (Vite)
