@@ -22,17 +22,22 @@
   background-color: var(--color-bg-off-white);
 }
 
+/* THE UPDATED ICON STYLES */
 .role-card__icon {
   width: 50px;
   height: 50px;
   border-radius: 50%;
   background-color: var(--color-icon-bg-green);
-  color: var(--color-primary-green);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 24px;
   margin-bottom: 16px;
+}
+
+.role-card__icon-image {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .role-card__title {

@@ -12,25 +12,28 @@
   background-color: var(--color-bg-white);
 }
 
+/* Header: Logo on top, Progress bar below */
 .auth-layout__header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
+  flex-direction: column; 
+  align-items: flex-start; 
+  margin-bottom: 80px;
+  width: 100%;
+  max-width: 500px; /* Limits the progress bar area */
 }
 
-.auth-layout__logo-text {
-  color: var(--color-primary-green);
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+.auth-layout__logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 24px; 
 }
 
 .auth-layout__progress {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 200px;
+  gap: 8px;
+  width: 100%;
 }
 
 .auth-layout__progress-bar {
@@ -43,6 +46,8 @@
 .auth-layout__progress-text {
   font-size: 14px;
   color: var(--color-text-heading);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .auth-layout__content {
@@ -53,15 +58,17 @@
   max-width: 600px;
 }
 
+/* Right side background image */
 .auth-layout__right {
   width: 50%;
+  position: relative;
+  overflow: hidden;
   background-color: var(--color-bg-gray-light);
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
-.auth-layout__image-placeholder {
-  font-size: 24px;
-  color: var(--color-text-placeholder);
+.auth-layout__background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }

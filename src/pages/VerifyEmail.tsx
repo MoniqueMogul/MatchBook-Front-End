@@ -7,6 +7,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import { OtpInput } from '../components/common/OtpInput';
 import { PasswordInput } from '../components/common/PasswordInput';
 import { Button } from '../components/common/Button';
+import { useAuthStore } from '../store/authStore';
 
 const schema = yup.object().shape({
   password: yup.string().min(8, 'Must be at least 8 chars').required('Password is required'),
@@ -16,6 +17,8 @@ const schema = yup.object().shape({
 const VerifyEmail: React.FC = () => {
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
   const navigate = useNavigate();
+  const { setStep } = useAuthStore();
+  
   const [otp, setOtp] = useState('');
   const [timer, setTimer] = useState(27);
 
@@ -27,7 +30,8 @@ const VerifyEmail: React.FC = () => {
   }, []);
 
   const onSubmit = (data: any) => {
-    console.log("OTP:", otp, "Passwords:", data); // Replace with actual API call
+    console.log("OTP:", otp, "Passwords:", data);
+    setStep(2); 
     navigate('/role-selection'); 
   };
 

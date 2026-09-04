@@ -1,5 +1,6 @@
 import React from 'react';
 import './AuthLayout.css';
+import heroImage from '../assets/hero.png';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -11,9 +12,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, progress }) => {
     <div className="auth-layout">
       <div className="auth-layout__left">
         <div className="auth-layout__header">
-          {/* Replace this h2 with your actual logo image: <img src="/logo.png" alt="MatchBook" /> */}
-          <h2 className="auth-layout__logo-text">matchbook</h2>
+          {/* Logo Image */}
+          <img src="/logo.png" alt="MatchBook" className="auth-layout__logo" />
           
+          {/* Progress Bar */}
           {progress !== undefined && (
             <div className="auth-layout__progress">
               <div className="auth-layout__progress-bar" style={{ width: `${progress}%` }}></div>
@@ -26,7 +28,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, progress }) => {
         </div>
       </div>
       <div className="auth-layout__right">
-        <div className="auth-layout__image-placeholder">Image</div>
+        <img src={heroImage} alt="MatchBook Background" className="auth-layout__background-image" />
       </div>
     </div>
   );
