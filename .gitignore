@@ -3,13 +3,17 @@ node_modules
 .pnp
 .pnp.js
 
-# Testing
-coverage
+# Next.js build output
+.next
+out
+build
 
 # Production
 dist
 dist-ssr
-*.local
+
+# Testing
+coverage
 
 # Logs
 logs
@@ -19,6 +23,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Editor directories and files
 .vscode/*
@@ -31,9 +42,6 @@ lerna-debug.log*
 *.sln
 *.sw?
 
-# Environment variables (to prevent API keys from being uploaded!)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

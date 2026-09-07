@@ -12,21 +12,19 @@
   background-color: var(--color-bg-white);
 }
 
-/* Header: Logo on top, Progress bar below */
 .auth-layout__header {
   display: flex;
-  flex-direction: column; 
-  align-items: flex-start; 
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 80px;
   width: 100%;
-  max-width: 500px; /* Limits the progress bar area */
+  max-width: 500px;
 }
 
 .auth-layout__logo {
+  margin-bottom: 24px;
   height: 32px;
   width: auto;
-  object-fit: contain;
-  margin-bottom: 24px; 
 }
 
 .auth-layout__progress {
@@ -58,17 +56,13 @@
   max-width: 600px;
 }
 
-/* Right side background image */
+/* UPDATED FOR NEXT/IMAGE */
 .auth-layout__right {
   width: 50%;
   position: relative;
   overflow: hidden;
-  background-color: var(--color-bg-gray-light);
 }
 
 .auth-layout__background-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  object-fit: cover; /* This makes the image fill the area */
 }

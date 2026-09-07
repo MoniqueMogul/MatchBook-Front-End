@@ -1,26 +1,28 @@
+'use client';
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useNavigate } from 'react-router-dom';
-import AuthLayout from '../layouts/AuthLayout';
-import { Input } from '../components/common/Input';
-import { Button } from '../components/common/Button';
-import { useAuthStore } from '../store/authStore';
+import { useRouter } from 'next/navigation';
+import AuthLayout from '@/components/common/AuthLayout';
+import { Input } from '@/components/common/Input';
+import { Button } from '@/components/common/Button';
+import { useAuthStore } from '@/store/authStore';
 
 const schema = yup.object().shape({
   email: yup.string().email('Invalid email').required('Email is required'),
 });
 
-const Signup: React.FC = () => {
+export default function SignupPage() {
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
-  const navigate = useNavigate();
+  const router = useRouter();
   const setEmail = useAuthStore((state) => state.setEmail);
 
   const onSubmit = (data: any) => {
-    console.log("Email:", data.email); // Replace with actual API call later
+    console.log("Email:", data.email);
     setEmail(data.email);
-    navigate('/verify-email');
+    router.push('/verify-email'); // This should now work!
   };
 
   return (
@@ -36,6 +38,4 @@ const Signup: React.FC = () => {
       <p className="login-link">Already have an account? <a href="/login">Sign In</a></p>
     </AuthLayout>
   );
-};
-
-export default Signup;
+}

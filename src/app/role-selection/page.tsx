@@ -1,15 +1,17 @@
+'use client';
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AuthLayout from '../layouts/AuthLayout';
-import { Button } from '../components/common/Button';
-import { useAuthStore } from '../store/authStore';
+import { useRouter } from 'next/navigation';
+import AuthLayout from '@/components/common/AuthLayout';
+import { Button } from '@/components/common/Button';
+import { useAuthStore } from '@/store/authStore';
 import './RoleSelection.css';
 
-import buyerIcon from '../assets/buyer-icon.png';
-import sellerIcon from '../assets/seller-icon.png';
+import buyerIcon from '@/assets/buyer-icon.png';
+import sellerIcon from '@/assets/seller-icon.png';
 
-const RoleSelection: React.FC = () => {
-  const navigate = useNavigate();
+export default function RoleSelectionPage() {
+  const router = useRouter();
   const { setRole, setStep } = useAuthStore();
   const [selected, setSelected] = useState<'buyer' | 'seller' | null>(null);
 
@@ -18,7 +20,7 @@ const RoleSelection: React.FC = () => {
       setRole(selected);
       setStep(3);
       console.log("🚀 Role selected:", selected);
-      console.log("🔗 Auth flow complete. Backend integration pending.");
+      // We don't navigate anywhere yet as the dashboard is not built.
     }
   };
 
@@ -32,7 +34,7 @@ const RoleSelection: React.FC = () => {
           onClick={() => setSelected('buyer')}
         >
           <div className="role-card__icon">
-            <img src={buyerIcon} alt="Buyer Icon" className="role-card__icon-image" />
+            <img src={buyerIcon.src} alt="Buyer Icon" className="role-card__icon-image" />
           </div>
           <h3 className="role-card__title">I'm looking to acquire</h3>
           <p className="role-card__desc">Tell us what you are looking for and get matched with verified, qualified sellers.</p>
@@ -43,7 +45,7 @@ const RoleSelection: React.FC = () => {
           onClick={() => setSelected('seller')}
         >
           <div className="role-card__icon">
-            <img src={sellerIcon} alt="Seller Icon" className="role-card__icon-image" />
+            <img src={sellerIcon.src} alt="Seller Icon" className="role-card__icon-image" />
           </div>
           <h3 className="role-card__title">I'm selling my business</h3>
           <p className="role-card__desc">List your business and meet buyers who are financially qualified and the right operational fit.</p>
@@ -51,11 +53,9 @@ const RoleSelection: React.FC = () => {
       </div>
 
       <div className="role-actions">
-        <Button variant="secondary" onClick={() => navigate(-1)}>Back</Button>
+        <Button variant="secondary" onClick={() => router.back()}>Back</Button>
         <Button variant="primary" onClick={handleNext} disabled={!selected}>Next</Button>
       </div>
     </AuthLayout>
   );
-};
-
-export default RoleSelection;
+}

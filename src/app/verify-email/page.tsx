@@ -1,22 +1,24 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useNavigate } from 'react-router-dom';
-import AuthLayout from '../layouts/AuthLayout';
-import { OtpInput } from '../components/common/OtpInput';
-import { PasswordInput } from '../components/common/PasswordInput';
-import { Button } from '../components/common/Button';
-import { useAuthStore } from '../store/authStore';
+import { useRouter } from 'next/navigation';
+import AuthLayout from '@/components/common/AuthLayout';
+import { OtpInput } from '@/components/common/OtpInput';
+import { PasswordInput } from '@/components/common/PasswordInput';
+import { Button } from '@/components/common/Button';
+import { useAuthStore } from '@/store/authStore';
 
 const schema = yup.object().shape({
   password: yup.string().min(8, 'Must be at least 8 chars').required('Password is required'),
   confirmPassword: yup.string().oneOf([yup.ref('password')], 'Passwords must match').required('Confirm Password is required'),
 });
 
-const VerifyEmail: React.FC = () => {
+export default function VerifyEmailPage() {
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
-  const navigate = useNavigate();
+  const router = useRouter();
   const { setStep } = useAuthStore();
   
   const [otp, setOtp] = useState('');
@@ -31,8 +33,8 @@ const VerifyEmail: React.FC = () => {
 
   const onSubmit = (data: any) => {
     console.log("OTP:", otp, "Passwords:", data);
-    setStep(2); 
-    navigate('/role-selection'); 
+    setStep(2);
+    router.push('/role-selection');
   };
 
   return (
@@ -58,6 +60,4 @@ const VerifyEmail: React.FC = () => {
       </form>
     </AuthLayout>
   );
-};
-
-export default VerifyEmail;
+}
