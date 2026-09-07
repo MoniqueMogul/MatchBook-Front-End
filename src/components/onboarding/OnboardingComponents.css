@@ -1,0 +1,212 @@
+/* ═══════════════════════════════════════════════
+   Onboarding Primitives — Figma Token Styles
+   ═══════════════════════════════════════════════ */
+
+/* ── Text Input ── */
+.ob-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.ob-field__label {
+  font-family: var(--ob-font);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ob-neutral-700);
+}
+
+.ob-field__input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ob-neutral-200);
+  border-radius: 8px;
+  font-family: var(--ob-font);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ob-neutral-700);
+  background-color: var(--ob-white);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.ob-field__input::placeholder {
+  color: var(--ob-neutral-400);
+  font-weight: 400;
+}
+
+.ob-field__input:focus {
+  border-color: var(--ob-green);
+}
+
+.ob-field__input--error {
+  border-color: #DC2626;
+}
+
+.ob-field__error {
+  font-family: var(--ob-font);
+  font-size: 12px;
+  line-height: 16px;
+  color: #DC2626;
+}
+
+/* ── Select Field ── */
+.ob-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.ob-select-wrapper__select {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  border: 1px solid var(--ob-neutral-200);
+  border-radius: 8px;
+  font-family: var(--ob-font);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ob-neutral-700);
+  background-color: var(--ob-white);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.ob-select-wrapper__select:focus {
+  border-color: var(--ob-green);
+}
+
+.ob-select-wrapper__select--error {
+  border-color: #DC2626;
+}
+
+.ob-select-wrapper__select--placeholder {
+  color: var(--ob-neutral-400);
+}
+
+.ob-select-wrapper__chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--ob-neutral-400);
+  display: flex;
+  align-items: center;
+}
+
+/* ── Phone Input ── */
+.ob-phone {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.ob-phone__code-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 72px;
+}
+
+.ob-phone__code-select {
+  width: 100%;
+  padding: 10px 8px;
+  border: 1px solid var(--ob-neutral-200);
+  border-radius: 8px;
+  font-family: var(--ob-font);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ob-neutral-700);
+  background-color: var(--ob-white);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.2s ease;
+}
+
+.ob-phone__code-select:focus {
+  border-color: var(--ob-green);
+}
+
+.ob-phone__number-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--ob-neutral-200);
+  border-radius: 8px;
+  font-family: var(--ob-font);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ob-neutral-700);
+  background-color: var(--ob-white);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.ob-phone__number-input::placeholder {
+  color: var(--ob-neutral-400);
+}
+
+.ob-phone__number-input:focus {
+  border-color: var(--ob-green);
+}
+
+.ob-phone__number-input--error {
+  border-color: #DC2626;
+}
+
+/* ── Progress Bar ── */
+.ob-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.ob-progress__track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--ob-neutral-200);
+  overflow: hidden;
+}
+
+.ob-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--ob-green);
+  transition: width 0.4s ease;
+}
+
+.ob-progress__label {
+  font-family: var(--ob-font);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ob-neutral-700);
+  white-space: nowrap;
+}
+
+/* ── Brand Logo ── */
+.ob-logo {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 24px;
+}
+
+.ob-logo__img {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+}

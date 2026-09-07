@@ -17,5 +17,16 @@
   --color-border-light: #D8DCE1;
 
   /* Typography */
-  --font-family-main: 'Inter', sans-serif; 
+  --font-family-main: 'Inter', sans-serif;
+
+  /* ── Onboarding Design Tokens (Figma) ── */
+  --ob-green: #3E7B42;
+  --ob-green-hover: #346938;
+  --ob-green-active: #2B572E;
+  --ob-neutral-100: #EEF0F2;
+  --ob-neutral-200: #E2E5E9;
+  --ob-neutral-400: #8C95A6;
+  --ob-neutral-700: #333D4D;
+  --ob-white: #FFFFFF;
+  --ob-font: 'Plus Jakarta Sans', sans-serif;
 }

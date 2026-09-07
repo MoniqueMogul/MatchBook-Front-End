@@ -18,7 +18,12 @@ const RoleSelection: React.FC = () => {
       setRole(selected);
       setStep(3);
       console.log("🚀 Role selected:", selected);
-      console.log("🔗 Auth flow complete. Backend integration pending.");
+
+      if (selected === 'buyer') {
+        navigate('/buyer/onboarding');
+      } else {
+        console.log("🔗 Seller flow not yet implemented.");
+      }
     }
   };
 

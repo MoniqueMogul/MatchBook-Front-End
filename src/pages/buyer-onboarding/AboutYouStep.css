@@ -1,0 +1,161 @@
+/* ═══════════════════════════════════════════════
+   About You Step — Two-Column Onboarding Layout
+   ═══════════════════════════════════════════════ */
+
+/* ── Canvas ── */
+.about-you {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--ob-white);
+  font-family: var(--ob-font);
+  overflow: hidden;
+}
+
+/* ── Left Column ── */
+.about-you__left {
+  width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 60px;
+  background-color: var(--ob-white);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.about-you__header {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 40px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.about-you__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 500px;
+}
+
+/* ── Heading ── */
+.about-you__heading {
+  font-family: var(--ob-font);
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+  color: var(--ob-neutral-700);
+  margin: 0 0 28px 0;
+}
+
+/* ── Fields wrapper ── */
+.about-you__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 500px;
+}
+
+/* ── Section group (Region / Contact) ── */
+.about-you__section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.about-you__section-header {
+  font-family: var(--ob-font);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0%;
+  color: var(--ob-neutral-700);
+  margin: 0;
+}
+
+.about-you__divider {
+  height: 1px;
+  background-color: var(--ob-neutral-200);
+  border: none;
+  margin: 0;
+  width: 100%;
+}
+
+.about-you__section-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Button row ── */
+.about-you__buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.about-you__btn {
+  font-family: var(--ob-font);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  padding: 10px 24px;
+  white-space: nowrap;
+}
+
+.about-you__btn--back {
+  background-color: var(--ob-white);
+  color: var(--ob-neutral-700);
+  border: 1px solid var(--ob-neutral-200);
+  min-width: 120px;
+}
+
+.about-you__btn--back:hover {
+  border-color: var(--ob-neutral-400);
+  background-color: #f9fafb;
+}
+
+.about-you__btn--next {
+  background-color: var(--ob-green);
+  color: var(--ob-white);
+  border: 1px solid var(--ob-green);
+  min-width: 160px;
+}
+
+.about-you__btn--next:hover {
+  background-color: var(--ob-green-hover);
+  border-color: var(--ob-green-hover);
+}
+
+.about-you__btn--next:active {
+  background-color: var(--ob-green-active);
+  border-color: var(--ob-green-active);
+}
+
+/* ── Right Column ── */
+.about-you__right {
+  width: 50%;
+  height: 100%;
+  background-color: var(--ob-neutral-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-you__right-placeholder {
+  font-family: var(--ob-font);
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--ob-neutral-400);
+  user-select: none;
+}
