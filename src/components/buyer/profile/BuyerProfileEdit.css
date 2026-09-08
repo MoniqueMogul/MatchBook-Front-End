@@ -1,0 +1,19 @@
+.buyer-profile-edit {
+  width: 1094px;
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.buyer-profile-edit__content {
+  width: 1094px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 47px;
+
+  padding-bottom: 10px;
+}
