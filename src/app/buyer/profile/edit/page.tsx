@@ -1,15 +1,15 @@
 import DashboardSidebar from "@/components/buyer/profile/DashboardSidebar";
-import AccountEdit from "@/components/buyer/account/AccountEdit";
+import BuyerProfileEdit from "@/components/buyer/profile/BuyerProfileEdit";
 
 import "./page.css";
 
-export default function BuyerAccountEditPage() {
+export default function BuyerProfileEditPage() {
   return (
-    <div className="buyer-account-edit-page">
+    <div className="buyer-profile-edit-page">
       <DashboardSidebar />
 
-      <div className="buyer-account-edit-page__main">
-        <AccountEdit />
+      <div className="buyer-profile-edit-page__main">
+        <BuyerProfileEdit />
       </div>
     </div>
   );

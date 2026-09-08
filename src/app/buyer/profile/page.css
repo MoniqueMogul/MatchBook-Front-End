@@ -1,5 +1,5 @@
 .buyer-profile-page {
-  width: 100%;
+  width: 98%;
   min-height: 100vh;
   display: flex;
   align-items: flex-start;
@@ -10,15 +10,11 @@
   flex: 1;
   min-width: 0;
   box-sizing: border-box;
-
-  padding: 48px 40px 48px 48px;
-
+  padding: 48px 24px 200px 60px;
   background: #ffffff;
-
   overflow-x: hidden;
 }
 
 .buyer-profile-page__main > * {
-  width: 100%;
-  max-width: 860px;
+  width: 98%;
 }
