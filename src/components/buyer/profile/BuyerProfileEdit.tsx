@@ -1,6 +1,7 @@
-"use client";
+ "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import IndustryExperienceSection from "./IndustryExperienceSection";
 import AcquisitionPreferencesSection from "./AcquisitionPreferencesSection";
@@ -12,6 +13,8 @@ import ProfileFormActions from "./ProfileFormActions";
 import "./BuyerProfileEdit.css";
 
 export default function BuyerProfileEdit() {
+  const router = useRouter();
+
   const [activeTab, setActiveTab] =
     useState<ProfileTab>("overview");
 
@@ -19,6 +22,10 @@ export default function BuyerProfileEdit() {
     useState("Original Location");
 
   const [saving, setSaving] = useState(false);
+
+  /* =========================
+     Save Profile
+     ========================= */
 
   const handleSave = async () => {
     setSaving(true);
@@ -34,15 +41,20 @@ export default function BuyerProfileEdit() {
     }
   };
 
+  /* =========================
+     Cancel Edit
+     ========================= */
+
   const handleCancel = () => {
     console.log("Profile edit cancelled");
   };
 
-  /*
-   * Overview
-   * ↓
-   * Industry Experience
-   */
+  /* =========================
+     Overview
+     ↓
+     Industry Experience
+     ========================= */
+
   const handleOverviewContinue = (data: {
     about: string;
     regions: string[];
@@ -50,17 +62,18 @@ export default function BuyerProfileEdit() {
   }) => {
     console.log(
       "Continue with overview data:",
-      data,
+      data
     );
 
     setActiveTab("industry-experience");
   };
 
-  /*
-   * Industry Experience
-   * ↓
-   * Acquisition Preferences
-   */
+  /* =========================
+     Industry Experience
+     ↓
+     Acquisition Preferences
+     ========================= */
+
   const handleIndustryExperienceContinue = (data: {
     industries: string[];
     years: string;
@@ -68,18 +81,19 @@ export default function BuyerProfileEdit() {
   }) => {
     console.log(
       "Industry experience:",
-      data,
+      data
     );
 
     setActiveTab("acquisition-preferences");
   };
 
-  /*
-   * Acquisition Preferences
-   *
-   * Finances will be connected once the
-   * Finances section is implemented.
-   */
+  /* =========================
+     Acquisition Preferences
+     
+     Finances will be connected once
+     that section is implemented.
+     ========================= */
+
   const handleAcquisitionPreferencesContinue = (data: {
     acquisitionPreferences: string;
     motivation: string;
@@ -96,28 +110,46 @@ export default function BuyerProfileEdit() {
   }) => {
     console.log(
       "Acquisition preferences:",
-      data,
+      data
     );
 
-    // Finances will be connected here
-    // once the Finances section is implemented.
+    /*
+     * Finances will be connected here
+     * once the Finances section is implemented.
+     */
   };
+
+  /* =========================
+     Render
+     ========================= */
 
   return (
     <main className="buyer-profile-edit">
       <div className="buyer-profile-edit__content">
 
-        {/* Header */}
+        {/* =========================
+            Header
+           ========================= */}
+
         <ProfileEditHeader
           name="Original Name"
           location={location}
           onLocationChange={setLocation}
+          mode="edit"
           onPreview={() => {
-            console.log("Switch to preview");
+            router.push("/buyer/profile");
+          }}
+          onModeChange={(mode) => {
+            if (mode === "preview") {
+              router.push("/buyer/profile");
+            }
           }}
         />
 
-        {/* Tabs */}
+        {/* =========================
+            Tabs
+           ========================= */}
+
         <ProfileTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -126,6 +158,7 @@ export default function BuyerProfileEdit() {
         {/* =========================
             Overview
            ========================= */}
+
         {activeTab === "overview" && (
           <EditOverviewSection
             initialAbout="Placeholder text for a longer response, spanning multiple lines."
@@ -146,6 +179,7 @@ export default function BuyerProfileEdit() {
         {/* =========================
             Industry Experience
            ========================= */}
+
         {activeTab === "industry-experience" && (
           <IndustryExperienceSection
             initialIndustries={[
@@ -171,6 +205,7 @@ export default function BuyerProfileEdit() {
         {/* =========================
             Acquisition Preferences
            ========================= */}
+
         {activeTab === "acquisition-preferences" && (
           <AcquisitionPreferencesSection
             initialAcquisitionPreferences=""
@@ -189,6 +224,7 @@ export default function BuyerProfileEdit() {
         {/* =========================
             Save / Cancel
            ========================= */}
+
         <ProfileFormActions
           onCancel={handleCancel}
           onSave={handleSave}

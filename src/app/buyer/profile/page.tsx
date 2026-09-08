@@ -1,5 +1,5 @@
 import DashboardSidebar from "@/components/buyer/profile/DashboardSidebar";
-import BuyerProfileEdit from "@/components/buyer/profile/BuyerProfileEdit";
+import BuyerProfilePreview from "@/components/buyer/profile/BuyerProfilePreview";
 
 import "./page.css";
 
@@ -9,7 +9,7 @@ export default function BuyerProfilePage() {
       <DashboardSidebar />
 
       <div className="buyer-profile-page__main">
-        <BuyerProfileEdit />
+        <BuyerProfilePreview />
       </div>
     </div>
   );

@@ -1,0 +1,348 @@
+.account-edit {
+  width: 100%;
+  min-height: 100vh;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.account-edit__content {
+  width: 100%;
+  max-width: 1040px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   TITLE
+   ========================================= */
+
+.account-edit__title {
+  margin: 10px 0 32px;
+
+  font-size: 32px;
+  line-height: 40px;
+
+  font-weight: 700;
+
+  color: #333d4d;
+}
+
+
+/* =========================================
+   SECTIONS
+   ========================================= */
+
+.account-edit__section {
+  width: 100%;
+
+  margin-bottom: 22px;
+}
+
+.account-edit__section-title {
+  margin: 0 0 10px;
+
+  font-size: 17px;
+  line-height: 24px;
+
+  font-weight: 600;
+
+  color: #333d4d;
+}
+
+.account-edit__divider {
+  width: 100%;
+  height: 1px;
+
+  margin-bottom: 18px;
+
+  background: #b7bec7;
+}
+
+
+/* =========================================
+   FIELDS
+   ========================================= */
+
+.account-edit__field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.account-edit__label {
+  margin: 0;
+
+  font-size: 15px;
+  line-height: 20px;
+
+  font-weight: 400;
+
+  color: #4d5868;
+}
+
+
+/* =========================================
+   INPUT
+   ========================================= */
+
+.account-edit__input {
+  width: 100%;
+  height: 48px;
+
+  box-sizing: border-box;
+
+  padding: 0 16px;
+
+  border: 1px solid #b7bec7;
+  border-radius: 8px;
+
+  background: #f7f8f9;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 16px;
+  line-height: 24px;
+
+  color: #333d4d;
+
+  outline: none;
+}
+
+.account-edit__input:focus {
+  border-color: #55994c;
+}
+
+.account-edit__input--name {
+  width: 438px;
+}
+
+.account-edit__input--linkedin {
+  width: 438px;
+}
+
+
+/* =========================================
+   TWO COLUMN FIELDS
+   ========================================= */
+
+.account-edit__two-column {
+  width: 100%;
+  max-width: 800px;
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 56px;
+}
+
+
+/* =========================================
+   SELECT
+   ========================================= */
+
+.account-edit__select-wrapper {
+  position: relative;
+
+  width: 100%;
+}
+
+.account-edit__select {
+  width: 100%;
+  height: 48px;
+
+  box-sizing: border-box;
+
+  appearance: none;
+
+  padding: 0 44px 0 16px;
+
+  border: 1px solid #b7bec7;
+  border-radius: 8px;
+
+  background: #f7f8f9;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 16px;
+  line-height: 24px;
+
+  color: #333d4d;
+
+  outline: none;
+
+  cursor: pointer;
+}
+
+.account-edit__select:focus {
+  border-color: #55994c;
+}
+
+.account-edit__select-icon {
+  position: absolute;
+
+  right: 16px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: #687385;
+
+  pointer-events: none;
+}
+
+
+/* =========================================
+   PHONE
+   ========================================= */
+
+.account-edit__phone {
+  display: flex;
+
+  gap: 10px;
+
+  width: 100%;
+}
+
+.account-edit__country-code {
+  width: 74px;
+  height: 48px;
+
+  flex: 0 0 74px;
+
+  box-sizing: border-box;
+
+  padding: 0 10px;
+
+  border: 1px solid #b7bec7;
+  border-radius: 8px;
+
+  background: #f7f8f9;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 16px;
+
+  color: #333d4d;
+
+  outline: none;
+}
+
+.account-edit__input--phone {
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+/* =========================================
+   ACTION BUTTONS
+   ========================================= */
+
+.account-edit__actions {
+  width: 100%;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  align-items: center;
+
+  gap: 36px;
+
+  margin-top: 46px;
+
+  padding-bottom: 20px;
+}
+
+.account-edit__cancel,
+.account-edit__save {
+  width: 230px;
+  height: 50px;
+
+  box-sizing: border-box;
+
+  border-radius: 8px;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 15px;
+  line-height: 22px;
+
+  cursor: pointer;
+}
+
+.account-edit__cancel {
+  border: 1px solid #b7bec7;
+
+  background: #ffffff;
+
+  color: #333d4d;
+}
+
+.account-edit__save {
+  border: 0;
+
+  background: #498441;
+
+  color: #ffffff;
+}
+
+.account-edit__cancel:hover {
+  background: #f7f8f9;
+}
+
+.account-edit__save:hover {
+  background: #3a6d35;
+}
+
+.account-edit__cancel:focus-visible,
+.account-edit__save:focus-visible {
+  outline: 2px solid #55994c;
+  outline-offset: 2px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 900px) {
+  .account-edit__two-column {
+    grid-template-columns: 1fr;
+
+    gap: 20px;
+
+    max-width: 600px;
+  }
+
+  .account-edit__actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .account-edit__input--name,
+  .account-edit__input--linkedin {
+    width: 100%;
+  }
+
+  .account-edit__actions {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 12px;
+  }
+
+  .account-edit__cancel,
+  .account-edit__save {
+    width: 100%;
+  }
+}
