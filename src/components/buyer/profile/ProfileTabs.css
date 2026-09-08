@@ -5,7 +5,8 @@
   box-sizing: border-box;
 
   display: flex;
-  align-items: center;
+  flex-direction: row;
+  align-items: flex-start;
 
   padding-left: 24px;
   padding-right: 24px;
@@ -16,91 +17,68 @@
 }
 
 .profile-tab {
+  position: relative;
+
   height: 32px;
+
+  flex: 0 0 auto;
 
   box-sizing: border-box;
 
-  padding-left: 20px;
-  padding-right: 20px;
-
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 
+  padding: 0;
+
   border: 0;
+
   background: transparent;
-
-  cursor: pointer;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  flex: 0 0 auto;
-}
-
-.profile-tab__content {
-  display: flex;
-  flex-direction: column;
-
-  align-items: stretch;
-
-  gap: 8px;
-}
-
-.profile-tab__label {
-  display: block;
 
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;
 
-  white-space: nowrap;
+  color: #667080;
+
+  cursor: pointer;
 }
 
-.profile-tab__underline {
+.profile-tab__label {
   display: block;
 
-  width: 100%;
-  height: 0;
+  height: 24px;
 
-  border-top: 3px solid transparent;
-  border-radius: 999px;
+  white-space: nowrap;
 }
-
-/* Selected */
 
 .profile-tab--active {
   color: #3d6e37;
 }
 
-.profile-tab--active .profile-tab__underline {
-  border-top-color: #3d6e37;
+.profile-tab__underline {
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 3px;
+
+  border-radius: 999px;
+
+  background: #3d6e37;
 }
 
-/* Unselected */
+.profile-tab:focus-visible {
+  outline: 2px solid #55994c;
+  outline-offset: 3px;
 
-.profile-tab:not(.profile-tab--active) {
-  color: #667080;
+  border-radius: 4px;
 }
 
-/*
- * The Figma instances have these exact widths.
- * They are kept here so the tab geometry follows
- * the exported design rather than browser text metrics.
- */
-
-.profile-tab:nth-child(1) {
-  width: 119px;
-}
-
-.profile-tab:nth-child(2) {
-  width: 206px;
-}
-
-.profile-tab:nth-child(3) {
-  width: 229px;
-}
-
-.profile-tab:nth-child(4) {
-  width: 113px;
+.profile-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

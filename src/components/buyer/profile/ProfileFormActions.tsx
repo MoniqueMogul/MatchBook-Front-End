@@ -3,34 +3,32 @@
 import "./ProfileFormActions.css";
 
 interface ProfileFormActionsProps {
-  onCancel: () => void;
-  onSave: () => void;
+  onCancel?: () => void;
+  onSave?: () => void;
   saving?: boolean;
-  disabled?: boolean;
 }
 
 export default function ProfileFormActions({
   onCancel,
   onSave,
   saving = false,
-  disabled = false,
 }: ProfileFormActionsProps) {
   return (
     <div className="profile-form-actions">
       <button
         type="button"
-        className="profile-form-actions__cancel"
+        className="profile-form-actions__button profile-form-actions__button--cancel"
         onClick={onCancel}
-        disabled={disabled || saving}
+        disabled={saving}
       >
         Cancel
       </button>
 
       <button
         type="button"
-        className="profile-form-actions__save"
+        className="profile-form-actions__button profile-form-actions__button--save"
         onClick={onSave}
-        disabled={disabled || saving}
+        disabled={saving}
       >
         {saving ? "Saving..." : "Save"}
       </button>

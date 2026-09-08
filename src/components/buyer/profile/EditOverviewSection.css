@@ -1,11 +1,13 @@
 .edit-overview-section {
-  width: 1094px;
-  min-height: 492px;
-  box-sizing: border-box;
+  position: relative;
 
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  width: 100%;
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 0;
+
+  box-sizing: border-box;
 
   padding: 20px;
 
@@ -15,40 +17,49 @@
   background: #ffffff;
 
   font-family: "Plus Jakarta Sans", sans-serif;
+
+  overflow: hidden;
 }
 
 .edit-overview-section__fields {
   width: 100%;
 
+  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
-  gap: 16px;
+
+  gap: 10px;
 }
 
 .edit-overview-section__continue {
-  width: 100%;
+  position: absolute;
+
+  left: 20px;
+  right: 20px;
+  bottom: 6px;
+
   height: 48px;
 
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  align-items: stretch;
-
-  margin-top: auto;
 }
 
 .edit-overview-section__continue-button {
   width: 50px;
   height: 48px;
-  box-sizing: border-box;
 
-  display: inline-flex;
+  flex: 0 0 50px;
+
+  display: flex;
   align-items: center;
   justify-content: center;
 
   padding: 0;
 
   border: 0;
-  border-radius: 0;
+  border-radius: 8px;
 
   background: #498441;
   color: #ffffff;
@@ -56,16 +67,7 @@
   cursor: pointer;
 }
 
-.edit-overview-section__continue-button:hover {
-  background: #3a6d35;
-}
-
-.edit-overview-section__continue-button:focus-visible {
-  outline: 2px solid #55994c;
-  outline-offset: 2px;
-}
-
-.edit-overview-section__continue-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+.edit-overview-section__continue-button svg {
+  width: 32px;
+  height: 32px;
 }

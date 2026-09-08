@@ -1,54 +1,49 @@
 "use client";
 
-import { useId } from "react";
 import "./ProfileAboutField.css";
 
 interface ProfileAboutFieldProps {
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
   error?: string;
   disabled?: boolean;
-  required?: boolean;
 }
 
 export default function ProfileAboutField({
   value,
   onChange,
+  placeholder = "Placeholder text for a longer response, spanning multiple lines.",
   error,
   disabled = false,
-  required = true,
 }: ProfileAboutFieldProps) {
-  const generatedId = useId();
-  const textareaId = `profile-about-${generatedId}`;
-  const errorId = `${textareaId}-error`;
-
   const hasError = Boolean(error);
 
   return (
     <div className="profile-about-field">
       <label
-        htmlFor={textareaId}
+        htmlFor="profile-about"
         className="profile-about-field__label"
       >
         About
       </label>
 
       <textarea
-        id={textareaId}
+        id="profile-about"
         className={`profile-about-field__textarea ${
-          hasError ? "profile-about-field__textarea--error" : ""
+          hasError
+            ? "profile-about-field__textarea--error"
+            : ""
         }`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         disabled={disabled}
-        required={required}
         aria-invalid={hasError}
-        aria-describedby={hasError ? errorId : undefined}
       />
 
       {hasError && (
         <p
-          id={errorId}
           className="profile-about-field__helper"
           role="alert"
         >

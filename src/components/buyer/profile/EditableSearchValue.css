@@ -1,5 +1,8 @@
 .editable-search-value {
   width: 448px;
+  height: 122px;
+  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -9,7 +12,9 @@
 
 .editable-search-value__label {
   width: 448px;
-  min-height: 20px;
+  height: 20px;
+  box-sizing: border-box;
+
   margin: 0;
 
   font-family: "Plus Jakarta Sans", sans-serif;
@@ -20,7 +25,7 @@
   color: #333d4d;
 }
 
-.editable-search-value__input-wrapper {
+.editable-search-value__search {
   width: 320px;
   height: 48px;
   box-sizing: border-box;
@@ -31,41 +36,30 @@
 
   padding: 12px 20px;
 
-  background: #f7f8f9;
   border: 1px solid #b7bec7;
   border-radius: 8px;
-}
 
-.editable-search-value__input-wrapper:focus-within {
-  border-color: #55994c;
-}
-
-.editable-search-value__input-wrapper--error {
-  border-color: #b7bec7;
-}
-
-.editable-search-value__icon {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
-
-  color: #667080;
+  background: #f7f8f9;
 }
 
 .editable-search-value__input {
-  width: 100%;
+  width: 252px;
+  height: 20px;
   min-width: 0;
-  height: 24px;
+  flex: 1 1 auto;
+
+  box-sizing: border-box;
 
   padding: 0;
 
   border: 0;
   outline: none;
+
   background: transparent;
 
   font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 400;
 
   color: #12161d;
@@ -73,33 +67,48 @@
 
 .editable-search-value__input::placeholder {
   color: #8d96a3;
+  opacity: 1;
+}
+
+.editable-search-value__input:focus {
+  outline: none;
 }
 
 .editable-search-value__input:disabled {
   cursor: not-allowed;
+  color: #8d96a3;
+}
+
+.editable-search-value__search-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #667080;
+}
+
+.editable-search-value__search-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .editable-search-value__selected {
   width: 448px;
-  min-height: 38px;
+  height: 38px;
+
   box-sizing: border-box;
 
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
+
   gap: 8px;
 
-  padding: 1px 0;
-}
+  padding-top: 1px;
+  padding-bottom: 1px;
 
-.editable-search-value__helper {
-  width: 448px;
-  margin: 0;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 400;
-
-  color: #4a5568;
+  overflow: hidden;
 }

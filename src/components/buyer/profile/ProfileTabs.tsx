@@ -4,8 +4,8 @@ import "./ProfileTabs.css";
 
 export type ProfileTab =
   | "overview"
-  | "industry"
-  | "acquisition"
+  | "industry-experience"
+  | "acquisition-preferences"
   | "finances";
 
 interface ProfileTabsProps {
@@ -13,20 +13,20 @@ interface ProfileTabsProps {
   onTabChange?: (tab: ProfileTab) => void;
 }
 
-const tabs: {
+const tabs: Array<{
   id: ProfileTab;
   label: string;
-}[] = [
+}> = [
   {
     id: "overview",
     label: "Overview",
   },
   {
-    id: "industry",
-    label: "Industry Background",
+    id: "industry-experience",
+    label: "Industry Experience",
   },
   {
-    id: "acquisition",
+    id: "acquisition-preferences",
     label: "Acquisition Preferences",
   },
   {
@@ -57,16 +57,16 @@ export default function ProfileTabs({
             onClick={() => onTabChange?.(tab.id)}
             aria-current={isActive ? "page" : undefined}
           >
-            <span className="profile-tab__content">
-              <span className="profile-tab__label">
-                {tab.label}
-              </span>
+            <span className="profile-tab__label">
+              {tab.label}
+            </span>
 
+            {isActive && (
               <span
                 className="profile-tab__underline"
                 aria-hidden="true"
               />
-            </span>
+            )}
           </button>
         );
       })}

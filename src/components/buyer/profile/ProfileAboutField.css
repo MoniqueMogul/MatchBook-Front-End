@@ -1,27 +1,40 @@
 .profile-about-field {
   width: 320px;
+  height: 124px;
+
+  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
+
   gap: 8px;
+
   font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 .profile-about-field__label {
   width: 320px;
-  min-height: 20px;
+  height: 20px;
+
+  box-sizing: border-box;
+
   margin: 0;
+
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 14px;
   line-height: 20px;
   font-weight: 400;
+
   color: #333d4d;
 }
 
 .profile-about-field__textarea {
   width: 320px;
   height: 96px;
+
   box-sizing: border-box;
-  resize: none;
+
+  display: block;
 
   padding: 12px 16px;
 
@@ -30,10 +43,13 @@
 
   background: #f7f8f9;
 
+  resize: none;
+
   font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 400;
+
   color: #12161d;
 
   outline: none;
@@ -41,10 +57,12 @@
 
 .profile-about-field__textarea::placeholder {
   color: #8d96a3;
+  opacity: 1;
 }
 
 .profile-about-field__textarea:focus {
   outline: none;
+  border-color: #b7bec7;
 }
 
 .profile-about-field__textarea:disabled {
@@ -58,6 +76,9 @@
 
 .profile-about-field__helper {
   width: 320px;
+
+  box-sizing: border-box;
+
   margin: 0;
 
   font-family: "Plus Jakarta Sans", sans-serif;

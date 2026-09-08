@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 
 import ProfileAboutField from "./ProfileAboutField";
 import EditableSearchValue from "./EditableSearchValue";
+
 import "./EditOverviewSection.css";
 
 interface EditOverviewSectionProps {
@@ -21,14 +22,23 @@ interface EditOverviewSectionProps {
 
 export default function EditOverviewSection({
   initialAbout = "Placeholder text for a longer response, spanning multiple lines.",
-  initialRegions = ["Location 1", "Location 2", "Location 3"],
-  initialIndustries = [],
+  initialRegions = [
+    "Location 1",
+    "Location 2",
+    "Location 3",
+  ],
+  initialIndustries = [
+    "Industry 1",
+    "Industry 2",
+    "Industry 3",
+  ],
   onContinue,
   disabled = false,
 }: EditOverviewSectionProps) {
   const [about, setAbout] = useState(initialAbout);
 
-  const [regions, setRegions] = useState<string[]>(initialRegions);
+  const [regions, setRegions] =
+    useState<string[]>(initialRegions);
   const [regionSearch, setRegionSearch] = useState("");
 
   const [industries, setIndustries] =
@@ -115,7 +125,10 @@ export default function EditOverviewSection({
           disabled={disabled}
           aria-label="Continue to next profile section"
         >
-          <ChevronRight size={32} strokeWidth={1.5} />
+          <ChevronRight
+            size={32}
+            strokeWidth={1.5}
+          />
         </button>
       </div>
     </section>

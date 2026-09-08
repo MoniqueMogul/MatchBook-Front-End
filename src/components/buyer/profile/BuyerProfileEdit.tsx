@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import IndustryExperienceSection from "./IndustryExperienceSection";
+import AcquisitionPreferencesSection from "./AcquisitionPreferencesSection";
 import ProfileEditHeader from "./ProfileEditHeader";
 import ProfileTabs, { type ProfileTab } from "./ProfileTabs";
 import EditOverviewSection from "./EditOverviewSection";
@@ -21,30 +23,91 @@ export default function BuyerProfileEdit() {
   const handleSave = async () => {
     setSaving(true);
 
-    /*
-     * API integration will be added here once
-     * the backend contract is finalized.
-     */
-    console.log("Profile save requested");
-
-    setSaving(false);
+    try {
+      /*
+       * Backend/API integration will be connected
+       * once the final API contract is available.
+       */
+      console.log("Profile save requested");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
     console.log("Profile edit cancelled");
   };
 
-  const handleContinue = (data: {
+  /*
+   * Overview
+   * ↓
+   * Industry Experience
+   */
+  const handleOverviewContinue = (data: {
     about: string;
     regions: string[];
     industries: string[];
   }) => {
-    console.log("Continue with overview data:", data);
+    console.log(
+      "Continue with overview data:",
+      data,
+    );
+
+    setActiveTab("industry-experience");
+  };
+
+  /*
+   * Industry Experience
+   * ↓
+   * Acquisition Preferences
+   */
+  const handleIndustryExperienceContinue = (data: {
+    industries: string[];
+    years: string;
+    roles: string[];
+  }) => {
+    console.log(
+      "Industry experience:",
+      data,
+    );
+
+    setActiveTab("acquisition-preferences");
+  };
+
+  /*
+   * Acquisition Preferences
+   *
+   * Finances will be connected once the
+   * Finances section is implemented.
+   */
+  const handleAcquisitionPreferencesContinue = (data: {
+    acquisitionPreferences: string;
+    motivation: string;
+    involvement:
+      | "operator"
+      | "investor"
+      | "owner-management"
+      | "partner";
+    timeline:
+      | "exploring"
+      | "within-1-12"
+      | "within-12-24"
+      | "within-24-plus";
+  }) => {
+    console.log(
+      "Acquisition preferences:",
+      data,
+    );
+
+    // Finances will be connected here
+    // once the Finances section is implemented.
   };
 
   return (
     <main className="buyer-profile-edit">
       <div className="buyer-profile-edit__content">
+
+        {/* Header */}
         <ProfileEditHeader
           name="Original Name"
           location={location}
@@ -54,31 +117,84 @@ export default function BuyerProfileEdit() {
           }}
         />
 
+        {/* Tabs */}
         <ProfileTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
 
+        {/* =========================
+            Overview
+           ========================= */}
         {activeTab === "overview" && (
-          <>
-            <EditOverviewSection
-              initialAbout="Placeholder text for a longer response, spanning multiple lines."
-              initialRegions={[
-                "Location 1",
-                "Location 2",
-                "Location 3",
-              ]}
-              initialIndustries={[]}
-              onContinue={handleContinue}
-            />
-
-            <ProfileFormActions
-              onCancel={handleCancel}
-              onSave={handleSave}
-              saving={saving}
-            />
-          </>
+          <EditOverviewSection
+            initialAbout="Placeholder text for a longer response, spanning multiple lines."
+            initialRegions={[
+              "Location 1",
+              "Location 2",
+              "Location 3",
+            ]}
+            initialIndustries={[
+              "Industry 1",
+              "Industry 2",
+              "Industry 3",
+            ]}
+            onContinue={handleOverviewContinue}
+          />
         )}
+
+        {/* =========================
+            Industry Experience
+           ========================= */}
+        {activeTab === "industry-experience" && (
+          <IndustryExperienceSection
+            initialIndustries={[
+              "Industry 1",
+              "Industry 2",
+              "Industry 3",
+            ]}
+            initialYears=""
+            initialRoles={[
+              "Role 1",
+              "Role 2",
+              "Role 3",
+            ]}
+            onBack={() =>
+              setActiveTab("overview")
+            }
+            onContinue={
+              handleIndustryExperienceContinue
+            }
+          />
+        )}
+
+        {/* =========================
+            Acquisition Preferences
+           ========================= */}
+        {activeTab === "acquisition-preferences" && (
+          <AcquisitionPreferencesSection
+            initialAcquisitionPreferences=""
+            initialMotivation=""
+            initialInvolvement="operator"
+            initialTimeline="exploring"
+            onBack={() =>
+              setActiveTab("industry-experience")
+            }
+            onContinue={
+              handleAcquisitionPreferencesContinue
+            }
+          />
+        )}
+
+        {/* =========================
+            Save / Cancel
+           ========================= */}
+        <ProfileFormActions
+          onCancel={handleCancel}
+          onSave={handleSave}
+          saving={saving}
+        />
+
       </div>
     </main>
   );

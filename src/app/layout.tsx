@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import { Plus_Jakarta_Sans } from "next/font/google";
+
 import "../styles/variables.css";
+import "./globals.css";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-plus-jakarta",
+});
 
 export const metadata: Metadata = {
   title: "MatchBook",
-  description: "MatchBook Authentication",
+  description: "MatchBook",
 };
 
 export default function RootLayout({
@@ -14,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={plusJakartaSans.variable}>
+        {children}
+      </body>
     </html>
   );
 }

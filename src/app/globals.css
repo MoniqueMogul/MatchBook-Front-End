@@ -11,8 +11,10 @@ body {
 }
 
 body {
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-family-main);
   -webkit-font-smoothing: antialiased;
+  background: var(--color-bg-white);
+  color: var(--color-text-heading);
 }
 
 a {

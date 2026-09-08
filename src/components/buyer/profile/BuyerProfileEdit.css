@@ -1,5 +1,7 @@
 .buyer-profile-edit {
-  width: 1094px;
+  width: 100%;
+  min-width: 0;
+
   box-sizing: border-box;
 
   background: #ffffff;
@@ -8,12 +10,50 @@
 }
 
 .buyer-profile-edit__content {
-  width: 1094px;
+  width: 100%;
+  min-width: 0;
+
   box-sizing: border-box;
 
   display: flex;
   flex-direction: column;
-  gap: 47px;
 
-  padding-bottom: 10px;
+  /*
+   * The right side is the scrollable area,
+   * so we allow the content to naturally extend
+   * beyond the viewport.
+   */
+  padding-bottom: 32px;
+}
+
+/*
+ * Profile header → Tabs
+ *
+ * This is the main visual breathing space
+ * between the identity/header area and navigation.
+ */
+.buyer-profile-edit__content > .profile-edit-header {
+  margin-bottom: 48px;
+}
+
+/*
+ * Tabs → Overview form
+ */
+.buyer-profile-edit__content > .profile-tabs {
+  margin-bottom: 16px;
+}
+
+/*
+ * Overview form → Cancel / Save
+ */
+.buyer-profile-edit__content > .edit-overview-section {
+  margin-bottom: 16px;
+}
+
+.buyer-profile-edit__content > .industry-experience-section {
+  margin-bottom: 32px;
+}
+
+.buyer-profile-edit__content > .acquisition-preferences-section {
+  margin-bottom: 32px;
 }

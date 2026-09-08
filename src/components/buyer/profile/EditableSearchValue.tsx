@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+
 import EditablePill from "./EditablePill";
 import "./EditableSearchValue.css";
 
@@ -11,9 +12,8 @@ interface EditableSearchValueProps {
   onChange: (value: string) => void;
   onRemove: (value: string) => void;
   onAdd?: () => void;
-  placeholder?: string;
-  error?: string;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 export default function EditableSearchValue({
@@ -23,12 +23,9 @@ export default function EditableSearchValue({
   onChange,
   onRemove,
   onAdd,
-  placeholder = "Placeholder Text",
-  error,
   disabled = false,
+  placeholder = "Placeholder Text",
 }: EditableSearchValueProps) {
-  const hasError = Boolean(error);
-
   const handleKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
@@ -44,20 +41,7 @@ export default function EditableSearchValue({
         {label}
       </label>
 
-      <div
-        className={`editable-search-value__input-wrapper ${
-          hasError
-            ? "editable-search-value__input-wrapper--error"
-            : ""
-        }`}
-      >
-        <Search
-          className="editable-search-value__icon"
-          size={20}
-          strokeWidth={1.5}
-          aria-hidden="true"
-        />
-
+      <div className="editable-search-value__search">
         <input
           type="text"
           className="editable-search-value__input"
@@ -66,28 +50,29 @@ export default function EditableSearchValue({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          aria-invalid={hasError}
         />
+
+        <span
+          className="editable-search-value__search-icon"
+          aria-hidden="true"
+        >
+          <Search
+            size={20}
+            strokeWidth={1.5}
+          />
+        </span>
       </div>
 
-      {selectedValues.length > 0 && (
-        <div className="editable-search-value__selected">
-          {selectedValues.map((item) => (
-            <EditablePill
-              key={item}
-              label={item}
-              onRemove={() => onRemove(item)}
-              disabled={disabled}
-            />
-          ))}
-        </div>
-      )}
-
-      {hasError && (
-        <p className="editable-search-value__helper" role="alert">
-          {error}
-        </p>
-      )}
+      <div className="editable-search-value__selected">
+        {selectedValues.map((selectedValue) => (
+          <EditablePill
+            key={selectedValue}
+            label={selectedValue}
+            onRemove={() => onRemove(selectedValue)}
+            disabled={disabled}
+          />
+        ))}
+      </div>
     </div>
   );
 }

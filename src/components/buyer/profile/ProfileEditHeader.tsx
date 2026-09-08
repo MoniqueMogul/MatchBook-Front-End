@@ -7,24 +7,28 @@ interface ProfileEditHeaderProps {
   name: string;
   location: string;
   imageSrc?: string;
-  onLocationChange: (value: string) => void;
-  onImageEdit?: () => void;
+  mode?: "preview" | "edit";
+  onModeChange?: (mode: "preview" | "edit") => void;
   onPreview?: () => void;
-  disabled?: boolean;
+  onImageChange?: () => void;
+  onLocationChange?: (value: string) => void;
 }
 
 export default function ProfileEditHeader({
   name,
   location,
   imageSrc,
-  onLocationChange,
-  onImageEdit,
+  mode = "edit",
+  onModeChange,
   onPreview,
-  disabled = false,
+  onImageChange,
+  onLocationChange,
 }: ProfileEditHeaderProps) {
   return (
-    <section className="profile-edit-header">
+    <header className="profile-edit-header">
+      {/* Identity section */}
       <div className="profile-edit-header__identity">
+        {/* Profile image */}
         <div className="profile-edit-header__image-wrapper">
           {imageSrc ? (
             <img
@@ -34,7 +38,7 @@ export default function ProfileEditHeader({
             />
           ) : (
             <div
-              className="profile-edit-header__image-placeholder"
+              className="profile-edit-header__image profile-edit-header__image--placeholder"
               aria-hidden="true"
             />
           )}
@@ -42,14 +46,14 @@ export default function ProfileEditHeader({
           <button
             type="button"
             className="profile-edit-header__image-edit"
-            onClick={onImageEdit}
-            disabled={disabled}
-            aria-label="Edit profile image"
+            onClick={onImageChange}
+            aria-label="Change profile image"
           >
-            <Pencil size={16} strokeWidth={1.5} />
+            <Pencil size={16} strokeWidth={2} />
           </button>
         </div>
 
+        {/* Name and Location */}
         <div className="profile-edit-header__fields">
           <div className="profile-edit-header__field">
             <label
@@ -62,7 +66,7 @@ export default function ProfileEditHeader({
             <input
               id="profile-edit-name"
               type="text"
-              className="profile-edit-header__input profile-edit-header__input--disabled"
+              className="profile-edit-header__input"
               value={name}
               disabled
               readOnly
@@ -83,34 +87,48 @@ export default function ProfileEditHeader({
               className="profile-edit-header__input"
               value={location}
               onChange={(event) =>
-                onLocationChange(event.target.value)
+                onLocationChange?.(event.target.value)
               }
-              disabled={disabled}
             />
           </div>
         </div>
       </div>
 
+      {/* Preview / Profile Edit toggle */}
       <div className="profile-edit-header__controls">
-        <div className="profile-edit-header__mode-toggle">
+        <div
+          className="profile-edit-header__toggle"
+          role="group"
+          aria-label="Profile view mode"
+        >
           <button
             type="button"
-            className="profile-edit-header__mode-button"
-            onClick={onPreview}
-            disabled={disabled}
+            className={`profile-edit-header__toggle-button ${
+              mode === "preview"
+                ? "profile-edit-header__toggle-button--active"
+                : ""
+            }`}
+            onClick={() => {
+              onPreview?.();
+              onModeChange?.("preview");
+            }}
           >
             Preview
           </button>
 
           <button
             type="button"
-            className="profile-edit-header__mode-button profile-edit-header__mode-button--active"
-            disabled
+            className={`profile-edit-header__toggle-button ${
+              mode === "edit"
+                ? "profile-edit-header__toggle-button--active"
+                : ""
+            }`}
+            onClick={() => onModeChange?.("edit")}
           >
             Profile Edit
           </button>
         </div>
       </div>
-    </section>
+    </header>
   );
 }

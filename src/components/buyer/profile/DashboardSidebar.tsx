@@ -1,9 +1,12 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
+
 import {
   LayoutDashboard,
   FolderOpen,
   MessageCircle,
+  CreditCard,
   Briefcase,
   FileText,
   Settings,
@@ -17,7 +20,7 @@ import "./DashboardSidebar.css";
 type NavigationItem = {
   label: string;
   icon: typeof LayoutDashboard;
-  active?: boolean;
+  href?: string;
 };
 
 const mainNavigation: NavigationItem[] = [
@@ -35,8 +38,8 @@ const mainNavigation: NavigationItem[] = [
   },
   {
     label: "Profile",
-    icon: CircleUser,
-    active: true,
+    icon: CreditCard,
+    href: "/buyer/profile",
   },
   {
     label: "Deals",
@@ -56,89 +59,178 @@ const bottomNavigation: NavigationItem[] = [
   {
     label: "Account",
     icon: CircleUser,
+    href: "/buyer/account",
   },
 ];
 
 function NavigationItem({
   label,
   icon: Icon,
-  active = false,
-}: NavigationItem) {
+  href,
+  active,
+}: NavigationItem & { active: boolean }) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (href) {
+      router.push(href);
+    }
+  };
+
   return (
     <button
       type="button"
-      className={`sidebar-nav-item ${
-        active ? "sidebar-nav-item-active" : ""
+      className={`dashboard-sidebar__nav-item ${
+        active
+          ? "dashboard-sidebar__nav-item--active"
+          : ""
       }`}
       aria-current={active ? "page" : undefined}
+      onClick={handleClick}
     >
-      <span className="sidebar-nav-icon">
-        <Icon size={20} strokeWidth={1.5} />
+      <span className="dashboard-sidebar__nav-item-icon">
+        <Icon
+          size={20}
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
       </span>
 
-      <span className="sidebar-nav-label">{label}</span>
+      <span className="dashboard-sidebar__nav-item-label">
+        {label}
+      </span>
+    </button>
+  );
+}
+
+function BottomNavigationItem({
+  label,
+  icon: Icon,
+  href,
+  active,
+}: NavigationItem & { active: boolean }) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (href) {
+      router.push(href);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      className={`dashboard-sidebar__bottom-item ${
+        active
+          ? "dashboard-sidebar__bottom-item--active"
+          : ""
+      }`}
+      aria-current={active ? "page" : undefined}
+      onClick={handleClick}
+    >
+      <span className="dashboard-sidebar__bottom-item-icon">
+        <Icon
+          size={20}
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
+      </span>
+
+      <span className="dashboard-sidebar__bottom-item-label">
+        {label}
+      </span>
     </button>
   );
 }
 
 export default function DashboardSidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="dashboard-sidebar">
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <img
-            src="/logo.png"
-            alt="Matchbook"
-            className="sidebar-logo-image"
-          />
-        </div>
+      {/* Header */}
+      <div className="dashboard-sidebar__header">
+        <img
+          src="/logo.png"
+          alt="Matchbook"
+          className="dashboard-sidebar__logo"
+        />
 
         <button
           type="button"
-          className="sidebar-collapse-button"
+          className="dashboard-sidebar__collapse"
           aria-label="Collapse sidebar"
         >
-          <ChevronLeft size={24} strokeWidth={2} />
+          <ChevronLeft
+            size={20}
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
         </button>
       </div>
 
-      <div className="sidebar-header-spacer" />
+      {/* Search */}
+      <div className="dashboard-sidebar__search">
+        <span className="dashboard-sidebar__search-icon">
+          <Search
+            size={20}
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+        </span>
 
-      <div className="sidebar-search">
-        <Search
-          size={20}
-          strokeWidth={1.5}
-          className="sidebar-search-icon"
-          aria-hidden="true"
-        />
+        <span className="dashboard-sidebar__search-text">
+          Search
+        </span>
 
-        <span className="sidebar-search-text">Search</span>
-
-        <span className="sidebar-search-shortcut">⌘K</span>
+        <span className="dashboard-sidebar__search-shortcut">
+          ⌘K
+        </span>
       </div>
 
-      <nav className="sidebar-navigation" aria-label="Main navigation">
-        <div className="sidebar-navigation-main">
-          {mainNavigation.map((item) => (
-            <NavigationItem
-              key={item.label}
-              label={item.label}
-              icon={item.icon}
-              active={item.active}
-            />
-          ))}
-        </div>
+      {/* Main navigation */}
+      <nav
+        className="dashboard-sidebar__nav"
+        aria-label="Main navigation"
+      >
+        {mainNavigation.map((item) => {
+          const isActive =
+            item.href !== undefined &&
+            pathname.startsWith(item.href);
 
-        <div className="sidebar-navigation-bottom">
-          {bottomNavigation.map((item) => (
+          return (
             <NavigationItem
               key={item.label}
               label={item.label}
               icon={item.icon}
+              href={item.href}
+              active={isActive}
             />
-          ))}
-        </div>
+          );
+        })}
       </nav>
+
+      {/* Push bottom navigation to the bottom */}
+      <div className="dashboard-sidebar__spacer" />
+
+      {/* Bottom navigation */}
+      <div className="dashboard-sidebar__bottom">
+        {bottomNavigation.map((item) => {
+          const isActive =
+            item.href !== undefined &&
+            pathname.startsWith(item.href);
+
+          return (
+            <BottomNavigationItem
+              key={item.label}
+              label={item.label}
+              icon={item.icon}
+              href={item.href}
+              active={isActive}
+            />
+          );
+        })}
+      </div>
     </aside>
   );
 }

@@ -17,5 +17,5 @@
   --color-border-light: #D8DCE1;
 
   /* Typography */
-  --font-family-main: 'Inter', sans-serif; 
+  --font-family-main: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif; 
 }
