@@ -1,64 +1,47 @@
 .profile-edit-header {
   width: 100%;
   height: 164px;
-
   min-width: 0;
-
   box-sizing: border-box;
-
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
-
   font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 .profile-edit-header__identity {
   width: auto;
   height: 164px;
-
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-
   gap: 40px;
-
   flex: 1 1 auto;
   min-width: 0;
 }
 
 .profile-edit-header__image-wrapper {
   position: relative;
-
   width: 146px;
   height: 146px;
-
   flex: 0 0 146px;
-
   box-sizing: border-box;
-
   padding: 8px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border: 2px solid #2f542a;
   border-radius: 50%;
-
   background: #ffffff;
 }
 
 .profile-edit-header__image {
   width: 130px;
   height: 130px;
-
   display: block;
-
   object-fit: cover;
   object-position: center;
-
   border-radius: 50%;
 }
 
@@ -68,27 +51,19 @@
 
 .profile-edit-header__image-edit {
   position: absolute;
-
   right: 0;
   bottom: 0;
-
   width: 29px;
   height: 29px;
-
   box-sizing: border-box;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 0;
-
   border: 1px solid #ffffff;
   border-radius: 50%;
-
   background: #55994c;
   color: #ffffff;
-
   cursor: pointer;
 }
 
@@ -100,16 +75,11 @@
 .profile-edit-header__fields {
   width: 484px;
   height: 164px;
-
   flex: 0 0 484px;
-
   box-sizing: border-box;
-
   display: flex;
   flex-direction: column;
-
   gap: 12px;
-
   padding-left: 16px;
   padding-right: 16px;
 }
@@ -117,49 +87,35 @@
 .profile-edit-header__field {
   width: 280px;
   height: 76px;
-
   box-sizing: border-box;
-
   display: flex;
   flex-direction: column;
-
   gap: 8px;
 }
 
 .profile-edit-header__label {
   width: 280px;
   height: 20px;
-
   margin: 0;
-
   box-sizing: border-box;
-
   font-size: 14px;
   line-height: 20px;
   font-weight: 400;
-
   color: #333d4d;
 }
 
 .profile-edit-header__input {
   width: 280px;
   height: 48px;
-
   box-sizing: border-box;
-
   padding: 12px 16px;
-
   border: 1px solid #b7bec7;
   border-radius: 8px;
-
   background: #f7f8f9;
-
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 16px;
   line-height: 24px;
-
   color: #12161d;
-
   outline: none;
 }
 
@@ -172,63 +128,44 @@
 .profile-edit-header__controls {
   width: 240px;
   height: 164px;
-
   flex: 0 0 240px;
-
   box-sizing: border-box;
-
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-
   padding-top: 10px;
 }
 
 .profile-edit-header__toggle {
   width: 240px;
   height: 44px;
-
   box-sizing: border-box;
-
   display: flex;
-
   border: 1px solid #8d96a3;
   border-radius: 8px;
-
   overflow: hidden;
-
   background: #ffffff;
 }
 
 .profile-edit-header__toggle-button {
   width: 120px;
   height: 44px;
-
   box-sizing: border-box;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 0;
-
   border: 0;
-
   background: transparent;
-
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 14px;
   line-height: 20px;
-
   color: #8d96a3;
-
   cursor: pointer;
 }
 
 .profile-edit-header__toggle-button--active {
   background: #b1d0ad;
-
   color: #2f542a;
-
   font-weight: 700;
 }

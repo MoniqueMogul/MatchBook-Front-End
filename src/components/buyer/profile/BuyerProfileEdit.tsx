@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import IndustryExperienceSection from "./IndustryExperienceSection";
 import AcquisitionPreferencesSection from "./AcquisitionPreferencesSection";
 import ProfileEditHeader from "./ProfileEditHeader";
+import ProfileImageModal from "./ProfileImageModal";
 import ProfileTabs, { type ProfileTab } from "./ProfileTabs";
 import EditOverviewSection from "./EditOverviewSection";
 import ProfileFormActions from "./ProfileFormActions";
@@ -20,6 +21,12 @@ export default function BuyerProfileEdit() {
 
   const [location, setLocation] =
     useState("Original Location");
+
+  const [profileImage, setProfileImage] =
+    useState<string | undefined>(undefined);
+
+  const [isImageModalOpen, setIsImageModalOpen] =
+    useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -47,6 +54,15 @@ export default function BuyerProfileEdit() {
 
   const handleCancel = () => {
     console.log("Profile edit cancelled");
+  };
+
+  /* =========================
+     Profile Image
+     ========================= */
+
+  const handleProfileImageDone = (imageSrc: string) => {
+    setProfileImage(imageSrc);
+    setIsImageModalOpen(false);
   };
 
   /* =========================
@@ -89,7 +105,7 @@ export default function BuyerProfileEdit() {
 
   /* =========================
      Acquisition Preferences
-     
+
      Finances will be connected once
      that section is implemented.
      ========================= */
@@ -127,15 +143,15 @@ export default function BuyerProfileEdit() {
     <main className="buyer-profile-edit">
       <div className="buyer-profile-edit__content">
 
-        {/* =========================
-            Header
-           ========================= */}
-
         <ProfileEditHeader
           name="Original Name"
           location={location}
+          imageSrc={profileImage}
           onLocationChange={setLocation}
           mode="edit"
+          onImageChange={() =>
+            setIsImageModalOpen(true)
+          }
           onPreview={() => {
             router.push("/buyer/profile");
           }}
@@ -146,18 +162,10 @@ export default function BuyerProfileEdit() {
           }}
         />
 
-        {/* =========================
-            Tabs
-           ========================= */}
-
         <ProfileTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
-
-        {/* =========================
-            Overview
-           ========================= */}
 
         {activeTab === "overview" && (
           <EditOverviewSection
@@ -167,18 +175,10 @@ export default function BuyerProfileEdit() {
               "Location 2",
               "Location 3",
             ]}
-            initialIndustries={[
-              "Industry 1",
-              "Industry 2",
-              "Industry 3",
-            ]}
+            initialIndustries={[]}
             onContinue={handleOverviewContinue}
           />
         )}
-
-        {/* =========================
-            Industry Experience
-           ========================= */}
 
         {activeTab === "industry-experience" && (
           <IndustryExperienceSection
@@ -202,10 +202,6 @@ export default function BuyerProfileEdit() {
           />
         )}
 
-        {/* =========================
-            Acquisition Preferences
-           ========================= */}
-
         {activeTab === "acquisition-preferences" && (
           <AcquisitionPreferencesSection
             initialAcquisitionPreferences=""
@@ -221,16 +217,20 @@ export default function BuyerProfileEdit() {
           />
         )}
 
-        {/* =========================
-            Save / Cancel
-           ========================= */}
-
         <ProfileFormActions
           onCancel={handleCancel}
           onSave={handleSave}
           saving={saving}
         />
 
+        <ProfileImageModal
+          isOpen={isImageModalOpen}
+          imageSrc={profileImage}
+          onClose={() =>
+            setIsImageModalOpen(false)
+          }
+          onDone={handleProfileImageDone}
+        />
       </div>
     </main>
   );

@@ -26,9 +26,7 @@ export default function ProfileEditHeader({
 }: ProfileEditHeaderProps) {
   return (
     <header className="profile-edit-header">
-      {/* Identity section */}
       <div className="profile-edit-header__identity">
-        {/* Profile image */}
         <div className="profile-edit-header__image-wrapper">
           {imageSrc ? (
             <img
@@ -53,7 +51,6 @@ export default function ProfileEditHeader({
           </button>
         </div>
 
-        {/* Name and Location */}
         <div className="profile-edit-header__fields">
           <div className="profile-edit-header__field">
             <label
@@ -94,7 +91,6 @@ export default function ProfileEditHeader({
         </div>
       </div>
 
-      {/* Preview / Profile Edit toggle */}
       <div className="profile-edit-header__controls">
         <div
           className="profile-edit-header__toggle"
