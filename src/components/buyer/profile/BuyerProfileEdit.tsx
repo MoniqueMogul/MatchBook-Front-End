@@ -91,8 +91,10 @@ export default function BuyerProfileEdit() {
      ========================= */
 
   const handleIndustryExperienceContinue = (data: {
-    industries: string[];
+    buyerType: string;
+    workSituation: string;
     years: string;
+    industries: string[];
     roles: string[];
   }) => {
     console.log(
@@ -182,17 +184,11 @@ export default function BuyerProfileEdit() {
 
         {activeTab === "industry-experience" && (
           <IndustryExperienceSection
-            initialIndustries={[
-              "Industry 1",
-              "Industry 2",
-              "Industry 3",
-            ]}
+            initialBuyerType="first-time-buyer"
+            initialWorkSituation="employed-full-time"
+            initialIndustries={[]}
             initialYears=""
-            initialRoles={[
-              "Role 1",
-              "Role 2",
-              "Role 3",
-            ]}
+            initialRoles={[]}
             onBack={() =>
               setActiveTab("overview")
             }
