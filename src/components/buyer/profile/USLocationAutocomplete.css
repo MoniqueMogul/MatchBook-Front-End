@@ -1,0 +1,314 @@
+.us-location-autocomplete {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.us-location-autocomplete__label {
+  display: block;
+
+  margin: 0 0 15px 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #1f3b5b;
+}
+
+.us-location-autocomplete__details {
+  position: relative;
+
+  width: 400px;
+  max-width: 100%;
+
+  box-sizing: border-box;
+}
+
+.us-location-autocomplete__input-wrapper {
+  width: 400px;
+  max-width: 100%;
+
+  height: 60px;
+
+  display: flex;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  border: 1px solid #b8c3d0;
+  border-radius: 6px;
+
+  background: #ffffff;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.us-location-autocomplete__input-wrapper:hover {
+  border-color: #aeb9c6;
+}
+
+.us-location-autocomplete__input-wrapper--open {
+  border-color: #498441;
+}
+
+.us-location-autocomplete__input-wrapper:focus-within {
+  border-color: #498441;
+
+  box-shadow:
+    0 0 0 1px
+    rgba(73, 132, 65, 0.1);
+}
+
+.us-location-autocomplete__input-wrapper input {
+  width: 100%;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  padding: 0 24px;
+
+  border: 0;
+  outline: none;
+
+  background: transparent;
+
+  color: #1f3b5b;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.us-location-autocomplete__input-wrapper input::placeholder {
+  color: #52677d;
+}
+
+.us-location-autocomplete__input-wrapper input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ================================
+   DROPDOWN
+   ================================ */
+
+.us-location-autocomplete__dropdown {
+  position: absolute;
+
+  top: calc(100% + 6px);
+  left: 0;
+
+  width: 400px;
+  max-width: 100%;
+
+  max-height: 280px;
+
+  overflow-y: auto;
+
+  box-sizing: border-box;
+
+  padding: 5px 0;
+
+  border: 1px solid #b8c3d0;
+  border-radius: 6px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 5px 14px
+    rgba(0, 0, 0, 0.1);
+
+  z-index: 1000;
+}
+
+/* ================================
+   OPTION
+   ================================ */
+
+.us-location-autocomplete__option {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  box-sizing: border-box;
+
+  margin: 0;
+  padding: 10px 18px;
+
+  border: 0;
+
+  background: #ffffff;
+
+  color: #1f3b5b;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.12s ease;
+}
+
+.us-location-autocomplete__option:hover {
+  background: #f3f7f2;
+}
+
+.us-location-autocomplete__option-name {
+  width: 100%;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.us-location-autocomplete__option-details {
+  margin-top: 2px;
+
+  color: #718096;
+
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+/* ================================
+   STATUS
+   ================================ */
+
+.us-location-autocomplete__status {
+  padding: 12px 18px;
+
+  color: #52677d;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.us-location-autocomplete__status--error {
+  color: #b42318;
+}
+
+/* ================================
+   SELECTED PILLS
+   ================================ */
+
+.us-location-autocomplete__pills {
+  width: 100%;
+
+  display: flex;
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-top: 10px;
+
+  box-sizing: border-box;
+}
+
+.us-location-autocomplete__pill {
+  width: 180px;
+  height: 45px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+
+  box-sizing: border-box;
+
+  padding: 0 12px 0 14px;
+
+  border-radius: 10px;
+
+  background: #edf5eb;
+
+  color: #172b1b;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.us-location-autocomplete__pill > span {
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.us-location-autocomplete__pill button {
+  width: 20px;
+  height: 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 20px;
+
+  margin-left: 8px;
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #8b9690;
+
+  cursor: pointer;
+}
+
+.us-location-autocomplete__pill button:hover {
+  color: #498441;
+}
+
+.us-location-autocomplete__pill button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ================================
+   MOBILE
+   ================================ */
+
+@media (max-width: 600px) {
+  .us-location-autocomplete__details {
+    width: 100%;
+  }
+
+  .us-location-autocomplete__input-wrapper {
+    width: 100%;
+  }
+
+  .us-location-autocomplete__dropdown {
+    width: 100%;
+  }
+
+  .us-location-autocomplete__pill {
+    width: 180px;
+    max-width: 100%;
+  }
+}
