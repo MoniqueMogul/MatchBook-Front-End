@@ -36,7 +36,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({ length = 6, onChange }) => {
         <input
           key={index}
           ref={(el) => {
-            inputRefs.current[index] = el;
+            inputRefs.current[index] = el!;
           }}
           type="text"
           value={digit}
