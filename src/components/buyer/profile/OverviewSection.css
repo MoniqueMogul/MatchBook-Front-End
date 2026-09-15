@@ -1,0 +1,116 @@
+.overview-section {
+  width: 1040px;
+  height: 362px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 20px;
+
+  gap: 16px;
+
+  border: 1px solid #d8dce1;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.overview-section__information {
+  width: 998px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.overview-section__information--about {
+  height: 128px;
+}
+
+.overview-section__information:not(
+  .overview-section__information--about
+) {
+  height: 80px;
+}
+
+.overview-section__title {
+  width: 998px;
+  height: 20px;
+
+  box-sizing: border-box;
+
+  margin: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+
+  color: #000000;
+}
+
+.overview-section__description {
+  width: 998px;
+  height: 96px;
+
+  box-sizing: border-box;
+
+  margin: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #000000;
+}
+
+.overview-section__pills {
+  width: 998px;
+  height: 38px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding-top: 1px;
+  padding-bottom: 1px;
+
+  overflow: hidden;
+}
+
+.overview-section__pill {
+  width: 144px;
+  height: 36px;
+
+  box-sizing: border-box;
+
+  flex: 0 0 144px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 8px;
+
+  background: #ebf3ea;
+
+  border-radius: 8px;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+
+  color: #12161d;
+
+  text-align: center;
+  white-space: nowrap;
+}

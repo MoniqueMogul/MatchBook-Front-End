@@ -1,0 +1,395 @@
+/* =====================================================
+   Section shell
+   ===================================================== */
+
+.industry-experience-section {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 700px;
+  box-sizing: border-box;
+  padding: 24px 20px 70px;
+  border: 1px solid #d8dce1;
+  border-radius: 5px;
+  background: #ffffff;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.industry-experience-section__fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.industry-experience-section__field,
+.industry-experience-section__select-field {
+  width: 448px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.industry-experience-section__field--years {
+  width: 320px;
+}
+
+.industry-experience-section__label {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #333d4d;
+}
+
+/* =====================================================
+   Years input
+   ===================================================== */
+
+.industry-experience-section__years-input {
+  width: 286px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  border: 1px solid #b7bec7;
+  border-radius: 8px;
+  background: #f7f8f9;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  color: #12161d;
+  outline: none;
+}
+
+.industry-experience-section__years-input::placeholder {
+  color: #12161d;
+  opacity: 1;
+}
+
+/* =====================================================
+   Radio group
+   ===================================================== */
+
+.industry-experience-section__group {
+  width: 620px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.industry-experience-section__radio-grid {
+  width: 620px;
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  column-gap: 8px;
+  row-gap: 8px;
+  margin-top: 5px;
+}
+
+.industry-experience-section__radio-option {
+  min-width: 0;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.industry-experience-section__radio-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.industry-experience-section__radio {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #667080;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.industry-experience-section__radio--selected {
+  border-color: #55994c;
+}
+
+.industry-experience-section__radio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #55994c;
+}
+
+.industry-experience-section__radio-label {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  color: #12161d;
+}
+
+/* =====================================================
+   MultiSelect dropdown
+   ===================================================== */
+
+.industry-experience-section__select-wrap {
+  position: relative;
+  width: 320px;
+}
+
+.industry-experience-section__select-trigger {
+  width: 320px;
+  height: 48px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: 1px solid #b7bec7;
+  border-radius: 8px;
+  background: #f7f8f9;
+  color: #52677d;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.industry-experience-section__select-trigger:hover {
+  border-color: #aeb9c6;
+}
+
+.industry-experience-section__select-trigger--open {
+  border-color: #498441;
+  background: #ffffff;
+}
+
+.industry-experience-section__select-trigger:focus {
+  outline: none;
+  border-color: #498441;
+  box-shadow: 0 0 0 1px rgba(73, 132, 65, 0.1);
+}
+
+.industry-experience-section__select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.industry-experience-section__chevron {
+  flex: 0 0 14px;
+  color: #52677d;
+  transition: transform 0.15s ease;
+}
+
+.industry-experience-section__chevron--open {
+  transform: rotate(180deg);
+}
+
+.industry-experience-section__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 320px;
+  max-height: 245px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 4px 0;
+  border: 1px solid #498441;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+}
+
+.industry-experience-section__dropdown-option {
+  width: 100%;
+  min-height: 32px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 0;
+  background: #ffffff;
+  color: #52677d;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.industry-experience-section__dropdown-option:hover {
+  background: #f3f7f2;
+}
+
+.industry-experience-section__dropdown-option--selected {
+  color: #498441;
+  font-weight: 500;
+}
+
+.industry-experience-section__dropdown-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.industry-experience-section__check {
+  width: 12px;
+  min-width: 12px;
+  margin-left: auto;
+  text-align: right;
+  color: #498441;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.industry-experience-section__pills {
+  width: 448px;
+  min-height: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.industry-experience-section__pill {
+  height: 32px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #edf5eb;
+  color: #172b1b;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.industry-experience-section__pill > span {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.industry-experience-section__pill button {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 6px;
+  border: 0;
+  background: transparent;
+  color: #8b9690;
+  cursor: pointer;
+}
+
+.industry-experience-section__pill button:hover {
+  color: #498441;
+}
+
+.industry-experience-section__pill button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* =====================================================
+   Navigation
+   ===================================================== */
+
+.industry-experience-section__navigation {
+  position: absolute;
+  right: 20px;
+  bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.industry-experience-section__navigation-button {
+  width: 50px;
+  height: 48px;
+  flex: 0 0 50px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: #498441;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.industry-experience-section__navigation-button:hover {
+  background: #3a6d35;
+}
+
+.industry-experience-section__navigation-button:focus-visible {
+  outline: 2px solid #55994c;
+  outline-offset: 2px;
+}
+
+.industry-experience-section__navigation-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =====================================================
+   Responsive
+   ===================================================== */
+
+@media (max-width: 700px) {
+  .industry-experience-section {
+    min-height: 0;
+    padding-bottom: 90px;
+  }
+
+  .industry-experience-section__field,
+  .industry-experience-section__select-field,
+  .industry-experience-section__group,
+  .industry-experience-section__radio-grid,
+  .industry-experience-section__pills {
+    width: 100%;
+  }
+
+  .industry-experience-section__radio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .industry-experience-section__select-wrap,
+  .industry-experience-section__select-trigger,
+  .industry-experience-section__dropdown {
+    width: 100%;
+  }
+}

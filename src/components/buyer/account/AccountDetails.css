@@ -1,0 +1,188 @@
+.account-details {
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  position: relative;
+
+  padding: 64px 40px 80px 40px;
+
+  background: #ffffff;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+/* =========================
+   Content
+   ========================= */
+
+.account-details__content {
+  width: 100%;
+  max-width: 625px;
+}
+
+/* =========================
+   Title
+   ========================= */
+
+.account-details__title {
+  margin: 0 0 28px;
+
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+
+  color: #333d4d;
+}
+
+/* =========================
+   Sections
+   ========================= */
+
+.account-details__section {
+  width: 100%;
+  margin: 0 0 22px;
+}
+
+.account-details__section-title {
+  margin: 0 0 10px;
+
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+
+  color: #333d4d;
+}
+
+.account-details__divider {
+  width: 1100px;
+  height: 1px;
+
+  margin: 0 0 13px;
+
+  background: #b7bec7;
+}
+
+/* =========================
+   Information rows
+   ========================= */
+
+.account-details__item {
+  min-height: 28px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin: 0;
+}
+
+.account-details__icon {
+  width: 18px;
+  height: 18px;
+
+  flex: 0 0 18px;
+
+  color: #3f793a;
+}
+
+.account-details__value {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 500;
+
+  color: #55994c;
+}
+
+/* =========================
+   Contact
+   ========================= */
+
+.account-details__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.account-details__contact .account-details__item {
+  margin: 0;
+}
+
+/* =========================
+   LinkedIn
+   ========================= */
+
+.account-details__linkedin-icon {
+  width: 18px;
+  height: 18px;
+
+  flex: 0 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 700;
+
+  color: #3f793a;
+}
+
+/* =========================
+   Edit Button
+   ========================= */
+
+.account-details__edit {
+  position: absolute;
+
+  right: 90px;
+  bottom: 90px;
+
+  width: 180px;
+  height: 44px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px 18px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: #498441;
+  color: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.account-details__edit svg {
+  display: none;
+}
+
+.account-details__edit:hover {
+  background: #3a6d35;
+}
+
+.account-details__edit:active {
+  transform: translateY(1px);
+}
+
+.account-details__edit:focus-visible {
+  outline: 2px solid #55994c;
+  outline-offset: 2px;
+}

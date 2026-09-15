@@ -1,0 +1,20 @@
+.buyer-profile-page {
+  width: 98%;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  background: #ffffff;
+}
+
+.buyer-profile-page__main {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 48px 24px 200px 60px;
+  background: #ffffff;
+  overflow-x: hidden;
+}
+
+.buyer-profile-page__main > * {
+  width: 98%;
+}

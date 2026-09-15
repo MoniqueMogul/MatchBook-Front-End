@@ -1,0 +1,16 @@
+.buyer-profile-edit-page {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  background: #ffffff;
+}
+
+.buyer-profile-edit-page__main {
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 48px 40px 48px 46px;
+  background: #ffffff;
+}

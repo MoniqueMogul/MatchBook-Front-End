@@ -1,0 +1,114 @@
+.editable-search-value {
+  width: 448px;
+  height: 122px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.editable-search-value__label {
+  width: 448px;
+  height: 20px;
+  box-sizing: border-box;
+
+  margin: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+
+  color: #333d4d;
+}
+
+.editable-search-value__search {
+  width: 320px;
+  height: 48px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 12px 20px;
+
+  border: 1px solid #b7bec7;
+  border-radius: 8px;
+
+  background: #f7f8f9;
+}
+
+.editable-search-value__input {
+  width: 252px;
+  height: 20px;
+  min-width: 0;
+  flex: 1 1 auto;
+
+  box-sizing: border-box;
+
+  padding: 0;
+
+  border: 0;
+  outline: none;
+
+  background: transparent;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+
+  color: #12161d;
+}
+
+.editable-search-value__input::placeholder {
+  color: #8d96a3;
+  opacity: 1;
+}
+
+.editable-search-value__input:focus {
+  outline: none;
+}
+
+.editable-search-value__input:disabled {
+  cursor: not-allowed;
+  color: #8d96a3;
+}
+
+.editable-search-value__search-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #667080;
+}
+
+.editable-search-value__search-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.editable-search-value__selected {
+  width: 448px;
+  height: 38px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding-top: 1px;
+  padding-bottom: 1px;
+
+  overflow: hidden;
+}
