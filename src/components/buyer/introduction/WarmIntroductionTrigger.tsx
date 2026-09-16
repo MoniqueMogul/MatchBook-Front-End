@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { CheckCircle2, X } from "lucide-react";
 
 import type { MatchBusinessDetails } from "@/lib/api/matching/matching.types";
+import { saveWarmIntroduction } from "@/lib/api/messages/messages.demo-storage";
 
 import WarmIntroductionModal from "./WarmIntroductionModal";
 
@@ -23,12 +24,18 @@ export default function WarmIntroductionTrigger({
   const [showSuccess, setShowSuccess] =
     useState(false);
 
-  function handleSent(_message: string) {
+  function handleSent(message: string) {
     /*
-     * Presentation-only behavior until the Warm
-     * Introduction backend endpoint is confirmed.
-     * The message is intentionally not persisted.
+     * Temporary browser persistence for the demo.
+     * Replace this with the real Warm Introduction /
+     * Chat API after the backend contract is ready.
      */
+    saveWarmIntroduction({
+      business,
+      content: message,
+      createdAt: new Date().toISOString(),
+    });
+
     setIsOpen(false);
     setShowSuccess(true);
   }
@@ -54,8 +61,7 @@ export default function WarmIntroductionTrigger({
                 <CheckCircle2 size={21} />
 
                 <span>
-                  Your introduction was successfully
-                  prepared!
+                  Your introduction was added to Messages!
                 </span>
 
                 <button

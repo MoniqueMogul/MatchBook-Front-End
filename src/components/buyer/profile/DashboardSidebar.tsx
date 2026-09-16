@@ -35,6 +35,7 @@ const mainNavigation: NavigationItem[] = [
   {
     label: "Messages",
     icon: MessageCircle,
+    href: "/buyer/messages",
   },
   {
     label: "Profile",
