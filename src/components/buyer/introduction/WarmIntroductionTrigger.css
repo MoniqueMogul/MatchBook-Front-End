@@ -1,0 +1,51 @@
+.warm-intro-toast {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 1300;
+  min-width: 340px;
+  max-width: min(440px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  box-sizing: border-box;
+  border: 1px solid #cfe3cb;
+  border-radius: 10px;
+  background: #f2f9f0;
+  color: #3d7c37;
+  box-shadow: 0 12px 35px rgba(36, 54, 34, 0.18);
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.warm-intro-toast > span {
+  flex: 1;
+  color: #3d6e37;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.warm-intro-toast > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  color: #667080;
+  cursor: pointer;
+}
+
+.warm-intro-toast > button:hover {
+  color: #333d4d;
+}
+
+@media (max-width: 600px) {
+  .warm-intro-toast {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    min-width: 0;
+    max-width: none;
+  }
+}

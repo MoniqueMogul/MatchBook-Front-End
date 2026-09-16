@@ -14,6 +14,8 @@ import {
   X,
 } from "lucide-react";
 
+import WarmIntroductionTrigger from "@/components/buyer/introduction/WarmIntroductionTrigger";
+
 import type {
   BuyerMatchViewData,
   DimensionScore,
@@ -233,12 +235,10 @@ export default function MatchDetail({
                 </p>
               </div>
 
-              <button
-                type="button"
-                className="match-detail__intro-button"
-              >
-                Request Introduction
-              </button>
+              <WarmIntroductionTrigger
+                business={business}
+                matchPercentage={percentage}
+              />
             </div>
 
             <div className="match-detail__financial-summary">
