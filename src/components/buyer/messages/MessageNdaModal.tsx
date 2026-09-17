@@ -16,6 +16,7 @@ import "./MessageNdaModal.css";
 interface MessageNdaModalProps {
   business: MatchBusinessDetails;
   currentUserName: string;
+  startWithAgreement?: boolean;
   onClose: () => void;
   onSigned: () => void;
 }
@@ -23,12 +24,17 @@ interface MessageNdaModalProps {
 export default function MessageNdaModal({
   business,
   currentUserName,
+  startWithAgreement = false,
   onClose,
   onSigned,
 }: MessageNdaModalProps) {
   const [stage, setStage] = useState<
-    "prompt" | "agreement"
-  >("prompt");
+  "prompt" | "agreement"
+>(
+  startWithAgreement
+    ? "agreement"
+    : "prompt",
+);
   const [accepted, setAccepted] = useState(false);
   const [legalName, setLegalName] =
     useState(currentUserName);

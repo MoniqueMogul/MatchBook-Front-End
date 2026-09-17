@@ -238,6 +238,11 @@ export default function MatchDetail({
               <WarmIntroductionTrigger
                 business={business}
                 matchPercentage={percentage}
+                requiresNda={locked}
+                onNdaSigned={() => {
+                  setIsNdaSigned(true);
+                  setNdaError("");
+                }}
               />
             </div>
 
