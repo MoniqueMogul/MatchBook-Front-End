@@ -1,0 +1,419 @@
+/* =================================================================
+   Onboarding Shared Styles
+   BEM naming: .onboarding-{block}__{element}--{modifier}
+   ================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ------------------------------------------------------------------ */
+/*  Layout                                                             */
+/* ------------------------------------------------------------------ */
+
+.onboarding-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #ffffff;
+  font-family: var(--font-family-jakarta);
+}
+
+.onboarding-layout__left {
+  width: 730px;
+  min-width: 730px;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 60px;
+  background-color: #ffffff;
+  overflow-y: auto;
+}
+
+.onboarding-layout__right {
+  flex: 1;
+  min-width: 710px;
+  min-height: 100vh;
+  background-color: var(--color-neutral-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding-layout__placeholder-text {
+  font-family: var(--font-family-jakarta);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--color-neutral-400);
+  user-select: none;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Brand Logo                                                         */
+/* ------------------------------------------------------------------ */
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.brand-logo__mark {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.brand-logo__wordmark {
+  font-family: var(--font-family-jakarta);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-neutral-700);
+  letter-spacing: -0.02em;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Progress Bar                                                       */
+/* ------------------------------------------------------------------ */
+
+.progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 48px;
+}
+
+.progress-bar__track {
+  flex: 1;
+  height: 6px;
+  background-color: var(--color-neutral-200);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  background-color: var(--color-onboarding-green);
+  border-radius: 100px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-bar__label {
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+  min-width: 32px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Heading                                                            */
+/* ------------------------------------------------------------------ */
+
+.onboarding-heading {
+  font-family: var(--font-family-jakarta);
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 56px;
+  letter-spacing: 0%;
+  color: var(--color-neutral-700);
+  margin-bottom: 40px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Section Headers ("Region", "Contact")                              */
+/* ------------------------------------------------------------------ */
+
+.onboarding-section {
+  margin-bottom: 24px;
+}
+
+.onboarding-section__header {
+  font-family: var(--font-family-jakarta);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--color-neutral-700);
+  margin-bottom: 12px;
+}
+
+.onboarding-section__divider {
+  height: 1px;
+  background-color: var(--color-neutral-200);
+  margin-bottom: 20px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Text Input                                                         */
+/* ------------------------------------------------------------------ */
+
+.onboarding-field {
+  margin-bottom: 24px;
+}
+
+.onboarding-field__label {
+  display: block;
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  margin-bottom: 6px;
+}
+
+.onboarding-field__input {
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 8px;
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-neutral-700);
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.onboarding-field__input::placeholder {
+  color: var(--color-neutral-400);
+  font-weight: 400;
+}
+
+.onboarding-field__input:focus {
+  border-color: var(--color-onboarding-green);
+}
+
+.onboarding-field__input--error {
+  border-color: #E53E3E;
+}
+
+.onboarding-field__error {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-family-jakarta);
+  font-size: 12px;
+  font-weight: 400;
+  color: #E53E3E;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Select Field                                                       */
+/* ------------------------------------------------------------------ */
+
+.onboarding-select {
+  margin-bottom: 16px;
+}
+
+.onboarding-select__label {
+  display: block;
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  margin-bottom: 6px;
+}
+
+.onboarding-select__wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.onboarding-select__native {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 8px;
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-neutral-700);
+  background-color: #ffffff;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.onboarding-select__native:focus {
+  border-color: var(--color-onboarding-green);
+}
+
+.onboarding-select__native--error {
+  border-color: #E53E3E;
+}
+
+.onboarding-select__chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  color: var(--color-neutral-400);
+}
+
+.onboarding-select__error {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-family-jakarta);
+  font-size: 12px;
+  font-weight: 400;
+  color: #E53E3E;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Phone Input                                                        */
+/* ------------------------------------------------------------------ */
+
+.phone-input {
+  margin-bottom: 24px;
+}
+
+.phone-input__label {
+  display: block;
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  margin-bottom: 6px;
+}
+
+.phone-input__row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.phone-input__code-wrapper {
+  position: relative;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.phone-input__code-select {
+  width: 100%;
+  height: 100%;
+  padding: 10px 8px;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 8px;
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-neutral-700);
+  background-color: #ffffff;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s ease;
+}
+
+.phone-input__code-select:focus {
+  border-color: var(--color-onboarding-green);
+}
+
+.phone-input__number {
+  flex: 1;
+  max-width: 280px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 8px;
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-neutral-700);
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.phone-input__number::placeholder {
+  color: var(--color-neutral-400);
+}
+
+.phone-input__number:focus {
+  border-color: var(--color-onboarding-green);
+}
+
+.phone-input__number--error {
+  border-color: #E53E3E;
+}
+
+.phone-input__error {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-family-jakarta);
+  font-size: 12px;
+  font-weight: 400;
+  color: #E53E3E;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Buttons                                                            */
+/* ------------------------------------------------------------------ */
+
+.onboarding-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 40px;
+}
+
+.onboarding-btn {
+  font-family: var(--font-family-jakarta);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  line-height: 1;
+}
+
+.onboarding-btn--back {
+  padding: 10px 24px;
+  background-color: #ffffff;
+  border: 1px solid var(--color-neutral-300);
+  color: var(--color-neutral-700);
+}
+
+.onboarding-btn--back:hover {
+  background-color: var(--color-neutral-100);
+}
+
+.onboarding-btn--next {
+  padding: 10px 32px;
+  background-color: var(--color-onboarding-green);
+  border: none;
+  color: #ffffff;
+}
+
+.onboarding-btn--next:hover {
+  background-color: var(--color-onboarding-green-hover);
+}
+
+.onboarding-btn--next:active {
+  background-color: var(--color-onboarding-green-active);
+}
+
+.onboarding-btn--next:disabled {
+  background-color: var(--color-neutral-300);
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Fields Wrapper                                                     */
+/* ------------------------------------------------------------------ */
+
+.onboarding-fields {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}

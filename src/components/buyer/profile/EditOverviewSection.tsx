@@ -15,16 +15,18 @@ import {
 } from "lucide-react";
 
 import ProfileAboutField from "./ProfileAboutField";
+import type { ApiTargetLocation } from "@/lib/api/buyerPreferences.types";
+import { searchLocations } from "@/lib/api/locations";
 
 import "./EditOverviewSection.css";
 
 interface EditOverviewSectionProps {
   initialAbout?: string;
-  initialRegions?: string[];
+  initialRegions?: ApiTargetLocation[];
   initialIndustries?: string[];
   onContinue?: (data: {
     about: string;
-    regions: string[];
+    regions: ApiTargetLocation[];
     industries: string[];
   }) => void;
   disabled?: boolean;
@@ -54,74 +56,10 @@ const INDUSTRY_OPTIONS = [
  * =========================================
  */
 
-interface LocationSuggestion {
-  id: string;
-  displayName: string;
-  city?: string;
-  state?: string;
-  stateCode?: string;
-  county?: string;
-  country?: string;
-  countryCode?: string;
-  postcode?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-interface LocationIQResult {
-  place_id?: string | number;
-  osm_id?: string | number;
-  osm_type?: string;
-
-  display_name?: string;
-  display_place?: string;
-  display_address?: string;
-
-  lat?: string;
-  lon?: string;
-
-  type?: string;
-  class?: string;
-
-  address?: {
-    city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
-    locality?: string;
-    borough?: string;
-    city_district?: string;
-
-    county?: string;
-
-    state?: string;
-    state_code?: string;
-
-    postcode?: string;
-
-    country?: string;
-    country_code?: string;
-  };
-}
-
 const LOCATION_RESULT_LIMIT = 8;
 
 type LocationErrorMessage = string | null;
 
-function getLocationErrorMessage(status: number): string {
-  switch (status) {
-    case 401:
-      return "Location search authentication failed.";
-    case 403:
-      return "Location search is not authorized.";
-    case 429:
-      return "Location search limit reached. Please try again.";
-    default:
-      return status >= 500
-        ? "Unable to load locations. Please try again."
-        : "Unable to load locations. Please try again.";
-  }
-}
 
 /*
  * =========================================
@@ -129,106 +67,6 @@ function getLocationErrorMessage(status: number): string {
  * =========================================
  */
 
-function normalizeLocationResult(
-  result: LocationIQResult,
-): LocationSuggestion | null {
-  const address = result.address ?? {};
-
-  const city =
-    address.city ??
-    address.town ??
-    address.village ??
-    address.municipality ??
-    address.locality ??
-    address.borough ??
-    address.city_district;
-
-  const state = address.state;
-
-  const stateCode =
-    address.state_code;
-
-  const country =
-    address.country ?? "United States";
-
-  const countryCode =
-    address.country_code?.toUpperCase() ?? "US";
-
-  /*
-   * Prefer a clean:
-   *
-   * City, ST, US
-   *
-   * instead of LocationIQ's long
-   * raw display_name.
-   */
-
-  let displayName = "";
-
-  if (city) {
-    displayName = [
-      city,
-      stateCode || state,
-      countryCode,
-    ]
-      .filter(Boolean)
-      .join(", ");
-  } else if (state) {
-    displayName = [
-      state,
-      countryCode,
-    ]
-      .filter(Boolean)
-      .join(", ");
-  } else if (address.county) {
-    displayName = [
-      address.county,
-      stateCode || state,
-      countryCode,
-    ]
-      .filter(Boolean)
-      .join(", ");
-  } else {
-    displayName =
-      result.display_place ??
-      result.display_name ??
-      "";
-  }
-
-  if (!displayName) {
-    return null;
-  }
-
-  return {
-    id: String(
-      result.place_id ??
-        `${result.osm_type ?? "location"}-${
-          result.osm_id ?? displayName
-        }`,
-    ),
-
-    displayName,
-
-    city,
-    state,
-    stateCode,
-
-    county: address.county,
-
-    country,
-    countryCode,
-
-    postcode: address.postcode,
-
-    latitude: result.lat
-      ? Number(result.lat)
-      : undefined,
-
-    longitude: result.lon
-      ? Number(result.lon)
-      : undefined,
-  };
-}
 
 /*
  * =========================================
@@ -237,7 +75,7 @@ function normalizeLocationResult(
  */
 
 function getLocationType(
-  suggestion: LocationSuggestion,
+  suggestion: ApiTargetLocation,
 ): string {
   if (suggestion.city) {
     return "City";
@@ -264,11 +102,7 @@ export default function EditOverviewSection({
   initialAbout =
     "Placeholder text for a longer response, spanning multiple lines.",
 
-  initialRegions = [
-    "Location 1",
-    "Location 2",
-    "Location 3",
-  ],
+  initialRegions = [],
 
   initialIndustries = [],
 
@@ -292,7 +126,7 @@ export default function EditOverviewSection({
    */
 
   const [regions, setRegions] =
-    useState<string[]>(initialRegions);
+    useState<ApiTargetLocation[]>(initialRegions);
 
   const [regionSearch, setRegionSearch] =
     useState("");
@@ -300,7 +134,7 @@ export default function EditOverviewSection({
   const [
     locationSuggestions,
     setLocationSuggestions,
-  ] = useState<LocationSuggestion[]>([]);
+  ] = useState<ApiTargetLocation[]>([]);
 
   const [
     locationDropdownOpen,
@@ -347,9 +181,6 @@ export default function EditOverviewSection({
 
   const industryWrapperRef =
     useRef<HTMLDivElement>(null);
-
-  const abortControllerRef =
-    useRef<AbortController | null>(null);
 
   /*
    * =========================================
@@ -426,278 +257,57 @@ export default function EditOverviewSection({
    */
 
   useEffect(() => {
-    const query =
-      regionSearch.trim();
+    const query = regionSearch.trim();
 
-    /*
-     * Don't search until at least
-     * two characters are entered.
-     */
-
-    if (query.length < 2) {
+    if (query.length < 3) {
       setLocationSuggestions([]);
-
       setLocationLoading(false);
-
       setLocationError(null);
-
       setLocationDropdownOpen(false);
-
       setHighlightedLocationIndex(-1);
 
-      abortControllerRef.current?.abort();
-
       return;
     }
 
-    const apiKey =
-      process.env
-        .NEXT_PUBLIC_LOCATIONIQ_API_KEY;
+  const timeoutId = window.setTimeout(
+    async () => {
+      try {
+        setLocationLoading(true);
+        setLocationError(null);
+        setLocationDropdownOpen(true);
+        setHighlightedLocationIndex(-1);
 
-    if (!apiKey) {
-      console.error(
-        "NEXT_PUBLIC_LOCATIONIQ_API_KEY is not configured.",
-      );
+        const results = await searchLocations(
+          query,
+          LOCATION_RESULT_LIMIT,
+        );
 
-      setLocationSuggestions([]);
+        setLocationSuggestions(results);
+        setLocationError(null);
+      } catch (error) {
+        console.error(
+          "Location search failed:",
+          error,
+        );
 
-      setLocationLoading(false);
+        setLocationSuggestions([]);
 
-      setLocationError("Location search is not configured. Add NEXT_PUBLIC_LOCATIONIQ_API_KEY to your environment and restart the Next.js dev server.");
+        setLocationError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load locations. Please try again.",
+        );
+      } finally {
+        setLocationLoading(false);
+      }
+    },
+    250,
+  );
 
-      setLocationDropdownOpen(true);
-
-      return;
-    }
-
-    /*
-     * Abort the previous request so
-     * older responses cannot overwrite
-     * newer searches.
-     */
-
-    const controller =
-      new AbortController();
-
-    abortControllerRef.current?.abort();
-
-    abortControllerRef.current =
-      controller;
-
-    /*
-     * Small debounce so LocationIQ
-     * isn't called on every keystroke.
-     */
-
-    const timeoutId =
-      window.setTimeout(
-        async () => {
-          try {
-            setLocationLoading(true);
-
-            setLocationError(null);
-
-            setLocationDropdownOpen(true);
-
-            setHighlightedLocationIndex(
-              -1,
-            );
-
-            const params =
-              new URLSearchParams({
-                key: apiKey,
-
-                q: query,
-
-                format: "json",
-
-                /*
-                 * US only.
-                 */
-                countrycodes: "us",
-
-                /*
-                 * Only useful profile
-                 * location types.
-                 */
-                layers:
-                  "city,state,county",
-
-                limit: String(
-                  LOCATION_RESULT_LIMIT,
-                ),
-
-                normalizecity: "1",
-
-                /*
-                 * IMPORTANT:
-                 * This key must be quoted
-                 * because it contains a hyphen.
-                 */
-                "accept-language": "en",
-
-                dedupe: "1",
-              });
-
-            const response =
-              await fetch(
-                `https://api.locationiq.com/v1/autocomplete?${params.toString()}`,
-                {
-                  method: "GET",
-
-                  signal:
-                    controller.signal,
-                },
-              );
-
-            if (!response.ok) {
-              const status = response.status;
-              throw new Error(
-                getLocationErrorMessage(status),
-              );
-            }
-
-            const data = await response.json();
-
-            if (
-              controller.signal.aborted
-            ) {
-              return;
-            }
-
-            if (!Array.isArray(data)) {
-              throw new Error(
-                "Location search returned an unexpected response.",
-              );
-            }
-
-            const results =
-              data as LocationIQResult[];
-
-            /*
-             * Normalize the API response.
-             */
-
-            const normalizedResults =
-              results
-                .map(
-                  normalizeLocationResult,
-                )
-                .filter(
-                  (
-                    item,
-                  ): item is LocationSuggestion =>
-                    item !== null,
-                );
-
-            /*
-             * Remove duplicate display names.
-             */
-
-            const uniqueResults =
-              normalizedResults.filter(
-                (
-                  item,
-                  index,
-                  array,
-                ) =>
-                  array.findIndex(
-                    (candidate) =>
-                      candidate.displayName.toLowerCase() ===
-                      item.displayName.toLowerCase(),
-                  ) === index,
-              );
-
-            /*
-             * Cities first.
-             * States second.
-             * Counties third.
-             */
-
-            uniqueResults.sort(
-              (a, b) => {
-                const priority = (
-                  suggestion: LocationSuggestion,
-                ) => {
-                  if (
-                    suggestion.city
-                  ) {
-                    return 0;
-                  }
-
-                  if (
-                    suggestion.state
-                  ) {
-                    return 1;
-                  }
-
-                  if (
-                    suggestion.county
-                  ) {
-                    return 2;
-                  }
-
-                  return 3;
-                };
-
-                return (
-                  priority(a) -
-                  priority(b)
-                );
-              },
-            );
-
-            setLocationSuggestions(
-              uniqueResults,
-            );
-
-            setLocationError(null);
-          } catch (error) {
-            /*
-             * Aborted requests are expected
-             * and should not show an error.
-             */
-
-            if (
-              error instanceof
-                DOMException &&
-              error.name ===
-                "AbortError"
-            ) {
-              return;
-            }
-
-            console.error(
-              "Location search failed:",
-              error,
-            );
-
-            setLocationSuggestions([]);
-
-            setLocationError(
-              error instanceof Error
-                ? error.message
-                : "Unable to load locations. Please try again.",
-            );
-          } finally {
-            if (
-              !controller.signal.aborted
-            ) {
-              setLocationLoading(false);
-            }
-          }
-        },
-        250,
-      );
-
-    return () => {
-      window.clearTimeout(
-        timeoutId,
-      );
-
-      controller.abort();
-    };
-  }, [regionSearch]);
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [regionSearch]);
 
   /*
    * =========================================
@@ -715,7 +325,7 @@ export default function EditOverviewSection({
     setRegionSearch(value);
 
     setLocationDropdownOpen(
-      value.trim().length >= 2,
+      value.trim().length >= 3,
     );
 
     setHighlightedLocationIndex(
@@ -730,43 +340,47 @@ export default function EditOverviewSection({
    */
 
   const handleSelectLocation = (
-    suggestion: LocationSuggestion,
+    suggestion: ApiTargetLocation,
   ) => {
     if (disabled) {
       return;
     }
 
     const value =
-      suggestion.displayName.trim();
+      suggestion.display_name.trim();
 
     if (!value) {
       return;
     }
 
-    /*
-     * Prevent duplicate selections.
-     */
+    if (
+      !Number.isFinite(suggestion.latitude) ||
+      !Number.isFinite(suggestion.longitude)
+    ) {
+      setLocationError(
+        "This location does not contain valid coordinates. Please choose another result.",
+      );
+      return;
+    }
 
-    if (!regions.includes(value)) {
+    if (
+      !regions.some(
+        (region) =>
+          region.place_id ===
+          suggestion.place_id,
+      )
+    ) {
       setRegions((current) => [
         ...current,
-        value,
+        suggestion,
       ]);
     }
 
-    /*
-     * Reset search UI.
-     */
-
     setRegionSearch("");
-
     setLocationSuggestions([]);
-
     setLocationDropdownOpen(false);
-
     setHighlightedLocationIndex(-1);
   };
-
   /*
    * =========================================
    * Remove Region
@@ -774,7 +388,7 @@ export default function EditOverviewSection({
    */
 
   const handleRemoveRegion = (
-    value: string,
+    placeId: string,
   ) => {
     if (disabled) {
       return;
@@ -782,7 +396,7 @@ export default function EditOverviewSection({
 
     setRegions((current) =>
       current.filter(
-        (item) => item !== value,
+        (item) => item.place_id !== placeId,
       ),
     );
   };
@@ -1019,7 +633,7 @@ export default function EditOverviewSection({
               onFocus={() => {
                 if (
                   regionSearch.trim()
-                    .length >= 2
+                    .length >= 3
                 ) {
                   setLocationDropdownOpen(
                     true,
@@ -1098,7 +712,7 @@ export default function EditOverviewSection({
                 locationSuggestions.length ===
                   0 &&
                 regionSearch.trim()
-                  .length >= 2 && (
+                  .length >= 3 && (
                   <div className="location-select__message">
                     No matching US
                     locations found.
@@ -1116,7 +730,7 @@ export default function EditOverviewSection({
                   ) => (
                     <button
                       key={
-                        suggestion.id
+                        suggestion.place_id
                       }
                       id={`location-option-${index}`}
                       type="button"
@@ -1146,7 +760,7 @@ export default function EditOverviewSection({
 
                         <span className="location-select__option-name">
                           {
-                            suggestion.displayName
+                            suggestion.display_name
                           }
                         </span>
 
@@ -1174,11 +788,11 @@ export default function EditOverviewSection({
               {regions.map(
                 (region) => (
                   <div
-                    key={region}
+                    key={region.place_id}
                     className="location-select__pill"
                   >
                     <span>
-                      {region}
+                      {region.display_name}
                     </span>
 
                     <button
@@ -1186,13 +800,13 @@ export default function EditOverviewSection({
                       className="location-select__pill-remove"
                       onClick={() =>
                         handleRemoveRegion(
-                          region,
+                          region.place_id,
                         )
                       }
                       disabled={
                         disabled
                       }
-                      aria-label={`Remove ${region}`}
+                      aria-label={`Remove ${region.display_name}`}
                     >
                       <X
                         size={11}

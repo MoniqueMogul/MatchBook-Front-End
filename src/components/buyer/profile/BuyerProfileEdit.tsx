@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import IndustryExperienceSection from "./IndustryExperienceSection";
 import AcquisitionPreferencesSection from "./AcquisitionPreferencesSection";
 import ProfileEditHeader from "./ProfileEditHeader";
+import ProfileImageModal from "./ProfileImageModal";
 import ProfileTabs, {
   type ProfileTab,
 } from "./ProfileTabs";
@@ -73,6 +74,17 @@ export default function BuyerProfileEdit() {
 
   /*
    * ------------------------------------------------
+   * Profile image
+   * ------------------------------------------------
+   */
+  const [profileImage, setProfileImage] =
+    useState<string | undefined>(undefined);
+
+  const [isImageModalOpen, setIsImageModalOpen] =
+    useState(false);
+
+  /*
+   * ------------------------------------------------
    * TEMPORARY ACCESS TOKEN
    * ------------------------------------------------
    *
@@ -82,39 +94,18 @@ export default function BuyerProfileEdit() {
    * access token once the frontend auth/session
    * implementation is connected.
    */
-  const [accessToken, setAccessToken] =
-    useState<string | null>(null);
 
   /*
    * ------------------------------------------------
    * Load buyer preferences
    * ------------------------------------------------
    */
-  useEffect(() => {
-    /*
-     * We cannot call the authenticated backend
-     * until we have the user's real access token.
-     *
-     * For now this intentionally stops here.
-     *
-     * Once Supabase auth is available, this should
-     * become:
-     *
-     * const token = session.access_token;
-     *
-     * setAccessToken(token);
-     */
-  }, []);
 
   /*
    * Once an access token exists, fetch preferences.
    */
   useEffect(() => {
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
-
+    
     let cancelled = false;
 
     const loadPreferences = async () => {
@@ -123,9 +114,7 @@ export default function BuyerProfileEdit() {
         setError(null);
 
         const data =
-          await getBuyerPreferences(
-            accessToken,
-          );
+          await getBuyerPreferences();
 
         if (!cancelled) {
           setPreferences(data);
@@ -160,7 +149,17 @@ export default function BuyerProfileEdit() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, []);
+
+  /*
+   * ------------------------------------------------
+   * Profile Image
+   * ------------------------------------------------
+   */
+  const handleProfileImageDone = (imageSrc: string) => {
+    setProfileImage(imageSrc);
+    setIsImageModalOpen(false);
+  };
 
   /*
    * ------------------------------------------------
@@ -174,26 +173,15 @@ export default function BuyerProfileEdit() {
     >;
     industries: string[];
   }) => {
-    /*
-     * About is frontend-only for now.
-     */
     setAbout(data.about);
 
-    /*
-     * Update the parent draft.
-     */
     setPreferences((current) => ({
       ...(current ?? {}),
-      target_locations:
-        data.regions,
-
-      target_industries:
-        data.industries,
+      target_locations: data.regions,
+      target_industries: data.industries,
     }));
 
-    setActiveTab(
-      "industry-experience",
-    );
+    setActiveTab("industry-experience");
   };
 
   /*
@@ -206,20 +194,16 @@ export default function BuyerProfileEdit() {
    *
    * Keep collecting it in the UI.
    */
-  const handleIndustryExperienceContinue =
-    (data: {
-      industries: string[];
+  const handleIndustryExperienceContinue = (data: {
+      buyerType: string;
+      workSituation: string;
       years: string;
+      industries: string[];
       roles: string[];
     }) => {
-      console.log(
-        "Industry experience:",
-        data,
-      );
+      console.log("Industry experience:", data);
 
-      setActiveTab(
-        "acquisition-preferences",
-      );
+      setActiveTab("acquisition-preferences");
     };
 
   /*
@@ -261,13 +245,7 @@ export default function BuyerProfileEdit() {
    * ------------------------------------------------
    */
   const handleSave = async () => {
-    if (!accessToken) {
-      setError(
-        "You are not authenticated. Please connect the frontend session before saving.",
-      );
-      return;
-    }
-
+    
     setSaving(true);
     setError(null);
 
@@ -343,10 +321,7 @@ export default function BuyerProfileEdit() {
       };
 
       const saved =
-        await saveBuyerPreferences(
-          accessToken,
-          payload,
-        );
+        await saveBuyerPreferences(payload);
 
       setPreferences(saved);
 
@@ -428,8 +403,12 @@ export default function BuyerProfileEdit() {
         <ProfileEditHeader
           name="Original Name"
           location={location}
+          imageSrc={profileImage}
           onLocationChange={setLocation}
           mode="edit"
+          onImageChange={() =>
+            setIsImageModalOpen(true)
+          }
           onPreview={() => {
             router.push(
               "/buyer/profile",
@@ -457,22 +436,15 @@ export default function BuyerProfileEdit() {
 
         {activeTab === "overview" && (
           <EditOverviewSection
-            key={
-              preferences?.updated_at ??
-              "new"
-            }
+            key={preferences?.updated_at ?? "new"}
             initialAbout={about}
             initialRegions={
-              preferences?.target_locations ??
-              []
+              preferences?.target_locations ?? []
             }
             initialIndustries={
-              preferences?.target_industries ??
-              []
+              preferences?.target_industries ?? []
             }
-            onContinue={
-              handleOverviewContinue
-            }
+            onContinue={handleOverviewContinue}
             disabled={saving}
           />
         )}
@@ -482,17 +454,11 @@ export default function BuyerProfileEdit() {
         {activeTab ===
           "industry-experience" && (
           <IndustryExperienceSection
-            initialIndustries={[
-              "Industry 1",
-              "Industry 2",
-              "Industry 3",
-            ]}
+            initialBuyerType="first-time-buyer"
+            initialWorkSituation="employed-full-time"
+            initialIndustries={[]}
             initialYears=""
-            initialRoles={[
-              "Role 1",
-              "Role 2",
-              "Role 3",
-            ]}
+            initialRoles={[]}
             onBack={() =>
               setActiveTab(
                 "overview",
@@ -534,6 +500,15 @@ export default function BuyerProfileEdit() {
             handleSave
           }
           saving={saving}
+        />
+
+        <ProfileImageModal
+          isOpen={isImageModalOpen}
+          imageSrc={profileImage}
+          onClose={() =>
+            setIsImageModalOpen(false)
+          }
+          onDone={handleProfileImageDone}
         />
 
       </div>

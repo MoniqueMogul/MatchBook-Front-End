@@ -3,15 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
-import {
-  searchBuyerLocations,
-  type TargetLocation,
-} from "@/lib/api/buyerPreferences";
+import type { ApiTargetLocation as TargetLocation } from "@/lib/api/buyerPreferences.types";
+import { searchLocations } from "@/lib/api/locations";
 
 import "./USLocationAutocomplete.css";
 
 interface USLocationAutocompleteProps {
-  accessToken: string | null;
   value: string;
   selectedLocations: TargetLocation[];
   onChange: (value: string) => void;
@@ -33,7 +30,6 @@ function formatLocationDetails(
 }
 
 export default function USLocationAutocomplete({
-  accessToken,
   value,
   selectedLocations,
   onChange,
@@ -64,11 +60,7 @@ export default function USLocationAutocomplete({
   useEffect(() => {
     const query = value.trim();
 
-    if (
-      !accessToken ||
-      query.length < 3 ||
-      disabled
-    ) {
+    if (query.length < 3 || disabled) {
       setSuggestions([]);
       setSearching(false);
       setOpen(false);
@@ -83,11 +75,7 @@ export default function USLocationAutocomplete({
           setSearching(true);
           setSearchError(null);
 
-          const results =
-            await searchBuyerLocations(
-              accessToken,
-              query,
-            );
+          const results = await searchLocations(query);
 
           if (cancelled) {
             return;
@@ -154,7 +142,6 @@ export default function USLocationAutocomplete({
       window.clearTimeout(timeout);
     };
   }, [
-    accessToken,
     value,
     disabled,
     selectedLocations,
@@ -261,8 +248,7 @@ export default function USLocationAutocomplete({
             onKeyDown={handleKeyDown}
             placeholder="Search cities or states"
             disabled={
-              disabled ||
-              !accessToken
+              disabled
             }
             autoComplete="off"
             aria-autocomplete="list"

@@ -1,4 +1,4 @@
-// src/lib/api/buyerPreferences.ts
+import api from "./client";
 
 export interface TargetLocation {
   provider: "locationiq";
@@ -56,11 +56,6 @@ export interface BuyerPreferences {
   updated_at?: string;
 }
 
-/*
- * Only fields that the backend accepts for PUT /intake/buyers/preferences.
- *
- * Do NOT send id, buyer_id, created_at or updated_at.
- */
 export interface BuyerPreferencesPayload {
   target_industries?: string[] | null;
   target_locations?: TargetLocation[] | null;
@@ -88,101 +83,31 @@ export interface BuyerPreferencesPayload {
   preferred_acquisition_timeline?: string | null;
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-
-async function request<T>(
-  path: string,
-  accessToken: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const response = await fetch(
-    `${API_BASE_URL}${path}`,
-    {
-      ...options,
-
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        ...(options.headers ?? {}),
-      },
-    },
-  );
-
-  if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
-
-    try {
-      const error = await response.json();
-
-      if (typeof error?.detail === "string") {
-        message = error.detail;
-      }
-    } catch {
-      // Keep default error message.
-    }
-
-    throw new Error(message);
-  }
-
-  return response.json();
-}
-
 /**
  * GET /intake/buyers/preferences
+ *
+ * Authentication is handled automatically by the shared axios client.
  */
-export async function getBuyerPreferences(
-  accessToken: string,
-): Promise<BuyerPreferences> {
-  return request<BuyerPreferences>(
+export async function getBuyerPreferences(): Promise<BuyerPreferences> {
+  const response = await api.get<BuyerPreferences>(
     "/intake/buyers/preferences",
-    accessToken,
-    {
-      method: "GET",
-    },
   );
+
+  return response.data;
 }
 
 /**
  * PUT /intake/buyers/preferences
+ *
+ * Authentication is handled automatically by the shared axios client.
  */
 export async function saveBuyerPreferences(
-  accessToken: string,
   payload: BuyerPreferencesPayload,
 ): Promise<BuyerPreferences> {
-  return request<BuyerPreferences>(
+  const response = await api.put<BuyerPreferences>(
     "/intake/buyers/preferences",
-    accessToken,
-    {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    },
+    payload,
   );
-}
 
-/**
- * GET /intake/locations/autocomplete
- */
-export async function searchBuyerLocations(
-  accessToken: string,
-  query: string,
-): Promise<TargetLocation[]> {
-  const trimmedQuery = query.trim();
-
-  if (trimmedQuery.length < 3) {
-    return [];
-  }
-
-  const params = new URLSearchParams({
-    q: trimmedQuery,
-    limit: "8",
-  });
-
-  return request<TargetLocation[]>(
-    `/intake/locations/autocomplete?${params.toString()}`,
-    accessToken,
-    {
-      method: "GET",
-    },
-  );
+  return response.data;
 }

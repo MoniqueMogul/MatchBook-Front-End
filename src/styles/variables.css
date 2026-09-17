@@ -16,6 +16,18 @@
   --color-border-gray: #B7BEC7;
   --color-border-light: #D8DCE1;
 
+  /* Onboarding Design Tokens (Figma Spec) */
+  --color-onboarding-green: #3E7B42;
+  --color-onboarding-green-hover: #346938;
+  --color-onboarding-green-active: #2B572E;
+
+  --color-neutral-100: #EEF0F2;
+  --color-neutral-200: #E2E5E9;
+  --color-neutral-300: #D1D5DB;
+  --color-neutral-400: #8C95A6;
+  --color-neutral-700: #333D4D;
+
   /* Typography */
-  --font-family-main: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif; 
+  --font-family-main: 'Inter', sans-serif;
+  --font-family-jakarta: 'Plus Jakarta Sans', sans-serif;
 }
