@@ -10,7 +10,6 @@ interface BuyerProfilePreviewProps {
   location?: string;
   memberType?: string;
   imageSrc?: string;
-  about?: string;
   preferredRegions?: string[];
   industriesOfInterest?: string[];
 }
@@ -20,17 +19,8 @@ export default function BuyerProfilePreview({
   location = "Location",
   memberType = "Member Type",
   imageSrc,
-  about = "lorem ipsum dolor sit amet consectetur adipiscing elit omnis fuga quo laboris magna blanditiis est harum magna aliqua ipsum qui maxime lorem odio atque laboris veniam excepteur molestias tempor vel sunt lorem ipsum dolor sit amet consectetur adipiscing elit omnis fuga quo laboris magna blanditiis est harum magna aliqua ipsum qui maxime lorem odio atque laboris veniam excepteur molestias tempor vel sunt",
-  preferredRegions = [
-    "Location 1",
-    "Location 3",
-    "Location 2",
-  ],
-  industriesOfInterest = [
-    "Placeholder text",
-    "Placeholder text",
-    "Placeholder text",
-  ],
+  preferredRegions = [],
+  industriesOfInterest = [],
 }: BuyerProfilePreviewProps) {
   const router = useRouter();
 
@@ -171,19 +161,6 @@ export default function BuyerProfilePreview({
            ========================= */}
 
         <section className="buyer-profile-preview__overview-card">
-
-          {/* About */}
-          <div className="buyer-profile-preview__section">
-
-            <h2 className="buyer-profile-preview__section-title">
-              About
-            </h2>
-
-            <p className="buyer-profile-preview__about">
-              {about}
-            </p>
-
-          </div>
 
           {/* Preferred Regions */}
           <div className="buyer-profile-preview__section">

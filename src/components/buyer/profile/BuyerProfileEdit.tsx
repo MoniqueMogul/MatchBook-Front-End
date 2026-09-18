@@ -20,6 +20,11 @@ import {
   type BuyerPreferencesPayload,
 } from "@/lib/api/buyerPreferences";
 
+import {
+  getBuyerProfile,
+  type BuyerProfile,
+} from "@/lib/api/buyer";
+
 import "./BuyerProfileEdit.css";
 
 export default function BuyerProfileEdit() {
@@ -33,6 +38,9 @@ export default function BuyerProfileEdit() {
    */
   const [preferences, setPreferences] =
     useState<BuyerPreferences | null>(null);
+
+  const [profile, setProfile] =
+    useState<BuyerProfile | null>(null);
 
   /*
    * Loading state for initial GET.
@@ -51,16 +59,6 @@ export default function BuyerProfileEdit() {
    */
   const [error, setError] =
     useState<string | null>(null);
-
-  /*
-   * About is currently frontend-only.
-   *
-   * IMPORTANT:
-   * There is no backend `about` field in the
-   * current BuyerPreferences schema.
-   */
-  const [about, setAbout] =
-    useState("");
 
   /*
    * Current buyer location is separate from
@@ -85,18 +83,6 @@ export default function BuyerProfileEdit() {
 
   /*
    * ------------------------------------------------
-   * TEMPORARY ACCESS TOKEN
-   * ------------------------------------------------
-   *
-   * DO NOT put a fake token here.
-   *
-   * Replace this with the actual Supabase session
-   * access token once the frontend auth/session
-   * implementation is connected.
-   */
-
-  /*
-   * ------------------------------------------------
    * Load buyer preferences
    * ------------------------------------------------
    */
@@ -105,7 +91,6 @@ export default function BuyerProfileEdit() {
    * Once an access token exists, fetch preferences.
    */
   useEffect(() => {
-    
     let cancelled = false;
 
     const loadPreferences = async () => {
@@ -113,28 +98,22 @@ export default function BuyerProfileEdit() {
         setLoading(true);
         setError(null);
 
-        const data =
-          await getBuyerPreferences();
+        const [profileData, preferencesData] =
+          await Promise.all([
+            getBuyerProfile(),
+            getBuyerPreferences(),
+          ]);
 
         if (!cancelled) {
-          setPreferences(data);
-
-          /*
-           * Keep existing backend preferences.
-           */
-          setAbout("");
-
-          /*
-           * If the backend profile location
-           * is connected later, set it here.
-           */
+          setProfile(profileData);
+          setPreferences(preferencesData);
         }
       } catch (err) {
         if (!cancelled) {
           setError(
             err instanceof Error
               ? err.message
-              : "Failed to load buyer preferences.",
+              : "Failed to load buyer profile and preferences.",
           );
         }
       } finally {
@@ -167,14 +146,11 @@ export default function BuyerProfileEdit() {
    * ------------------------------------------------
    */
   const handleOverviewContinue = (data: {
-    about: string;
     regions: NonNullable<
       BuyerPreferences["target_locations"]
     >;
     industries: string[];
   }) => {
-    setAbout(data.about);
-
     setPreferences((current) => ({
       ...(current ?? {}),
       target_locations: data.regions,
@@ -183,7 +159,6 @@ export default function BuyerProfileEdit() {
 
     setActiveTab("industry-experience");
   };
-
   /*
    * ------------------------------------------------
    * Industry Experience
@@ -211,34 +186,61 @@ export default function BuyerProfileEdit() {
    * Acquisition Preferences
    * ------------------------------------------------
    */
-  const handleAcquisitionPreferencesContinue =
-    (data: {
-      acquisitionPreferences: string;
-      motivation: string;
-      involvement:
-        | "operator"
-        | "investor"
-        | "owner-management"
-        | "partner";
-      timeline:
-        | "exploring"
-        | "within-1-12"
-        | "within-12-24"
-        | "within-24-plus";
-    }) => {
-      /*
-       * These fields are from the current UI,
-       * but some do not exist in the backend
-       * preferences schema.
-       *
-       * Do NOT blindly send them to the API.
-       */
-      console.log(
-        "Acquisition preferences:",
-        data,
-      );
-    };
+  const handleAcquisitionPreferencesContinue = (data: {
+    industries: string[];
+    minimumYearsInOperation?: number;
+    minimumARR?: number;
+    minimumSDE?: number;
+    maximumPurchasePrice?: number;
+    preferredARR?: number;
+    preferredSDE?: number;
+    preferredOwnerHoursPerWeek?: number;
+    customerConcentration?: boolean;
+    sellerTrainingDays?: number;
+    dealPreference?: "cash" | "financing" | "either";
+    timeline?: "exploring" | "within-1-12" | "within-12-24" | "within-24-plus";
+  }) => {
+    setPreferences((current) => ({
+      ...(current ?? {}),
 
+      target_industries: data.industries,
+
+      minimum_years_in_operation:
+        data.minimumYearsInOperation ?? null,
+
+      minimum_required_arr:
+        data.minimumARR ?? null,
+
+      minimum_required_sde:
+        data.minimumSDE ?? null,
+
+      maximum_purchase_price:
+        data.maximumPurchasePrice ?? null,
+
+      preferred_arr:
+        data.preferredARR ?? null,
+
+      preferred_sde:
+        data.preferredSDE ?? null,
+
+      preferred_owner_hours_per_week:
+        data.preferredOwnerHoursPerWeek ?? null,
+
+      accepts_customer_concentration_above_25_percent:
+        data.customerConcentration ?? null,
+
+      required_transition_training_days:
+        data.sellerTrainingDays ?? null,
+
+      deal_preference:
+        data.dealPreference ?? null,
+
+      preferred_acquisition_timeline:
+        data.timeline ?? null,
+    }));
+
+    setActiveTab("overview");
+  };
   /*
    * ------------------------------------------------
    * Final Save
@@ -437,7 +439,6 @@ export default function BuyerProfileEdit() {
         {activeTab === "overview" && (
           <EditOverviewSection
             key={preferences?.updated_at ?? "new"}
-            initialAbout={about}
             initialRegions={
               preferences?.target_locations ?? []
             }
@@ -475,15 +476,65 @@ export default function BuyerProfileEdit() {
         {activeTab ===
           "acquisition-preferences" && (
           <AcquisitionPreferencesSection
-            initialAcquisitionPreferences=""
-            initialMotivation=""
-            initialInvolvement="operator"
-            initialTimeline="exploring"
+            initialIndustries={
+              preferences?.target_industries ?? []
+            }
+
+            initialMinimumYearsInOperation={
+              preferences?.minimum_years_in_operation ?? null
+            }
+
+            initialMinimumARR={
+              preferences?.minimum_required_arr ?? null
+            }
+
+            initialMinimumSDE={
+              preferences?.minimum_required_sde ?? null
+            }
+
+            initialMaximumPurchasePrice={
+              preferences?.maximum_purchase_price ?? null
+            }
+
+            initialPreferredARR={
+              preferences?.preferred_arr ?? null
+            }
+
+            initialPreferredSDE={
+              preferences?.preferred_sde ?? null
+            }
+
+            initialPreferredOwnerHoursPerWeek={
+              preferences?.preferred_owner_hours_per_week ?? null
+            }
+
+            initialCustomerConcentration={
+              preferences?.accepts_customer_concentration_above_25_percent ?? null
+            }
+
+            initialSellerTrainingDays={
+              preferences?.required_transition_training_days ?? null
+            }
+
+            initialDealPreference={
+              preferences?.deal_preference ?? null
+            }
+
+            initialTimeline={
+              preferences?.preferred_acquisition_timeline as
+                | "exploring"
+                | "within-1-12"
+                | "within-12-24"
+                | "within-24-plus"
+                | undefined
+            }
+
             onBack={() =>
               setActiveTab(
                 "industry-experience",
               )
             }
+
             onContinue={
               handleAcquisitionPreferencesContinue
             }

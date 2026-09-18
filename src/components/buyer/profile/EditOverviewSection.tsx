@@ -14,18 +14,15 @@ import {
   X,
 } from "lucide-react";
 
-import ProfileAboutField from "./ProfileAboutField";
 import type { ApiTargetLocation } from "@/lib/api/buyerPreferences.types";
 import { searchLocations } from "@/lib/api/locations";
 
 import "./EditOverviewSection.css";
 
 interface EditOverviewSectionProps {
-  initialAbout?: string;
   initialRegions?: ApiTargetLocation[];
   initialIndustries?: string[];
   onContinue?: (data: {
-    about: string;
     regions: ApiTargetLocation[];
     industries: string[];
   }) => void;
@@ -99,8 +96,6 @@ function getLocationType(
  */
 
 export default function EditOverviewSection({
-  initialAbout =
-    "Placeholder text for a longer response, spanning multiple lines.",
 
   initialRegions = [],
 
@@ -110,14 +105,7 @@ export default function EditOverviewSection({
 
   disabled = false,
 }: EditOverviewSectionProps) {
-  /*
-   * =========================================
-   * About
-   * =========================================
-   */
-
-  const [about, setAbout] =
-    useState(initialAbout);
+ 
 
   /*
    * =========================================
@@ -571,7 +559,6 @@ export default function EditOverviewSection({
 
   const handleContinue = () => {
     onContinue?.({
-      about,
       regions,
       industries,
     });
@@ -587,16 +574,6 @@ export default function EditOverviewSection({
     <section className="edit-overview-section">
 
       <div className="edit-overview-section__fields">
-
-        {/* =====================================
-            ABOUT
-            ===================================== */}
-
-        <ProfileAboutField
-          value={about}
-          onChange={setAbout}
-          disabled={disabled}
-        />
 
         {/* =====================================
             PREFERRED REGIONS

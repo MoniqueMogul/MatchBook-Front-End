@@ -111,3 +111,21 @@ export async function saveBuyerPreferences(
 
   return response.data;
 }
+
+export interface BuyerReadiness {
+  ready: boolean;
+  missing_fields: string[];
+}
+
+/**
+ * GET /intake/buyers/readiness
+ *
+ * Authentication is handled automatically by the shared axios client.
+ */
+export async function getBuyerReadiness(): Promise<BuyerReadiness> {
+  const response = await api.get<BuyerReadiness>(
+    "/intake/buyers/readiness",
+  );
+
+  return response.data;
+}

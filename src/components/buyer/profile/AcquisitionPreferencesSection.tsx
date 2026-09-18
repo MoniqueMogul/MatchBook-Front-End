@@ -10,55 +10,73 @@ import {
 
 import "./AcquisitionPreferencesSection.css";
 
-type InvolvementOption =
-  | "operator"
-  | "investor"
-  | "owner-management"
-  | "partner";
-
 type TimelineOption =
   | "exploring"
   | "within-1-12"
   | "within-12-24"
   | "within-24-plus";
 
+type DealPreferenceOption =
+  | "cash"
+  | "financing"
+  | "either";
+
+type CustomerConcentrationOption =
+  | ""
+  | "yes"
+  | "no";
+
 type AcquisitionPreferenceData = {
-  acquisitionPreferences: string;
-  motivation: string;
-  involvement: InvolvementOption;
-  timeline: TimelineOption;
-  industries?: string[];
-  companySizes?: string[];
-  minimumYearsInOperation?: string;
-  minimumARR?: string;
-  minimumSDE?: string;
-  customerConcentration?: string;
-  sellerTraining?: string;
-  zipcode?: string;
-  searchRadius?: number;
+  industries: string[];
+
+  minimumYearsInOperation?: number;
+  minimumARR?: number;
+  minimumSDE?: number;
+
+  maximumPurchasePrice?: number;
+  preferredARR?: number;
+  preferredSDE?: number;
+  preferredOwnerHoursPerWeek?: number;
+
+  customerConcentration?: boolean;
+  sellerTrainingDays?: number;
+
+  dealPreference?: DealPreferenceOption;
+
+  timeline?: TimelineOption;
 };
 
 interface AcquisitionPreferencesSectionProps {
-  initialAcquisitionPreferences?: string;
-  initialMotivation?: string;
-  initialInvolvement?: InvolvementOption;
+  initialIndustries?: string[];
+
+  initialMinimumYearsInOperation?: number | null;
+  initialMinimumARR?: number | null;
+  initialMinimumSDE?: number | null;
+
+  initialMaximumPurchasePrice?: number | null;
+  initialPreferredARR?: number | null;
+  initialPreferredSDE?: number | null;
+  initialPreferredOwnerHoursPerWeek?: number | null;
+
+  initialCustomerConcentration?: boolean | null;
+  initialSellerTrainingDays?: number | null;
+
+  initialDealPreference?: DealPreferenceOption | null;
+
   initialTimeline?: TimelineOption;
 
-  // New fields are optional so existing parent integrations remain valid.
-  initialIndustries?: string[];
-  initialCompanySizes?: string[];
-  initialMinimumYearsInOperation?: string;
-  initialMinimumARR?: string;
-  initialMinimumSDE?: string;
-  initialCustomerConcentration?: string;
-  initialSellerTraining?: string;
-  initialZipcode?: string;
-  initialSearchRadius?: number;
-
   onBack?: () => void;
+
   onContinue?: (data: AcquisitionPreferenceData) => void;
+
   disabled?: boolean;
 }
+
+/*
+ * ------------------------------------------------
+ * Options
+ * ------------------------------------------------
+ */
 
 const INDUSTRY_OPTIONS = [
   "Food & Beverage",
@@ -72,52 +90,62 @@ const INDUSTRY_OPTIONS = [
   "Technology",
 ];
 
-const COMPANY_SIZE_OPTIONS = [
-  "1–10",
-  "11–25",
-  "26–50",
-  "51+",
-];
-
 const CUSTOMER_CONCENTRATION_OPTIONS = [
-  "Under 10%",
-  "Under 25%",
-  "Under 50%",
+  "Yes",
+  "No",
 ];
 
-const SELLER_TRAINING_OPTIONS = ["Yes", "No"];
+const SELLER_TRAINING_OPTIONS = [
+  "0 days",
+  "7 days",
+  "14 days",
+];
 
-const involvementOptions: Array<{
-  value: InvolvementOption;
+const DEAL_PREFERENCE_OPTIONS: Array<{
+  value: DealPreferenceOption;
   label: string;
 }> = [
-  { value: "operator", label: "Operator" },
-  { value: "investor", label: "Investor" },
   {
-    value: "owner-management",
-    label: "Owner with management team",
+    value: "cash",
+    label: "Cash",
   },
-  { value: "partner", label: "Partner" },
+  {
+    value: "financing",
+    label: "Financing",
+  },
+  {
+    value: "either",
+    label: "Either",
+  },
 ];
 
 const timelineOptions: Array<{
   value: TimelineOption;
   label: string;
 }> = [
-  { value: "exploring", label: "Seeing what's out there" },
   {
-    value: "within-12-24",
-    label: "Ready to buy within 12–24 months",
+    value: "exploring",
+    label: "Seeing what's out there",
   },
   {
     value: "within-1-12",
     label: "Ready to buy within 1–12 months",
   },
   {
+    value: "within-12-24",
+    label: "Ready to buy within 12–24 months",
+  },
+  {
     value: "within-24-plus",
     label: "Ready to buy in 24+ months",
   },
 ];
+
+/*
+ * ------------------------------------------------
+ * Multi Select
+ * ------------------------------------------------
+ */
 
 interface MultiSelectProps {
   label: string;
@@ -148,6 +176,7 @@ function MultiSelect({
     };
 
     document.addEventListener("mousedown", handlePointerDown);
+
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
     };
@@ -165,6 +194,7 @@ function MultiSelect({
 
   const removeValue = (value: string) => {
     if (disabled) return;
+
     onChange(selected.filter((item) => item !== value));
   };
 
@@ -190,6 +220,7 @@ function MultiSelect({
           aria-expanded={open}
         >
           <span>Select all that apply</span>
+
           <ChevronDown
             size={14}
             strokeWidth={1.5}
@@ -221,7 +252,9 @@ function MultiSelect({
                     onChange={() => toggleValue(option)}
                     disabled={disabled}
                   />
+
                   <span>{option}</span>
+
                   <span className="acquisition-preferences-section__check">
                     {selectedOption ? "✓" : ""}
                   </span>
@@ -240,6 +273,7 @@ function MultiSelect({
               className="acquisition-preferences-section__pill"
             >
               <span>{value}</span>
+
               <button
                 type="button"
                 onClick={() => removeValue(value)}
@@ -255,6 +289,12 @@ function MultiSelect({
     </div>
   );
 }
+
+/*
+ * ------------------------------------------------
+ * Single Select
+ * ------------------------------------------------
+ */
 
 interface SingleSelectProps {
   label: string;
@@ -285,6 +325,7 @@ function SingleSelect({
     };
 
     document.addEventListener("mousedown", handlePointerDown);
+
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
     };
@@ -312,6 +353,7 @@ function SingleSelect({
           aria-expanded={open}
         >
           <span>{value || "Select an option"}</span>
+
           <ChevronDown
             size={14}
             strokeWidth={1.5}
@@ -341,6 +383,7 @@ function SingleSelect({
                 disabled={disabled}
               >
                 <span>{option}</span>
+
                 <span className="acquisition-preferences-section__check">
                   {value === option ? "✓" : ""}
                 </span>
@@ -353,69 +396,222 @@ function SingleSelect({
   );
 }
 
+/*
+ * ------------------------------------------------
+ * Main Component
+ * ------------------------------------------------
+ */
+
 export default function AcquisitionPreferencesSection({
-  initialAcquisitionPreferences = "",
-  initialMotivation = "",
-  initialInvolvement = "operator",
-  initialTimeline = "exploring",
   initialIndustries = [],
-  initialCompanySizes = [],
-  initialMinimumYearsInOperation = "",
-  initialMinimumARR = "",
-  initialMinimumSDE = "",
-  initialCustomerConcentration = "",
-  initialSellerTraining = "",
-  initialZipcode = "",
-  initialSearchRadius = 20,
+
+  initialMinimumYearsInOperation = null,
+  initialMinimumARR = null,
+  initialMinimumSDE = null,
+
+  initialMaximumPurchasePrice = null,
+  initialPreferredARR = null,
+  initialPreferredSDE = null,
+  initialPreferredOwnerHoursPerWeek = null,
+
+  initialCustomerConcentration = null,
+  initialSellerTrainingDays = null,
+
+  initialDealPreference = null,
+
+  initialTimeline = "exploring",
+
   onBack,
   onContinue,
   disabled = false,
 }: AcquisitionPreferencesSectionProps) {
-  const [acquisitionPreferences, setAcquisitionPreferences] =
-    useState(initialAcquisitionPreferences);
-  const [motivation, setMotivation] = useState(initialMotivation);
-  const [involvement, setInvolvement] =
-    useState<InvolvementOption>(initialInvolvement);
-  const [timeline, setTimeline] =
-    useState<TimelineOption>(initialTimeline);
+  /*
+   * ------------------------------------------------
+   * State
+   * ------------------------------------------------
+   */
 
   const [industries, setIndustries] =
     useState<string[]>(initialIndustries);
-  const [companySizes, setCompanySizes] =
-    useState<string[]>(initialCompanySizes);
+
   const [minimumYearsInOperation, setMinimumYearsInOperation] =
-    useState(initialMinimumYearsInOperation);
-  const [minimumARR, setMinimumARR] = useState(initialMinimumARR);
-  const [minimumSDE, setMinimumSDE] = useState(initialMinimumSDE);
+    useState(
+      initialMinimumYearsInOperation !== null &&
+        initialMinimumYearsInOperation !== undefined
+        ? String(initialMinimumYearsInOperation)
+        : "",
+    );
+
+  const [minimumARR, setMinimumARR] =
+    useState(
+      initialMinimumARR !== null &&
+        initialMinimumARR !== undefined
+        ? String(initialMinimumARR)
+        : "",
+    );
+
+  const [minimumSDE, setMinimumSDE] =
+    useState(
+      initialMinimumSDE !== null &&
+        initialMinimumSDE !== undefined
+        ? String(initialMinimumSDE)
+        : "",
+    );
+
+  const [maximumPurchasePrice, setMaximumPurchasePrice] =
+    useState(
+      initialMaximumPurchasePrice !== null &&
+        initialMaximumPurchasePrice !== undefined
+        ? String(initialMaximumPurchasePrice)
+        : "",
+    );
+
+  const [preferredARR, setPreferredARR] =
+    useState(
+      initialPreferredARR !== null &&
+        initialPreferredARR !== undefined
+        ? String(initialPreferredARR)
+        : "",
+    );
+
+  const [preferredSDE, setPreferredSDE] =
+    useState(
+      initialPreferredSDE !== null &&
+        initialPreferredSDE !== undefined
+        ? String(initialPreferredSDE)
+        : "",
+    );
+
+  const [preferredOwnerHoursPerWeek, setPreferredOwnerHoursPerWeek] =
+    useState(
+      initialPreferredOwnerHoursPerWeek !== null &&
+        initialPreferredOwnerHoursPerWeek !== undefined
+        ? String(initialPreferredOwnerHoursPerWeek)
+        : "",
+    );
+
   const [customerConcentration, setCustomerConcentration] =
-    useState(initialCustomerConcentration);
-  const [sellerTraining, setSellerTraining] =
-    useState(initialSellerTraining);
-  const [zipcode, setZipcode] = useState(initialZipcode);
-  const [searchRadius, setSearchRadius] =
-    useState(initialSearchRadius);
+    useState<CustomerConcentrationOption>(
+      initialCustomerConcentration === true
+        ? "yes"
+        : initialCustomerConcentration === false
+          ? "no"
+          : "",
+    );
+
+  const [sellerTrainingDays, setSellerTrainingDays] =
+    useState(
+      initialSellerTrainingDays !== null &&
+        initialSellerTrainingDays !== undefined
+        ? `${initialSellerTrainingDays} days`
+        : "",
+    );
+
+  const [dealPreference, setDealPreference] =
+    useState<DealPreferenceOption | "">(
+      initialDealPreference ?? "",
+    );
+
+  const [timeline, setTimeline] =
+    useState<TimelineOption>(initialTimeline);
+
+  /*
+   * ------------------------------------------------
+   * Helpers
+   * ------------------------------------------------
+   */
+
+  const toNumberOrUndefined = (
+    value: string,
+  ): number | undefined => {
+    if (value.trim() === "") {
+      return undefined;
+    }
+
+    const parsed = Number(value);
+
+    return Number.isNaN(parsed)
+      ? undefined
+      : parsed;
+  };
+
+  /*
+   * ------------------------------------------------
+   * Continue
+   * ------------------------------------------------
+   */
 
   const handleContinue = () => {
+    const trainingDays =
+      sellerTrainingDays === ""
+        ? undefined
+        : Number.parseInt(
+            sellerTrainingDays.replace(" days", ""),
+            10,
+          );
+
+    const customerConcentrationValue =
+      customerConcentration === ""
+        ? undefined
+        : customerConcentration === "yes";
+
     onContinue?.({
-      acquisitionPreferences,
-      motivation,
-      involvement,
-      timeline,
       industries,
-      companySizes,
-      minimumYearsInOperation,
-      minimumARR,
-      minimumSDE,
-      customerConcentration,
-      sellerTraining,
-      zipcode,
-      searchRadius,
+
+      minimumYearsInOperation:
+        toNumberOrUndefined(
+          minimumYearsInOperation,
+        ),
+
+      minimumARR:
+        toNumberOrUndefined(minimumARR),
+
+      minimumSDE:
+        toNumberOrUndefined(minimumSDE),
+
+      maximumPurchasePrice:
+        toNumberOrUndefined(
+          maximumPurchasePrice,
+        ),
+
+      preferredARR:
+        toNumberOrUndefined(preferredARR),
+
+      preferredSDE:
+        toNumberOrUndefined(preferredSDE),
+
+      preferredOwnerHoursPerWeek:
+        toNumberOrUndefined(
+          preferredOwnerHoursPerWeek,
+        ),
+
+      customerConcentration:
+        customerConcentrationValue,
+
+      sellerTrainingDays:
+        trainingDays,
+
+      dealPreference:
+        dealPreference === ""
+          ? undefined
+          : dealPreference,
+
+      timeline,
     });
   };
+
+  /*
+   * ------------------------------------------------
+   * Render
+   * ------------------------------------------------
+   */
 
   return (
     <section className="acquisition-preferences-section">
       <div className="acquisition-preferences-section__fields">
+
+        {/* Industries */}
+
         <MultiSelect
           label="Which industries are you interested in?"
           options={INDUSTRY_OPTIONS}
@@ -424,154 +620,244 @@ export default function AcquisitionPreferencesSection({
           disabled={disabled}
         />
 
-        <MultiSelect
-          label="What is your preferred company size by employee count?"
-          options={COMPANY_SIZE_OPTIONS}
-          selected={companySizes}
-          onChange={setCompanySizes}
-          disabled={disabled}
-        />
+        {/* Minimum Years */}
 
-        <div className="acquisition-preferences-section__field acquisition-preferences-section__field--compact">
+        <div className="acquisition-preferences-section__field">
           <label
             htmlFor="minimum-years-in-operation"
             className="acquisition-preferences-section__label"
           >
             Minimum Years in Operation
           </label>
-          <div className="acquisition-preferences-section__input-with-suffix">
-            <input
-              id="minimum-years-in-operation"
-              type="number"
-              min="0"
-              value={minimumYearsInOperation}
-              onChange={(event) =>
-                setMinimumYearsInOperation(event.target.value)
-              }
-              placeholder="Years"
-              disabled={disabled}
-              className="acquisition-preferences-section__input"
-            />
-          </div>
+
+          <input
+            id="minimum-years-in-operation"
+            type="number"
+            min="0"
+            step="1"
+            value={minimumYearsInOperation}
+            onChange={(event) =>
+              setMinimumYearsInOperation(
+                event.target.value,
+              )
+            }
+            placeholder="Years"
+            disabled={disabled}
+            className="acquisition-preferences-section__input"
+          />
         </div>
 
-        <div className="acquisition-preferences-section__field acquisition-preferences-section__field--compact">
+        {/* Minimum ARR */}
+
+        <div className="acquisition-preferences-section__field">
           <label
             htmlFor="minimum-arr"
             className="acquisition-preferences-section__label"
           >
             Minimum Annual Recurring Revenue (ARR)
           </label>
+
           <input
             id="minimum-arr"
             type="number"
             min="0"
             value={minimumARR}
-            onChange={(event) => setMinimumARR(event.target.value)}
+            onChange={(event) =>
+              setMinimumARR(event.target.value)
+            }
             placeholder="Value"
             disabled={disabled}
             className="acquisition-preferences-section__input"
           />
         </div>
 
-        <div className="acquisition-preferences-section__field acquisition-preferences-section__field--compact">
+        {/* Minimum SDE */}
+
+        <div className="acquisition-preferences-section__field">
           <label
             htmlFor="minimum-sde"
             className="acquisition-preferences-section__label"
           >
             Minimum Seller&apos;s Discretionary Earnings (SDE)
           </label>
+
           <input
             id="minimum-sde"
             type="number"
             min="0"
             value={minimumSDE}
-            onChange={(event) => setMinimumSDE(event.target.value)}
+            onChange={(event) =>
+              setMinimumSDE(event.target.value)
+            }
             placeholder="Value"
             disabled={disabled}
             className="acquisition-preferences-section__input"
           />
         </div>
 
-        <SingleSelect
-          label="What is your maximum tolerance for customer concentration?"
-          value={customerConcentration}
-          options={CUSTOMER_CONCENTRATION_OPTIONS}
-          onChange={setCustomerConcentration}
-          disabled={disabled}
-        />
+        {/* Maximum Purchase Price */}
 
         <div className="acquisition-preferences-section__field">
           <label
-            htmlFor="motivation-for-buying"
+            htmlFor="maximum-purchase-price"
             className="acquisition-preferences-section__label"
           >
-            Motivation for Buying
+            Maximum Purchase Budget
           </label>
 
-          <textarea
-            id="motivation-for-buying"
-            value={motivation}
-            onChange={(event) => setMotivation(event.target.value)}
-            placeholder="Placeholder text for a longer response, spanning multiple lines."
+          <input
+            id="maximum-purchase-price"
+            type="number"
+            min="0"
+            value={maximumPurchasePrice}
+            onChange={(event) =>
+              setMaximumPurchasePrice(
+                event.target.value,
+              )
+            }
+            placeholder="Value"
             disabled={disabled}
-            className="acquisition-preferences-section__textarea"
+            className="acquisition-preferences-section__input"
           />
         </div>
 
+        {/* Preferred ARR */}
+
+        <div className="acquisition-preferences-section__field">
+          <label
+            htmlFor="preferred-arr"
+            className="acquisition-preferences-section__label"
+          >
+            Preferred Annual Recurring Revenue (ARR)
+          </label>
+
+          <input
+            id="preferred-arr"
+            type="number"
+            min="0"
+            value={preferredARR}
+            onChange={(event) =>
+              setPreferredARR(event.target.value)
+            }
+            placeholder="Value"
+            disabled={disabled}
+            className="acquisition-preferences-section__input"
+          />
+        </div>
+
+        {/* Preferred SDE */}
+
+        <div className="acquisition-preferences-section__field">
+          <label
+            htmlFor="preferred-sde"
+            className="acquisition-preferences-section__label"
+          >
+            Preferred Seller&apos;s Discretionary Earnings (SDE)
+          </label>
+
+          <input
+            id="preferred-sde"
+            type="number"
+            min="0"
+            value={preferredSDE}
+            onChange={(event) =>
+              setPreferredSDE(event.target.value)
+            }
+            placeholder="Value"
+            disabled={disabled}
+            className="acquisition-preferences-section__input"
+          />
+        </div>
+
+        {/* Preferred Owner Hours */}
+
+        <div className="acquisition-preferences-section__field">
+          <label
+            htmlFor="preferred-owner-hours"
+            className="acquisition-preferences-section__label"
+          >
+            Preferred Owner Hours per Week
+          </label>
+
+          <input
+            id="preferred-owner-hours"
+            type="number"
+            min="0"
+            max="168"
+            step="1"
+            value={preferredOwnerHoursPerWeek}
+            onChange={(event) =>
+              setPreferredOwnerHoursPerWeek(
+                event.target.value,
+              )
+            }
+            placeholder="Hours"
+            disabled={disabled}
+            className="acquisition-preferences-section__input"
+          />
+        </div>
+
+        {/* Customer Concentration */}
+
         <SingleSelect
-          label="Do you expect the seller to provide training during the handover?"
-          value={sellerTraining}
-          options={SELLER_TRAINING_OPTIONS}
-          onChange={setSellerTraining}
+          label="Would you consider a business where one customer makes up more than 25% of its revenue?"
+          value={
+            customerConcentration === "yes"
+              ? "Yes"
+              : customerConcentration === "no"
+                ? "No"
+                : ""
+          }
+          options={CUSTOMER_CONCENTRATION_OPTIONS}
+          onChange={(value) =>
+            setCustomerConcentration(
+              value.toLowerCase() as CustomerConcentrationOption,
+            )
+          }
           disabled={disabled}
         />
 
-        <fieldset className="acquisition-preferences-section__group">
-          <legend className="acquisition-preferences-section__label">
-            Post-Acquisition Involvement
-          </legend>
+        {/* Seller Training */}
 
-          <div className="acquisition-preferences-section__radio-grid">
-            {involvementOptions.map((option) => {
-              const selected = involvement === option.value;
+        <SingleSelect
+          label="How many days of seller transition training would you require?"
+          value={sellerTrainingDays}
+          options={SELLER_TRAINING_OPTIONS}
+          onChange={setSellerTrainingDays}
+          disabled={disabled}
+        />
 
-              return (
-                <label
-                  key={option.value}
-                  className="acquisition-preferences-section__radio-option"
-                >
-                  <input
-                    type="radio"
-                    name="post-acquisition-involvement"
-                    value={option.value}
-                    checked={selected}
-                    onChange={() => setInvolvement(option.value)}
-                    disabled={disabled}
-                    className="acquisition-preferences-section__radio-input"
-                  />
+        {/* Deal Preference */}
 
-                  <span
-                    className={`acquisition-preferences-section__radio ${
-                      selected
-                        ? "acquisition-preferences-section__radio--selected"
-                        : ""
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {selected && (
-                      <span className="acquisition-preferences-section__radio-dot" />
-                    )}
-                  </span>
-
-                  <span className="acquisition-preferences-section__radio-label">
-                    {option.label}
-                  </span>
-                </label>
+        <SingleSelect
+          label="What is your preferred deal structure?"
+          value={
+            dealPreference === "cash"
+              ? "Cash"
+              : dealPreference === "financing"
+                ? "Financing"
+                : dealPreference === "either"
+                  ? "Either"
+                  : ""
+          }
+          options={DEAL_PREFERENCE_OPTIONS.map(
+            (option) => option.label,
+          )}
+          onChange={(value) => {
+            const selectedOption =
+              DEAL_PREFERENCE_OPTIONS.find(
+                (option) =>
+                  option.label === value,
               );
-            })}
-          </div>
-        </fieldset>
+
+            setDealPreference(
+              selectedOption?.value ?? "",
+            );
+          }}
+          disabled={disabled}
+        />
+
+        {/* Acquisition Timeline */}
 
         <fieldset className="acquisition-preferences-section__group acquisition-preferences-section__group--timeline">
           <legend className="acquisition-preferences-section__label">
@@ -580,7 +866,8 @@ export default function AcquisitionPreferencesSection({
 
           <div className="acquisition-preferences-section__radio-grid">
             {timelineOptions.map((option) => {
-              const selected = timeline === option.value;
+              const selected =
+                timeline === option.value;
 
               return (
                 <label
@@ -592,7 +879,9 @@ export default function AcquisitionPreferencesSection({
                     name="acquisition-timeline"
                     value={option.value}
                     checked={selected}
-                    onChange={() => setTimeline(option.value)}
+                    onChange={() =>
+                      setTimeline(option.value)
+                    }
                     disabled={disabled}
                     className="acquisition-preferences-section__radio-input"
                   />
@@ -618,73 +907,9 @@ export default function AcquisitionPreferencesSection({
             })}
           </div>
         </fieldset>
-
-        <div className="acquisition-preferences-section__location-row">
-          <div className="acquisition-preferences-section__field acquisition-preferences-section__field--zipcode">
-            <label
-              htmlFor="acquisition-zipcode"
-              className="acquisition-preferences-section__label"
-            >
-              Zipcode
-            </label>
-            <input
-              id="acquisition-zipcode"
-              type="text"
-              inputMode="numeric"
-              value={zipcode}
-              onChange={(event) => setZipcode(event.target.value)}
-              placeholder="Value"
-              disabled={disabled}
-              className="acquisition-preferences-section__input"
-            />
-          </div>
-
-          <div className="acquisition-preferences-section__radius">
-            <label
-              htmlFor="acquisition-search-radius"
-              className="acquisition-preferences-section__label"
-            >
-              Search Radius
-            </label>
-
-            <div className="acquisition-preferences-section__radius-control">
-              <input
-                id="acquisition-search-radius"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={searchRadius}
-                onChange={(event) =>
-                  setSearchRadius(Number(event.target.value))
-                }
-                disabled={disabled}
-              />
-              <span>{searchRadius} Miles</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="acquisition-preferences-section__field">
-          <label
-            htmlFor="additional-acquisition-preferences"
-            className="acquisition-preferences-section__label"
-          >
-            Additional Acquisition Preferences
-          </label>
-
-          <textarea
-            id="additional-acquisition-preferences"
-            value={acquisitionPreferences}
-            onChange={(event) =>
-              setAcquisitionPreferences(event.target.value)
-            }
-            placeholder="Placeholder text for a longer response, spanning multiple lines."
-            disabled={disabled}
-            className="acquisition-preferences-section__textarea"
-          />
-        </div>
       </div>
+
+      {/* Navigation */}
 
       <div className="acquisition-preferences-section__navigation">
         <button
@@ -694,7 +919,10 @@ export default function AcquisitionPreferencesSection({
           disabled={disabled}
           aria-label="Go back to industry experience"
         >
-          <ChevronLeft size={32} strokeWidth={1.5} />
+          <ChevronLeft
+            size={32}
+            strokeWidth={1.5}
+          />
         </button>
 
         <button
@@ -704,7 +932,10 @@ export default function AcquisitionPreferencesSection({
           disabled={disabled}
           aria-label="Continue to finances"
         >
-          <ChevronRight size={32} strokeWidth={1.5} />
+          <ChevronRight
+            size={32}
+            strokeWidth={1.5}
+          />
         </button>
       </div>
     </section>
