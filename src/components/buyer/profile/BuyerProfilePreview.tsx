@@ -104,19 +104,6 @@ export default function BuyerProfilePreview({
                 />
               </button>
             </div>
-
-            <button
-              type="button"
-              className="buyer-profile-preview__settings-button"
-              aria-label="Profile settings"
-            >
-              <UserRoundCog
-                size={22}
-                strokeWidth={1.7}
-                aria-hidden="true"
-              />
-            </button>
-
           </div>
         </section>
 
