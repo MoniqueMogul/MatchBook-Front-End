@@ -22,6 +22,14 @@ export interface ApiMessageCreate {
   content: string;
 }
 
+export interface ApiAiSuggestionRequest {
+  instruction?: string;
+}
+
+export interface ApiAiSuggestionResponse {
+  suggestion: string;
+}
+
 /* Frontend view models required by the finalized Messages Figma. */
 
 export type MessageCategory =

@@ -1,6 +1,8 @@
 import api from "@/lib/api/client";
 
 import type {
+  ApiAiSuggestionRequest,
+  ApiAiSuggestionResponse,
   ApiConversation,
   ApiMessage,
   ApiMessageCreate,
@@ -41,6 +43,18 @@ export async function sendConversationMessage(
 ): Promise<ApiMessage> {
   const response = await api.post<ApiMessage>(
     `/chat/conversations/${conversationId}/messages`,
+    data,
+  );
+
+  return response.data;
+}
+
+export async function generateConversationAiSuggestion(
+  conversationId: string,
+  data: ApiAiSuggestionRequest = {},
+): Promise<ApiAiSuggestionResponse> {
+  const response = await api.post<ApiAiSuggestionResponse>(
+    `/chat/conversations/${conversationId}/ai-suggestion`,
     data,
   );
 
