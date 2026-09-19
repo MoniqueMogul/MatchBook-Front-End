@@ -195,10 +195,9 @@ export default function MatchDetail({
             <div>
               <h2>NDA signed successfully</h2>
               <p>
-                Business details are now available to be
-                viewed. The signed agreement will appear in
-                your MatchBook Documents when backend NDA
-                storage is connected.
+                Business details are now available to view.
+                You can continue reviewing the match and
+                request an introduction.
               </p>
             </div>
           </section>
@@ -601,11 +600,10 @@ export default function MatchDetail({
 
             <div className="match-detail__nda-scroll">
               <div className="match-detail__nda-notice">
-                <strong>Frontend demonstration</strong>
+                <strong>Agreement Summary</strong>
                 <p>
-                  Approved MatchBook legal text and backend
-                  persistence must be connected before
-                  production use.
+                  Please review the agreement details below
+                  before signing.
                 </p>
               </div>
 
@@ -620,42 +618,8 @@ export default function MatchDetail({
                 <div>
                   <span>Buyer Name</span>
                   <strong>
-                    To be pulled from buyer profile
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Address</span>
-                  <strong>
-                    To be pulled from buyer profile
-                  </strong>
-                </div>
-
-                <div>
-                  <span>City / State / ZIP</span>
-                  <strong>
-                    To be pulled from buyer profile
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Country</span>
-                  <strong>
-                    To be pulled from buyer profile
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Email</span>
-                  <strong>
-                    To be pulled from buyer profile
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Phone / Cell</span>
-                  <strong>
-                    To be pulled from buyer profile
+                    {legalName.trim() ||
+                      "Enter your legal name below"}
                   </strong>
                 </div>
 
@@ -666,9 +630,7 @@ export default function MatchDetail({
 
                 <div>
                   <span>Reference Number</span>
-                  <strong>
-                    To be supplied by backend
-                  </strong>
+                  <strong>{business.id}</strong>
                 </div>
 
                 <div>
@@ -734,9 +696,8 @@ export default function MatchDetail({
                 />
 
                 <span>
-                  I confirm that I have reviewed the
-                  agreement and agree to continue with this
-                  frontend demonstration.
+                  I confirm that I have reviewed, understood,
+                  and agree to the terms of this agreement.
                 </span>
               </label>
 
@@ -763,10 +724,10 @@ export default function MatchDetail({
                 <div className="match-detail__security-log">
                   <ShieldCheck size={20} />
                   <div>
-                    <strong>Security Log</strong>
+                    <strong>Electronic Signature</strong>
                     <span>
-                      Timestamp and IP will come from the
-                      backend.
+                      Your typed legal name confirms your
+                      acceptance of this agreement.
                     </span>
                   </div>
                 </div>
