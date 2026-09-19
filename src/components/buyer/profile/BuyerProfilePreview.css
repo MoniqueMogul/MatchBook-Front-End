@@ -394,3 +394,27 @@
 
   font-weight: 400;
 }
+
+.buyer-profile-preview__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.buyer-profile-preview__edit-button {
+  min-width: 40px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #333333;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.buyer-profile-preview__edit-button:hover {
+  background: #f7f7f7;
+}

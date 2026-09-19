@@ -21,6 +21,11 @@ type DealPreferenceOption =
   | "financing"
   | "either";
 
+type RealEstatePreferenceOption =
+  | "included"
+  | "lease"
+  | "either";
+
 type CustomerConcentrationOption =
   | ""
   | "yes"
@@ -42,6 +47,7 @@ type AcquisitionPreferenceData = {
   sellerTrainingDays?: number;
 
   dealPreference?: DealPreferenceOption;
+  realEstatePreference?: RealEstatePreferenceOption;
 
   timeline?: TimelineOption;
 };
@@ -62,6 +68,7 @@ interface AcquisitionPreferencesSectionProps {
   initialSellerTrainingDays?: number | null;
 
   initialDealPreference?: DealPreferenceOption | null;
+  initialRealEstatePreference?: RealEstatePreferenceOption | null;
 
   initialTimeline?: TimelineOption;
 
@@ -418,6 +425,7 @@ export default function AcquisitionPreferencesSection({
   initialSellerTrainingDays = null,
 
   initialDealPreference = null,
+  initialRealEstatePreference = null,
 
   initialTimeline = "exploring",
 
@@ -512,6 +520,11 @@ export default function AcquisitionPreferencesSection({
       initialDealPreference ?? "",
     );
 
+  const [realEstatePreference, setRealEstatePreference] =
+    useState<RealEstatePreferenceOption | "">(
+      initialRealEstatePreference ?? "",
+    );
+
   const [timeline, setTimeline] =
     useState<TimelineOption>(initialTimeline);
 
@@ -595,6 +608,11 @@ export default function AcquisitionPreferencesSection({
         dealPreference === ""
           ? undefined
           : dealPreference,
+
+      realEstatePreference:
+        realEstatePreference === ""
+          ? undefined
+          : realEstatePreference,
 
       timeline,
     });
@@ -853,6 +871,35 @@ export default function AcquisitionPreferencesSection({
             setDealPreference(
               selectedOption?.value ?? "",
             );
+          }}
+          disabled={disabled}
+        />
+
+        {/* Real Estate Preference */}
+
+        <SingleSelect
+          label="What is your preference for real estate?"
+          value={
+            realEstatePreference === "included"
+              ? "Included"
+              : realEstatePreference === "lease"
+                ? "Lease"
+                : realEstatePreference === "either"
+                  ? "Either"
+                  : ""
+          }
+          options={["Included", "Lease", "Either"]}
+          onChange={(value) => {
+            const selectedOption =
+              value === "Included"
+                ? "included"
+                : value === "Lease"
+                  ? "lease"
+                  : value === "Either"
+                    ? "either"
+                    : "";
+
+            setRealEstatePreference(selectedOption);
           }}
           disabled={disabled}
         />

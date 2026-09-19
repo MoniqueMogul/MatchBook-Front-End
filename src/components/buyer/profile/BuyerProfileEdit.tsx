@@ -82,12 +82,6 @@ export default function BuyerProfileEdit() {
     useState(false);
 
   /*
-   * ------------------------------------------------
-   * Load buyer preferences
-   * ------------------------------------------------
-   */
-
-  /*
    * Once an access token exists, fetch preferences.
    */
   useEffect(() => {
@@ -198,6 +192,7 @@ export default function BuyerProfileEdit() {
     customerConcentration?: boolean;
     sellerTrainingDays?: number;
     dealPreference?: "cash" | "financing" | "either";
+    realEstatePreference?: "included" | "lease" | "either";
     timeline?: "exploring" | "within-1-12" | "within-12-24" | "within-24-plus";
   }) => {
     setPreferences((current) => ({
@@ -234,6 +229,9 @@ export default function BuyerProfileEdit() {
 
       deal_preference:
         data.dealPreference ?? null,
+      
+      real_estate_preference:
+        data.realEstatePreference ?? null,
 
       preferred_acquisition_timeline:
         data.timeline ?? null,
@@ -407,24 +405,9 @@ export default function BuyerProfileEdit() {
           location={location}
           imageSrc={profileImage}
           onLocationChange={setLocation}
-          mode="edit"
           onImageChange={() =>
             setIsImageModalOpen(true)
           }
-          onPreview={() => {
-            router.push(
-              "/buyer/profile",
-            );
-          }}
-          onModeChange={(mode) => {
-            if (
-              mode === "preview"
-            ) {
-              router.push(
-                "/buyer/profile",
-              );
-            }
-          }}
         />
 
         {/* Tabs */}
@@ -518,6 +501,10 @@ export default function BuyerProfileEdit() {
 
             initialDealPreference={
               preferences?.deal_preference ?? null
+            }
+
+            initialRealEstatePreference={
+              preferences?.real_estate_preference ?? null
             }
 
             initialTimeline={

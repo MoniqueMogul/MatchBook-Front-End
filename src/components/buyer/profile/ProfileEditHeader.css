@@ -169,3 +169,16 @@
   color: #2f542a;
   font-weight: 700;
 }
+
+.profile-edit-header__editing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f1f2f3;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}

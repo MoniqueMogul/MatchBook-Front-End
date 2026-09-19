@@ -23,7 +23,7 @@ const tabs: Array<{
   },
   {
     id: "industry-experience",
-    label: "Industry Experience",
+    label: "Experience & Credentials",
   },
   {
     id: "acquisition-preferences",

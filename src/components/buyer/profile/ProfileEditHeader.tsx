@@ -7,9 +7,6 @@ interface ProfileEditHeaderProps {
   name: string;
   location: string;
   imageSrc?: string;
-  mode?: "preview" | "edit";
-  onModeChange?: (mode: "preview" | "edit") => void;
-  onPreview?: () => void;
   onImageChange?: () => void;
   onLocationChange?: (value: string) => void;
 }
@@ -18,9 +15,6 @@ export default function ProfileEditHeader({
   name,
   location,
   imageSrc,
-  mode = "edit",
-  onModeChange,
-  onPreview,
   onImageChange,
   onLocationChange,
 }: ProfileEditHeaderProps) {
@@ -92,37 +86,8 @@ export default function ProfileEditHeader({
       </div>
 
       <div className="profile-edit-header__controls">
-        <div
-          className="profile-edit-header__toggle"
-          role="group"
-          aria-label="Profile view mode"
-        >
-          <button
-            type="button"
-            className={`profile-edit-header__toggle-button ${
-              mode === "preview"
-                ? "profile-edit-header__toggle-button--active"
-                : ""
-            }`}
-            onClick={() => {
-              onPreview?.();
-              onModeChange?.("preview");
-            }}
-          >
-            Preview
-          </button>
-
-          <button
-            type="button"
-            className={`profile-edit-header__toggle-button ${
-              mode === "edit"
-                ? "profile-edit-header__toggle-button--active"
-                : ""
-            }`}
-            onClick={() => onModeChange?.("edit")}
-          >
-            Profile Edit
-          </button>
+        <div className="profile-edit-header__editing">
+          Editing Profile
         </div>
       </div>
     </header>

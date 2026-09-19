@@ -83,24 +83,25 @@ export default function BuyerProfilePreview({
           {/* Header controls */}
           <div className="buyer-profile-preview__controls">
 
-            <div
-              className="buyer-profile-preview__mode-toggle"
-              role="group"
-              aria-label="Profile view mode"
-            >
+            <div className="buyer-profile-preview__actions">
               <button
                 type="button"
-                className="buyer-profile-preview__mode-button buyer-profile-preview__mode-button--active"
+                className="buyer-profile-preview__edit-button"
+                onClick={() => router.push("/buyer/profile/edit")}
               >
-                Profile Preview
+                Edit
               </button>
 
               <button
                 type="button"
-                className="buyer-profile-preview__mode-button"
-                onClick={() => router.push("/buyer/profile/edit")}
+                className="buyer-profile-preview__settings-button"
+                aria-label="Profile settings"
               >
-                Profile Edit
+                <UserRoundCog
+                  size={22}
+                  strokeWidth={1.7}
+                  aria-hidden="true"
+                />
               </button>
             </div>
 
@@ -138,7 +139,7 @@ export default function BuyerProfilePreview({
             type="button"
             className="buyer-profile-preview__tab"
           >
-            Industry Background
+            Experience & Credentials
           </button>
 
           <button
