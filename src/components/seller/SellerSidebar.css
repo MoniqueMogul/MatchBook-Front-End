@@ -1,0 +1,131 @@
+.seller-sidebar {
+  width: 260px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 12px;
+  background: #f7f8f9;
+  border-right: 1px solid #d8dce1;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.seller-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 20px;
+}
+
+.seller-sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seller-sidebar__logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #55994c;
+  color: #fff;
+  font-weight: 700;
+}
+
+.seller-sidebar__logo-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #12161d;
+}
+
+.seller-sidebar__collapse {
+  background: none;
+  border: 0;
+  font-size: 20px;
+  cursor: pointer;
+  color: #52677d;
+}
+
+.seller-sidebar__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 40px;
+  margin: 0 4px 16px;
+  border: 1px solid #d8dce1;
+  border-radius: 8px;
+  background: #fff;
+  color: #52677d;
+}
+
+.seller-sidebar__search input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  color: #12161d;
+}
+
+.seller-sidebar__search input::placeholder {
+  color: #8d96a3;
+}
+
+.seller-sidebar__kbd {
+  font-size: 11px;
+  color: #8d96a3;
+}
+
+.seller-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seller-sidebar__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  color: #333d4d;
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.seller-sidebar__item:hover {
+  background: #eef0f2;
+}
+
+.seller-sidebar__item--active {
+  color: #498441;
+  font-weight: 500;
+}
+
+.seller-sidebar__item--active::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: #498441;
+}
+
+.seller-sidebar__bottom {
+  margin-top: auto;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

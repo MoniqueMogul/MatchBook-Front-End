@@ -1,0 +1,80 @@
+.seller-listings {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.seller-listings__header {
+  margin-bottom: 24px;
+}
+
+.seller-listings__title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #12161d;
+  margin: 0 0 6px;
+}
+
+.seller-listings__subtitle {
+  font-size: 14px;
+  color: #52677d;
+  margin: 0;
+}
+
+.seller-listings__tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  background: #eef0f2;
+}
+
+.seller-listings__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #52677d;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.seller-listings__tab--active {
+  background: #fff;
+  color: #12161d;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.seller-listings__tab-count {
+  font-weight: 400;
+}
+
+.seller-listings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.seller-listings__empty {
+  padding: 60px 0;
+  text-align: center;
+  color: #8d96a3;
+}
+
+.seller-listings__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+  padding-top: 20px;
+  font-size: 12px;
+  color: #8d96a3;
+}
