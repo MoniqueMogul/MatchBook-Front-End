@@ -1,0 +1,198 @@
+/* =========================================
+   Acquisition Preferences Preview
+   ========================================= */
+
+.acquisition-preferences-preview {
+  width: 100%;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+
+/* =========================================
+   Sections
+   ========================================= */
+
+.acquisition-preferences-preview__section {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 0 0 24px;
+  margin: 0 0 24px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.acquisition-preferences-preview__section:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+
+  border-bottom: none;
+}
+
+
+/* =========================================
+   Section Titles
+   ========================================= */
+
+.acquisition-preferences-preview__title {
+  margin: 0 0 12px;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 16px;
+  line-height: 24px;
+
+  font-weight: 600;
+
+  color: #26384f;
+}
+
+
+/* =========================================
+   Industries / Preferred Regions
+   ========================================= */
+
+.acquisition-preferences-preview__pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
+}
+
+
+.acquisition-preferences-preview__pill {
+  width: fit-content;
+  min-height: 30px;
+
+  box-sizing: border-box;
+
+  padding: 5px 11px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #dbe8d8;
+  border-radius: 6px;
+
+  background: #eef6ec;
+
+  color: #344054;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 12px;
+  line-height: 18px;
+
+  font-weight: 400;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   Empty / Not Specified
+   ========================================= */
+
+.acquisition-preferences-preview__empty,
+.acquisition-preferences-preview__value {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+
+/* =========================================
+   Details Grid
+   ========================================= */
+
+.acquisition-preferences-preview__grid {
+  width: 100%;
+  box-sizing: border-box;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  column-gap: 64px;
+  row-gap: 20px;
+}
+
+
+/* =========================================
+   Individual Detail
+   ========================================= */
+
+.acquisition-preferences-preview__item {
+  min-width: 0;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+/* =========================================
+   Labels
+   ========================================= */
+
+.acquisition-preferences-preview__label {
+  display: block;
+
+  margin: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 12px;
+  line-height: 18px;
+
+  font-weight: 400;
+
+  color: #687385;
+}
+
+
+/* =========================================
+   Values
+   ========================================= */
+
+.acquisition-preferences-preview__value {
+  display: block;
+
+  margin: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 14px;
+  line-height: 21px;
+
+  font-weight: 500;
+
+  color: #1f2937;
+
+  word-break: break-word;
+}
+
+
+/* =========================================
+   Responsive
+   ========================================= */
+
+@media (max-width: 700px) {
+  .acquisition-preferences-preview__grid {
+    grid-template-columns: 1fr;
+
+    row-gap: 16px;
+  }
+}

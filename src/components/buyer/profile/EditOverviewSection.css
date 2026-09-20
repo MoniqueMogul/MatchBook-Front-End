@@ -6,8 +6,6 @@
   position: relative;
 
   width: 100%;
-  flex: 1 1 auto;
-
   min-width: 0;
   min-height: 0;
 
@@ -22,11 +20,6 @@
 
   font-family: "Plus Jakarta Sans", sans-serif;
 
-  /*
-   * Important:
-   * Allow autocomplete/dropdowns to extend
-   * outside the section when necessary.
-   */
   overflow: visible;
 }
 
@@ -48,6 +41,126 @@
 
 
 /* =========================================
+   About Field
+   ========================================= */
+
+.edit-overview-section__field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  width: 100%;
+
+  gap: 8px;
+}
+
+
+/* =========================================
+   About Label
+   ========================================= */
+
+.edit-overview-section__label {
+  display: block;
+
+  margin: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+
+  color: #333d4d;
+}
+
+
+/* =========================================
+   About Textarea
+   ========================================= */
+
+.edit-overview-section__textarea {
+  display: block;
+
+  width: 237px;
+  height: 104px;
+
+  box-sizing: border-box;
+
+  padding: 12px;
+
+  border: 1px solid #c8ced6;
+  border-radius: 6px;
+
+  background: #f7f8fa;
+
+  color: #333d4d;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 17px;
+
+  resize: none;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+
+/* =========================================
+   About Placeholder
+   ========================================= */
+
+.edit-overview-section__textarea::placeholder {
+  color: #98a2b3;
+  opacity: 1;
+}
+
+
+/* =========================================
+   About Hover
+   ========================================= */
+
+.edit-overview-section__textarea:hover {
+  border-color: #b8c0ca;
+}
+
+
+/* =========================================
+   About Focus
+   ========================================= */
+
+.edit-overview-section__textarea:focus {
+  border-color: #498441;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 1px rgba(73, 132, 65, 0.05);
+}
+
+
+/* =========================================
+   About Disabled
+   ========================================= */
+
+.edit-overview-section__textarea:disabled {
+  background: #f7f8f9;
+
+  color: #8a929b;
+
+  cursor: not-allowed;
+
+  opacity: 0.7;
+}
+
+
+/* =========================================
    Continue Button
    ========================================= */
 
@@ -64,12 +177,9 @@
   align-items: center;
   justify-content: flex-end;
 
-  /*
-   * Do not allow this absolute footer layer
-   * to block autocomplete/dropdown interaction.
-   */
   pointer-events: none;
 }
+
 
 .edit-overview-section__continue-button {
   width: 50px;
@@ -94,14 +204,18 @@
   pointer-events: auto;
 }
 
+
 .edit-overview-section__continue-button:hover {
   background: #3f7538;
 }
 
+
 .edit-overview-section__continue-button:disabled {
   opacity: 0.6;
+
   cursor: not-allowed;
 }
+
 
 .edit-overview-section__continue-button svg {
   width: 32px;
@@ -110,743 +224,7 @@
 
 
 /* =========================================
-   Location / Preferred Regions
-   ========================================= */
-
-.location-select {
-  position: relative;
-
-  width: 100%;
-
-  /*
-   * Base stacking level.
-   * This gets raised when the location control
-   * is focused/open.
-   */
-  z-index: 20;
-}
-
-.location-select:focus-within {
-  z-index: 50;
-}
-
-.location-select__label {
-  display: block;
-
-  margin-bottom: 6px;
-
-  font-size: 13px;
-  font-weight: 400;
-
-  color: #333d4d;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-}
-
-
-/* =========================================
-   Location Control
-   ========================================= */
-
-.location-select__control {
-  position: relative;
-
-  width: 360px;
-
-  box-sizing: border-box;
-}
-
-
-/* =========================================
-   Location Input
-   ========================================= */
-
-.location-select__input-wrapper {
-  position: relative;
-
-  width: 360px;
-  height: 44px;
-
-  box-sizing: border-box;
-}
-
-.location-select__input-wrapper input {
-  width: 100%;
-  height: 100%;
-
-  box-sizing: border-box;
-
-  padding: 0 34px 0 12px;
-
-  border: 1px solid #c8ced6;
-  border-radius: 5px;
-
-  background: #ffffff;
-
-  color: #333333;
-
-  outline: none;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  font-size: 12px;
-  font-weight: 400;
-
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.location-select__input-wrapper input::placeholder {
-  color: #68717b;
-  opacity: 1;
-}
-
-.location-select__input-wrapper:hover input {
-  border-color: #498441;
-}
-
-.location-select__input-wrapper--open input,
-.location-select__input-wrapper input:focus {
-  border-color: #498441;
-
-  box-shadow: 0 0 0 1px rgba(73, 132, 65, 0.05);
-}
-
-
-/* =========================================
-   Search / Loading Icon
-   ========================================= */
-
-.location-select__icon {
-  position: absolute;
-
-  top: 50%;
-  right: 11px;
-
-  width: 14px;
-  height: 14px;
-
-  transform: translateY(-50%);
-
-  color: #68717b;
-
-  pointer-events: none;
-}
-
-.location-select__icon--loading {
-  animation: location-select-spin 0.9s linear infinite;
-}
-
-@keyframes location-select-spin {
-  from {
-    transform: translateY(-50%) rotate(0deg);
-  }
-
-  to {
-    transform: translateY(-50%) rotate(360deg);
-  }
-}
-
-
-/* =========================================
-   Location Dropdown
-   ========================================= */
-
-.location-select__dropdown {
-  position: absolute;
-
-  top: calc(100% + 6px);
-  left: 0;
-
-  width: 360px;
-
-  max-height: 220px;
-
-  overflow-y: auto;
-
-  padding: 5px 0;
-
-  border: 1px solid #498441;
-  border-radius: 5px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 5px 14px rgba(0, 0, 0, 0.10);
-
-  /*
-   * High value inside the location stacking context.
-   */
-  z-index: 1000;
-
-  box-sizing: border-box;
-}
-
-
-/* =========================================
-   Location Scrollbar
-   ========================================= */
-
-.location-select__dropdown::-webkit-scrollbar {
-  width: 5px;
-}
-
-.location-select__dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.location-select__dropdown::-webkit-scrollbar-thumb {
-  background: #cbd3c8;
-
-  border-radius: 5px;
-}
-
-
-/* =========================================
-   Location Options
-   ========================================= */
-
-.location-select__option {
-  width: 100%;
-
-  min-height: 38px;
-
-  display: flex;
-  align-items: center;
-
-  padding: 7px 12px;
-
-  border: 0;
-
-  background: transparent;
-
-  color: #555d66;
-
-  text-align: left;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  cursor: pointer;
-
-  box-sizing: border-box;
-
-  transition:
-    background 0.12s ease,
-    color 0.12s ease;
-}
-
-.location-select__option:hover,
-.location-select__option--highlighted {
-  background: #f2f6f1;
-}
-
-.location-select__option-content {
-  width: 100%;
-
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  gap: 2px;
-}
-
-.location-select__option-name {
-  display: block;
-
-  width: 100%;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
-
-  color: #555d66;
-
-  font-size: 12px;
-  font-weight: 400;
-
-  line-height: 1.3;
-}
-
-.location-select__option--highlighted
-  .location-select__option-name {
-  color: #498441;
-}
-
-.location-select__option-type {
-  display: block;
-
-  color: #8a929b;
-
-  font-size: 9px;
-  font-weight: 400;
-
-  line-height: 1.2;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.2px;
-}
-
-
-/* =========================================
-   Location Dropdown Messages
-   ========================================= */
-
-.location-select__message {
-  width: 100%;
-
-  box-sizing: border-box;
-
-  padding: 10px 12px;
-
-  color: #68717b;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  font-size: 10px;
-
-  line-height: 1.4;
-}
-
-.location-select__message--error {
-  color: #8a5b5b;
-}
-
-
-/* =========================================
-   Selected Location Pills
-   ========================================= */
-
-.location-select__pills {
-  display: flex;
-  flex-wrap: wrap;
-
-  gap: 6px;
-
-  margin-top: 7px;
-
-  max-width: 500px;
-}
-
-.location-select__pill {
-  display: inline-flex;
-  align-items: center;
-
-  gap: 5px;
-
-  min-height: 25px;
-
-  max-width: 180px;
-
-  padding: 4px 8px;
-
-  border: 0;
-  border-radius: 5px;
-
-  background: #eaf3e8;
-
-  color: #4f5d50;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  font-size: 10px;
-
-  box-sizing: border-box;
-}
-
-.location-select__pill > span:first-child {
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
-}
-
-.location-select__pill-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  flex: 0 0 auto;
-
-  width: 13px;
-  height: 13px;
-
-  padding: 0;
-
-  border: 0;
-
-  background: transparent;
-
-  color: #7b8580;
-
-  cursor: pointer;
-}
-
-.location-select__pill-remove:hover {
-  color: #498441;
-}
-
-.location-select__pill-remove:disabled {
-  cursor: not-allowed;
-}
-
-
-/* =========================================
-   Industry Multi Select
-   ========================================= */
-
-.industry-select {
-  position: relative;
-
-  width: 100%;
-
-  /*
-   * Base stacking level.
-   * When opened/focused, this section rises
-   * above the location section.
-   */
-  z-index: 20;
-}
-
-.industry-select:focus-within {
-  z-index: 50;
-}
-
-.industry-select__label {
-  display: block;
-
-  margin-bottom: 6px;
-
-  font-size: 13px;
-  font-weight: 400;
-
-  color: #333d4d;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-}
-
-
-/* =========================================
-   Industry Control
-   ========================================= */
-
-.industry-select__control {
-  position: relative;
-
-  width: 360px;
-
-  box-sizing: border-box;
-}
-
-
-/* =========================================
-   Industry Trigger
-   ========================================= */
-
-.industry-select__trigger {
-  width: 360px;
-  height: 44px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding: 0 12px;
-
-  border: 1px solid #c8ced6;
-  border-radius: 5px;
-
-  background: #ffffff;
-
-  color: #68717b;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  font-size: 12px;
-  font-weight: 400;
-
-  cursor: pointer;
-
-  box-sizing: border-box;
-
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.industry-select__trigger:hover {
-  border-color: #498441;
-}
-
-.industry-select__trigger--open {
-  border-color: #498441;
-
-  box-shadow: 0 0 0 1px rgba(73, 132, 65, 0.05);
-}
-
-.industry-select__trigger:disabled {
-  opacity: 0.6;
-
-  cursor: not-allowed;
-}
-
-.industry-select__placeholder {
-  color: #68717b;
-
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-}
-
-
-/* =========================================
-   Industry Chevron
-   ========================================= */
-
-.industry-select__chevron {
-  flex: 0 0 auto;
-
-  width: 14px;
-  height: 14px;
-
-  color: #68717b;
-
-  transition:
-    transform 0.15s ease,
-    color 0.15s ease;
-}
-
-.industry-select__chevron--open {
-  color: #498441;
-
-  transform: rotate(180deg);
-}
-
-
-/* =========================================
-   Industry Dropdown
-   ========================================= */
-
-.industry-select__dropdown {
-  position: absolute;
-
-  top: calc(100% + 6px);
-  left: 0;
-
-  width: 360px;
-
-  max-height: 220px;
-
-  overflow-y: auto;
-
-  padding: 5px 0;
-
-  border: 1px solid #498441;
-  border-radius: 5px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 5px 14px rgba(0, 0, 0, 0.10);
-
-  /*
-   * High value inside the industry stacking context.
-   */
-  z-index: 1000;
-
-  box-sizing: border-box;
-}
-
-
-/* =========================================
-   Industry Scrollbar
-   ========================================= */
-
-.industry-select__dropdown::-webkit-scrollbar {
-  width: 5px;
-}
-
-.industry-select__dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.industry-select__dropdown::-webkit-scrollbar-thumb {
-  background: #cbd3c8;
-
-  border-radius: 5px;
-}
-
-
-/* =========================================
-   Industry Options
-   ========================================= */
-
-.industry-select__option {
-  width: 100%;
-
-  min-height: 34px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding: 7px 12px;
-
-  border: 0;
-
-  background: transparent;
-
-  color: #555d66;
-
-  text-align: left;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  font-size: 12px;
-  font-weight: 400;
-
-  cursor: pointer;
-
-  box-sizing: border-box;
-
-  transition:
-    background 0.12s ease,
-    color 0.12s ease;
-}
-
-.industry-select__option:hover {
-  background: #f2f6f1;
-}
-
-.industry-select__option--selected {
-  background: #f2f6f1;
-
-  color: #498441;
-
-  font-weight: 500;
-}
-
-
-/* =========================================
-   Industry Checkmark
-   ========================================= */
-
-.industry-select__check {
-  flex: 0 0 auto;
-
-  margin-left: 8px;
-
-  color: #498441;
-
-  font-size: 12px;
-
-  font-weight: 600;
-
-  line-height: 1;
-}
-
-
-/* =========================================
-   Selected Industry Pills
-   ========================================= */
-
-.industry-select__pills {
-  display: flex;
-  flex-wrap: wrap;
-
-  gap: 6px;
-
-  margin-top: 7px;
-
-  max-width: 500px;
-}
-
-.industry-select__pill {
-  display: inline-flex;
-  align-items: center;
-
-  gap: 5px;
-
-  min-height: 25px;
-
-  max-width: 180px;
-
-  padding: 4px 8px;
-
-  border: 0;
-  border-radius: 5px;
-
-  background: #eaf3e8;
-
-  color: #4f5d50;
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  font-size: 10px;
-
-  box-sizing: border-box;
-}
-
-.industry-select__pill > span:first-child {
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
-}
-
-.industry-select__pill-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  flex: 0 0 auto;
-
-  width: 13px;
-  height: 13px;
-
-  padding: 0;
-
-  border: 0;
-
-  background: transparent;
-
-  color: #7b8580;
-
-  cursor: pointer;
-}
-
-.industry-select__pill-remove:hover {
-  color: #498441;
-}
-
-.industry-select__pill-remove:disabled {
-  cursor: not-allowed;
-}
-
-
-/* =========================================
-   General Disabled State
-   ========================================= */
-
-.location-select__input-wrapper input:disabled {
-  background: #f7f8f9;
-
-  color: #8a929b;
-
-  cursor: not-allowed;
-}
-
-
-/* =========================================
-   Responsive Adjustment
+   Responsive
    ========================================= */
 
 @media (max-width: 600px) {
@@ -859,27 +237,8 @@
     right: 16px;
   }
 
-  .location-select__control {
-    width: 100%;
-  }
-
-  .location-select__input-wrapper {
-    width: 100%;
-  }
-
-  .location-select__dropdown {
-    width: 100%;
-  }
-
-  .industry-select__control {
-    width: 100%;
-  }
-
-  .industry-select__trigger {
-    width: 100%;
-  }
-
-  .industry-select__dropdown {
-    width: 100%;
+  .edit-overview-section__textarea {
+    width: 237px;
+    height: 104px;
   }
 }

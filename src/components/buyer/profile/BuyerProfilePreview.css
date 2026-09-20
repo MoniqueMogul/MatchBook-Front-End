@@ -372,7 +372,7 @@
 }
 
 .buyer-profile-preview__pill {
-  width: 146px;
+  width: fit-content;
   height: 36px;
 
   box-sizing: border-box;

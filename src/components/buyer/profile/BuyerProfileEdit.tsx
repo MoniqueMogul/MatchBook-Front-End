@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import IndustryExperienceSection from "./IndustryExperienceSection";
+import ExperienceCredentialsEdit, {
+  type ExperienceCredentialsData,
+} from "./ExperienceCredentialsEdit";
 import AcquisitionPreferencesSection from "./AcquisitionPreferencesSection";
+import FinanceEdit from "./FinanceEdit";
 import ProfileEditHeader from "./ProfileEditHeader";
 import ProfileImageModal from "./ProfileImageModal";
 import ProfileTabs, {
@@ -22,7 +25,9 @@ import {
 
 import {
   getBuyerProfile,
+  updateBuyerProfile,
   type BuyerProfile,
+  type BuyerProfileUpdatePayload,
 } from "@/lib/api/buyer";
 
 import "./BuyerProfileEdit.css";
@@ -33,48 +38,24 @@ export default function BuyerProfileEdit() {
   const [activeTab, setActiveTab] =
     useState<ProfileTab>("overview");
 
-  /*
-   * Backend preference data.
-   */
   const [preferences, setPreferences] =
     useState<BuyerPreferences | null>(null);
 
   const [profile, setProfile] =
     useState<BuyerProfile | null>(null);
 
-  /*
-   * Loading state for initial GET.
-   */
   const [loading, setLoading] =
     useState(true);
 
-  /*
-   * Saving state for final PUT.
-   */
   const [saving, setSaving] =
     useState(false);
 
-  /*
-   * Error shown to the user if API fails.
-   */
   const [error, setError] =
     useState<string | null>(null);
 
-  /*
-   * Current buyer location is separate from
-   * Preferred Regions.
-   *
-   * We are not connecting this to the
-   * preferences endpoint.
-   */
   const [location, setLocation] =
     useState("");
 
-  /*
-   * ------------------------------------------------
-   * Profile image
-   * ------------------------------------------------
-   */
   const [profileImage, setProfileImage] =
     useState<string | undefined>(undefined);
 
@@ -82,12 +63,15 @@ export default function BuyerProfileEdit() {
     useState(false);
 
   /*
-   * Once an access token exists, fetch preferences.
+   * ------------------------------------------------
+   * Initial GET
+   * ------------------------------------------------
    */
+
   useEffect(() => {
     let cancelled = false;
 
-    const loadPreferences = async () => {
+    const loadProfile = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -101,6 +85,15 @@ export default function BuyerProfileEdit() {
         if (!cancelled) {
           setProfile(profileData);
           setPreferences(preferencesData);
+
+          const currentLocation = [
+            profileData.city,
+            profileData.state,
+          ]
+            .filter(Boolean)
+            .join(", ");
+
+          setLocation(currentLocation);
         }
       } catch (err) {
         if (!cancelled) {
@@ -117,7 +110,7 @@ export default function BuyerProfileEdit() {
       }
     };
 
-    loadPreferences();
+    loadProfile();
 
     return () => {
       cancelled = true;
@@ -129,6 +122,7 @@ export default function BuyerProfileEdit() {
    * Profile Image
    * ------------------------------------------------
    */
+
   const handleProfileImageDone = (imageSrc: string) => {
     setProfileImage(imageSrc);
     setIsImageModalOpen(false);
@@ -138,67 +132,126 @@ export default function BuyerProfileEdit() {
    * ------------------------------------------------
    * Overview
    * ------------------------------------------------
+   *
+   * Preferred Regions are now handled in
+   * Acquisition Preferences.
    */
-  const handleOverviewContinue = (data: {
-    regions: NonNullable<
-      BuyerPreferences["target_locations"]
-    >;
-    industries: string[];
-  }) => {
-    setPreferences((current) => ({
-      ...(current ?? {}),
-      target_locations: data.regions,
-      target_industries: data.industries,
-    }));
 
+  const handleOverviewContinue = (data: {
+    about: string;
+  }) => {
     setActiveTab("industry-experience");
   };
+
   /*
    * ------------------------------------------------
-   * Industry Experience
+   * Experience & Credentials
    * ------------------------------------------------
-   *
-   * This is currently separate from the
-   * BuyerPreferences API contract.
-   *
-   * Keep collecting it in the UI.
    */
-  const handleIndustryExperienceContinue = (data: {
-      buyerType: string;
-      workSituation: string;
-      years: string;
-      industries: string[];
-      roles: string[];
-    }) => {
-      console.log("Industry experience:", data);
 
-      setActiveTab("acquisition-preferences");
-    };
+  const handleExperienceCredentialsContinue = (
+    data: ExperienceCredentialsData,
+  ) => {
+    setProfile((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+
+        buyer_type:
+          data.buyerType ?? current.buyer_type,
+
+        current_industry:
+          data.currentIndustry || null,
+
+        current_position:
+          data.currentPosition || null,
+
+        business_experience_years:
+          data.businessExperienceYears === ""
+            ? null
+            : Number(data.businessExperienceYears),
+
+        relevant_experience:
+          data.relevantExperience || null,
+
+        available_hours_per_week:
+          data.availableHoursPerWeek === ""
+            ? null
+            : Number(data.availableHoursPerWeek),
+
+        city:
+          data.city || null,
+
+        county:
+          data.county || null,
+
+        state:
+          data.state || null,
+
+        zip_code:
+          data.zipCode || null,
+      };
+    });
+
+    setActiveTab("acquisition-preferences");
+  };
 
   /*
    * ------------------------------------------------
    * Acquisition Preferences
    * ------------------------------------------------
    */
+
   const handleAcquisitionPreferencesContinue = (data: {
     industries: string[];
+
+    targetLocations: NonNullable<
+      BuyerPreferences["target_locations"]
+    >;
+
     minimumYearsInOperation?: number;
     minimumARR?: number;
     minimumSDE?: number;
+
     maximumPurchasePrice?: number;
     preferredARR?: number;
     preferredSDE?: number;
     preferredOwnerHoursPerWeek?: number;
+
     customerConcentration?: boolean;
     sellerTrainingDays?: number;
-    dealPreference?: "cash" | "financing" | "either";
-    realEstatePreference?: "included" | "lease" | "either";
-    timeline?: "exploring" | "within-1-12" | "within-12-24" | "within-24-plus";
+
+    dealPreference?:
+      | "cash"
+      | "financing"
+      | "either";
+
+    realEstatePreference?:
+      | "included"
+      | "lease"
+      | "either";
+
+    timeline?:
+      | "exploring"
+      | "within-1-12"
+      | "within-12-24"
+      | "within-24-plus";
   }) => {
     setPreferences((current) => ({
       ...(current ?? {}),
 
-      target_industries: data.industries,
+      target_industries:
+        data.industries,
+
+      /*
+       * Preferred Regions now belongs to
+       * Acquisition Preferences.
+       */
+      target_locations:
+        data.targetLocations,
 
       minimum_years_in_operation:
         data.minimumYearsInOperation ?? null,
@@ -229,7 +282,7 @@ export default function BuyerProfileEdit() {
 
       deal_preference:
         data.dealPreference ?? null,
-      
+
       real_estate_preference:
         data.realEstatePreference ?? null,
 
@@ -237,112 +290,170 @@ export default function BuyerProfileEdit() {
         data.timeline ?? null,
     }));
 
-    setActiveTab("overview");
+    setActiveTab("finances");
   };
+
   /*
    * ------------------------------------------------
-   * Final Save
+   * Build Buyer Profile PATCH payload
    * ------------------------------------------------
    */
+
+  const buildBuyerProfilePayload =
+    (): BuyerProfileUpdatePayload | null => {
+      if (!profile) {
+        return null;
+      }
+
+      return {
+        buyer_type: profile.buyer_type,
+
+        current_industry:
+          profile.current_industry ?? null,
+
+        current_position:
+          profile.current_position ?? null,
+
+        business_experience_years:
+          profile.business_experience_years ?? null,
+
+        relevant_experience:
+          profile.relevant_experience ?? null,
+
+        available_hours_per_week:
+          profile.available_hours_per_week ?? null,
+
+        city:
+          profile.city ?? null,
+
+        county:
+          profile.county ?? null,
+
+        state:
+          profile.state ?? null,
+
+        zip_code:
+          profile.zip_code ?? null,
+      };
+    };
+
+  /*
+   * ------------------------------------------------
+   * Build Buyer Preferences PUT payload
+   * ------------------------------------------------
+   */
+
+  const buildBuyerPreferencesPayload =
+    (): BuyerPreferencesPayload => ({
+      target_industries:
+        preferences?.target_industries ?? null,
+
+      target_locations:
+        preferences?.target_locations ?? null,
+
+      maximum_purchase_price:
+        preferences?.maximum_purchase_price ?? null,
+
+      minimum_required_sde:
+        preferences?.minimum_required_sde ?? null,
+
+      preferred_sde:
+        preferences?.preferred_sde ?? null,
+
+      minimum_required_arr:
+        preferences?.minimum_required_arr ?? null,
+
+      preferred_arr:
+        preferences?.preferred_arr ?? null,
+
+      preferred_owner_hours_per_week:
+        preferences?.preferred_owner_hours_per_week ?? null,
+
+      required_transition_training_days:
+        preferences?.required_transition_training_days ??
+        null,
+
+      deal_preference:
+        preferences?.deal_preference ?? null,
+
+      real_estate_preference:
+        preferences?.real_estate_preference ?? null,
+
+      minimum_years_in_operation:
+        preferences?.minimum_years_in_operation ?? null,
+
+      accepts_customer_concentration_above_25_percent:
+        preferences
+          ?.accepts_customer_concentration_above_25_percent ??
+        null,
+
+      preferred_acquisition_timeline:
+        preferences?.preferred_acquisition_timeline ??
+        null,
+    });
+
+  /*
+   * ------------------------------------------------
+   * FINAL SAVE
+   * ------------------------------------------------
+   *
+   * Buyer Profile  -> PATCH
+   * Buyer Preferences -> PUT
+   *
+   * Both are saved before redirecting to preview.
+   */
+
   const handleSave = async () => {
-    
+    if (!profile) {
+      setError("Buyer profile is not loaded.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
-      /*
-       * IMPORTANT:
-       *
-       * Send only fields accepted by
-       * BuyerPreferencesUpsert.
-       *
-       * Do not send:
-       * id
-       * buyer_id
-       * created_at
-       * updated_at
-       */
-      const payload: BuyerPreferencesPayload = {
-        target_industries:
-          preferences?.target_industries ??
-          null,
+      const buyerProfilePayload =
+        buildBuyerProfilePayload();
 
-        target_locations:
-          preferences?.target_locations ??
-          null,
+      const buyerPreferencesPayload =
+        buildBuyerPreferencesPayload();
 
-        maximum_purchase_price:
-          preferences?.maximum_purchase_price ??
-          null,
+      if (!buyerProfilePayload) {
+        throw new Error(
+          "Buyer profile data is unavailable.",
+        );
+      }
 
-        minimum_required_sde:
-          preferences?.minimum_required_sde ??
-          null,
+      const [
+        savedProfile,
+        savedPreferences,
+      ] = await Promise.all([
+        updateBuyerProfile(
+          buyerProfilePayload,
+        ),
+        saveBuyerPreferences(
+          buyerPreferencesPayload,
+        ),
+      ]);
 
-        preferred_sde:
-          preferences?.preferred_sde ??
-          null,
+      setProfile(savedProfile);
+      setPreferences(savedPreferences);
 
-        minimum_required_arr:
-          preferences?.minimum_required_arr ??
-          null,
-
-        preferred_arr:
-          preferences?.preferred_arr ??
-          null,
-
-        preferred_owner_hours_per_week:
-          preferences?.preferred_owner_hours_per_week ??
-          null,
-
-        required_transition_training_days:
-          preferences?.required_transition_training_days ??
-          null,
-
-        deal_preference:
-          preferences?.deal_preference ??
-          null,
-
-        real_estate_preference:
-          preferences?.real_estate_preference ??
-          null,
-
-        minimum_years_in_operation:
-          preferences?.minimum_years_in_operation ??
-          null,
-
-        accepts_customer_concentration_above_25_percent:
-          preferences?.accepts_customer_concentration_above_25_percent ??
-          null,
-
-        preferred_acquisition_timeline:
-          preferences?.preferred_acquisition_timeline ??
-          null,
-      };
-
-      const saved =
-        await saveBuyerPreferences(payload);
-
-      setPreferences(saved);
-
-      /*
-       * Save successful.
-       */
       console.log(
-        "Buyer preferences saved successfully.",
-        saved,
+        "Buyer profile and preferences saved successfully.",
+        {
+          profile: savedProfile,
+          preferences: savedPreferences,
+        },
       );
 
-      /*
-       * Optional:
-       * return to preview after saving.
-       */
       router.push("/buyer/profile");
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to save buyer preferences.",
+          : "Failed to save buyer profile.",
       );
     } finally {
       setSaving(false);
@@ -351,11 +462,29 @@ export default function BuyerProfileEdit() {
 
   /*
    * ------------------------------------------------
-   * Cancel
+   * CANCEL
    * ------------------------------------------------
+   *
+   * No API request.
+   * Preview will GET backend values again.
    */
+
   const handleCancel = () => {
-    router.push("/buyer/profile");
+    const previewTabMap: Record<
+      ProfileTab,
+      string
+    > = {
+      overview: "overview",
+      "industry-experience":
+        "industry-experience",
+      "acquisition-preferences":
+        "acquisition-preferences",
+      finances: "finances",
+    };
+
+    router.push(
+      `/buyer/profile?tab=${previewTabMap[activeTab]}`,
+    );
   };
 
   /*
@@ -363,6 +492,7 @@ export default function BuyerProfileEdit() {
    * Loading
    * ------------------------------------------------
    */
+
   if (loading) {
     return (
       <main className="buyer-profile-edit">
@@ -378,11 +508,11 @@ export default function BuyerProfileEdit() {
    * Render
    * ------------------------------------------------
    */
+
   return (
     <main className="buyer-profile-edit">
       <div className="buyer-profile-edit__content">
 
-        {/* Error */}
         {error && (
           <div
             role="alert"
@@ -421,36 +551,64 @@ export default function BuyerProfileEdit() {
 
         {activeTab === "overview" && (
           <EditOverviewSection
-            key={preferences?.updated_at ?? "new"}
-            initialRegions={
-              preferences?.target_locations ?? []
-            }
-            initialIndustries={
-              preferences?.target_industries ?? []
-            }
             onContinue={handleOverviewContinue}
             disabled={saving}
           />
         )}
 
-        {/* Industry Experience */}
+        {/* Experience & Credentials */}
 
         {activeTab ===
           "industry-experience" && (
-          <IndustryExperienceSection
-            initialBuyerType="first-time-buyer"
-            initialWorkSituation="employed-full-time"
-            initialIndustries={[]}
-            initialYears=""
-            initialRoles={[]}
+          <ExperienceCredentialsEdit
+            initialData={{
+              buyerType:
+                profile?.buyer_type ?? null,
+
+              currentIndustry:
+                profile?.current_industry ?? "",
+
+              currentPosition:
+                profile?.current_position ?? "",
+
+              businessExperienceYears:
+                profile?.business_experience_years !=
+                null
+                  ? String(
+                      profile.business_experience_years,
+                    )
+                  : "",
+
+              relevantExperience:
+                profile?.relevant_experience ?? "",
+
+              availableHoursPerWeek:
+                profile?.available_hours_per_week !=
+                null
+                  ? String(
+                      profile.available_hours_per_week,
+                    )
+                  : "",
+
+              city:
+                profile?.city ?? "",
+
+              county:
+                profile?.county ?? "",
+
+              state:
+                profile?.state ?? "",
+
+              zipCode:
+                profile?.zip_code ?? "",
+            }}
             onBack={() =>
-              setActiveTab(
-                "overview",
-              )
+              setActiveTab("overview")
             }
             onContinue={
-              handleIndustryExperienceContinue
+              handleExperienceCredentialsContinue
             }
+            disabled={saving}
           />
         )}
 
@@ -463,52 +621,72 @@ export default function BuyerProfileEdit() {
               preferences?.target_industries ?? []
             }
 
+            initialTargetLocations={
+              preferences?.target_locations ?? []
+            }
+
             initialMinimumYearsInOperation={
-              preferences?.minimum_years_in_operation ?? null
+              preferences?.minimum_years_in_operation ??
+              null
             }
 
             initialMinimumARR={
-              preferences?.minimum_required_arr ?? null
+              preferences?.minimum_required_arr ??
+              null
             }
 
             initialMinimumSDE={
-              preferences?.minimum_required_sde ?? null
+              preferences?.minimum_required_sde ??
+              null
             }
 
             initialMaximumPurchasePrice={
-              preferences?.maximum_purchase_price ?? null
+              preferences?.maximum_purchase_price ??
+              null
             }
 
             initialPreferredARR={
-              preferences?.preferred_arr ?? null
+              preferences?.preferred_arr ??
+              null
             }
 
             initialPreferredSDE={
-              preferences?.preferred_sde ?? null
+              preferences?.preferred_sde ??
+              null
             }
 
             initialPreferredOwnerHoursPerWeek={
-              preferences?.preferred_owner_hours_per_week ?? null
+              preferences
+                ?.preferred_owner_hours_per_week ??
+              null
             }
 
             initialCustomerConcentration={
-              preferences?.accepts_customer_concentration_above_25_percent ?? null
+              preferences
+                ?.accepts_customer_concentration_above_25_percent ??
+              null
             }
 
             initialSellerTrainingDays={
-              preferences?.required_transition_training_days ?? null
+              preferences
+                ?.required_transition_training_days ??
+              null
             }
 
             initialDealPreference={
-              preferences?.deal_preference ?? null
+              preferences?.deal_preference ??
+              null
             }
 
             initialRealEstatePreference={
-              preferences?.real_estate_preference ?? null
+              preferences
+                ?.real_estate_preference ??
+              null
             }
 
             initialTimeline={
-              preferences?.preferred_acquisition_timeline as
+              preferences
+                ?.preferred_acquisition_timeline as
                 | "exploring"
                 | "within-1-12"
                 | "within-12-24"
@@ -525,18 +703,29 @@ export default function BuyerProfileEdit() {
             onContinue={
               handleAcquisitionPreferencesContinue
             }
+
+            disabled={saving}
           />
         )}
 
-        {/* Save / Cancel */}
+        {/* Finance */}
+
+        {activeTab === "finances" && (
+          <FinanceEdit
+            onBack={() =>
+              setActiveTab(
+                "acquisition-preferences",
+              )
+            }
+            disabled={saving}
+          />
+        )}
+
+        {/* Global Save / Cancel */}
 
         <ProfileFormActions
-          onCancel={
-            handleCancel
-          }
-          onSave={
-            handleSave
-          }
+          onCancel={handleCancel}
+          onSave={handleSave}
           saving={saving}
         />
 

@@ -1,17 +1,29 @@
 "use client";
 
+import type { BuyerPreferences } from "@/lib/api/buyerPreferences";
+import type { BuyerProfile } from "@/lib/api/buyer";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { UserRoundCog } from "lucide-react";
-
+import AcquisitionPreferencesPreview from "./AcquisitionPreferencesPreview";
+import ExperienceCredentialsPreview from "./ExperienceCredentialsPreview";
+import FinancePreview from "./FinancePreview";
 import "./BuyerProfilePreview.css";
+
+type PreviewTab =
+  | "overview"
+  | "industry-experience"
+  | "acquisition-preferences"
+  | "finances";
 
 interface BuyerProfilePreviewProps {
   name?: string;
   location?: string;
   memberType?: string;
   imageSrc?: string;
-  preferredRegions?: string[];
-  industriesOfInterest?: string[];
+  preferences?: BuyerPreferences;
+  profile?: BuyerProfile | null;
+  initialTab?: PreviewTab;
 }
 
 export default function BuyerProfilePreview({
@@ -19,10 +31,14 @@ export default function BuyerProfilePreview({
   location = "Location",
   memberType = "Member Type",
   imageSrc,
-  preferredRegions = [],
-  industriesOfInterest = [],
+  preferences,
+  profile,
+  initialTab = "overview",
 }: BuyerProfilePreviewProps) {
   const router = useRouter();
+
+  const [activeTab, setActiveTab] =
+    useState<PreviewTab>(initialTab);
 
   return (
     <main className="buyer-profile-preview">
@@ -104,6 +120,7 @@ export default function BuyerProfilePreview({
                 />
               </button>
             </div>
+
           </div>
         </section>
 
@@ -117,80 +134,170 @@ export default function BuyerProfilePreview({
         >
           <button
             type="button"
-            className="buyer-profile-preview__tab buyer-profile-preview__tab--active"
+            className={`buyer-profile-preview__tab ${
+              activeTab === "overview"
+                ? "buyer-profile-preview__tab--active"
+                : ""
+            }`}
+            onClick={() => setActiveTab("overview")}
           >
             Overview
           </button>
 
           <button
             type="button"
-            className="buyer-profile-preview__tab"
+            className={`buyer-profile-preview__tab ${
+              activeTab === "industry-experience"
+                ? "buyer-profile-preview__tab--active"
+                : ""
+            }`}
+            onClick={() =>
+              setActiveTab("industry-experience")
+            }
           >
             Experience & Credentials
           </button>
 
           <button
             type="button"
-            className="buyer-profile-preview__tab"
+            className={`buyer-profile-preview__tab ${
+              activeTab === "acquisition-preferences"
+                ? "buyer-profile-preview__tab--active"
+                : ""
+            }`}
+            onClick={() =>
+              setActiveTab("acquisition-preferences")
+            }
           >
             Acquisition Preferences
           </button>
 
           <button
             type="button"
-            className="buyer-profile-preview__tab"
+            className={`buyer-profile-preview__tab ${
+              activeTab === "finances"
+                ? "buyer-profile-preview__tab--active"
+                : ""
+            }`}
+            onClick={() => setActiveTab("finances")}
           >
             Finances
           </button>
         </nav>
 
+
+        {activeTab === "overview" && (
+          <section className="buyer-profile-preview__overview-card">
+            <div className="buyer-profile-preview__section">
+              <h2 className="buyer-profile-preview__section-title">
+                About
+              </h2>
+
+              <p className="buyer-profile-preview__value">
+                About text goes here...
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* =========================
-            Overview
+            Acquisition Preferences
            ========================= */}
 
-        <section className="buyer-profile-preview__overview-card">
+        {activeTab === "acquisition-preferences" && (
+          <section className="buyer-profile-preview__overview-card">
 
-          {/* Preferred Regions */}
-          <div className="buyer-profile-preview__section">
+            <AcquisitionPreferencesPreview
+              data={{
+                industries:
+                  preferences?.target_industries ?? [],
 
-            <h2 className="buyer-profile-preview__section-title">
-              Preferred Regions
-            </h2>
+                targetLocations:
+                  preferences?.target_locations ?? [],
 
-            <div className="buyer-profile-preview__pills">
-              {preferredRegions.map((region, index) => (
-                <span
-                  key={`${region}-${index}`}
-                  className="buyer-profile-preview__pill"
-                >
-                  {region}
-                </span>
-              ))}
-            </div>
+                minimumYearsInOperation:
+                  preferences?.minimum_years_in_operation,
 
-          </div>
+                minimumARR:
+                  preferences?.minimum_required_arr,
 
-          {/* Industries */}
-          <div className="buyer-profile-preview__section">
+                minimumSDE:
+                  preferences?.minimum_required_sde,
 
-            <h2 className="buyer-profile-preview__section-title">
-              Industries of Interest
-            </h2>
+                maximumPurchasePrice:
+                  preferences?.maximum_purchase_price,
 
-            <div className="buyer-profile-preview__pills">
-              {industriesOfInterest.map((industry, index) => (
-                <span
-                  key={`${industry}-${index}`}
-                  className="buyer-profile-preview__pill"
-                >
-                  {industry}
-                </span>
-              ))}
-            </div>
+                preferredARR:
+                  preferences?.preferred_arr,
 
-          </div>
+                preferredSDE:
+                  preferences?.preferred_sde,
 
-        </section>
+                preferredOwnerHoursPerWeek:
+                  preferences?.preferred_owner_hours_per_week,
+
+                customerConcentration:
+                  preferences?.accepts_customer_concentration_above_25_percent,
+
+                sellerTrainingDays:
+                  preferences?.required_transition_training_days,
+
+                dealPreference:
+                  preferences?.deal_preference,
+
+                realEstatePreference:
+                  preferences?.real_estate_preference,
+
+                timeline:
+                  preferences?.preferred_acquisition_timeline as
+                    | "exploring"
+                    | "within-1-12"
+                    | "within-12-24"
+                    | "within-24-plus"
+                    | null
+                    | undefined,
+              }}
+            />
+
+          </section>
+        )}
+
+        {/* =========================
+            Experience & Credentials
+           ========================= */}
+
+        {activeTab === "industry-experience" && (
+          <section className="buyer-profile-preview__overview-card">
+
+            <ExperienceCredentialsPreview
+              profile={profile ?? null}
+            />
+
+          </section>
+        )}
+
+        {/* =========================
+            Finances
+           ========================= */}
+
+        {activeTab === "finances" && (
+          <section className="buyer-profile-preview__overview-card">
+
+            <FinancePreview
+              data={{
+                fundingSource: "all_cash",
+                reportedCashAvailable: 500000,
+                verifiedCashAvailable: 450000,
+                financingAmountRequested: 1000000,
+                financingAmountApproved: 750000,
+                lenderName: "ABC Bank",
+                lenderApprovalStatus: "approved",
+                financialVerificationStatus: "verified",
+              }}
+            />
+
+          </section>
+        )}
 
       </div>
     </main>

@@ -8,6 +8,9 @@ import {
   X,
 } from "lucide-react";
 
+import type { ApiTargetLocation } from "@/lib/api/buyerPreferences.types";
+import { searchLocations } from "@/lib/api/locations";
+
 import "./AcquisitionPreferencesSection.css";
 
 type TimelineOption =
@@ -33,6 +36,8 @@ type CustomerConcentrationOption =
 
 type AcquisitionPreferenceData = {
   industries: string[];
+  
+  targetLocations: ApiTargetLocation[];
 
   minimumYearsInOperation?: number;
   minimumARR?: number;
@@ -54,7 +59,7 @@ type AcquisitionPreferenceData = {
 
 interface AcquisitionPreferencesSectionProps {
   initialIndustries?: string[];
-
+  initialTargetLocations?: ApiTargetLocation[];
   initialMinimumYearsInOperation?: number | null;
   initialMinimumARR?: number | null;
   initialMinimumSDE?: number | null;
@@ -411,7 +416,7 @@ function SingleSelect({
 
 export default function AcquisitionPreferencesSection({
   initialIndustries = [],
-
+  initialTargetLocations = [],
   initialMinimumYearsInOperation = null,
   initialMinimumARR = null,
   initialMinimumSDE = null,
@@ -441,6 +446,45 @@ export default function AcquisitionPreferencesSection({
 
   const [industries, setIndustries] =
     useState<string[]>(initialIndustries);
+
+  
+    /*
+   * ------------------------------------------------
+   * Preferred Regions
+   * ------------------------------------------------
+   */
+
+  const [targetLocations, setTargetLocations] =
+    useState<ApiTargetLocation[]>(
+      initialTargetLocations,
+    );
+
+  const [locationSearch, setLocationSearch] =
+    useState("");
+
+  const [
+    locationSuggestions,
+    setLocationSuggestions,
+  ] = useState<ApiTargetLocation[]>([]);
+
+  const [
+    locationDropdownOpen,
+    setLocationDropdownOpen,
+  ] = useState(false);
+
+  const [locationLoading, setLocationLoading] =
+    useState(false);
+
+  const [locationError, setLocationError] =
+    useState<string | null>(null);
+
+  const [
+    highlightedLocationIndex,
+    setHighlightedLocationIndex,
+  ] = useState(-1);
+
+  const locationWrapperRef =
+    useRef<HTMLDivElement>(null);
 
   const [minimumYearsInOperation, setMinimumYearsInOperation] =
     useState(
@@ -528,6 +572,102 @@ export default function AcquisitionPreferencesSection({
   const [timeline, setTimeline] =
     useState<TimelineOption>(initialTimeline);
 
+
+
+    /*
+   * ------------------------------------------------
+   * Preferred Regions Autocomplete
+   * ------------------------------------------------
+   */
+
+  useEffect(() => {
+    const query = locationSearch.trim();
+
+    if (query.length < 3) {
+      setLocationSuggestions([]);
+      setLocationLoading(false);
+      setLocationError(null);
+      setLocationDropdownOpen(false);
+      setHighlightedLocationIndex(-1);
+
+      return;
+    }
+
+    const timeoutId = window.setTimeout(
+      async () => {
+        try {
+          setLocationLoading(true);
+          setLocationError(null);
+          setLocationDropdownOpen(true);
+          setHighlightedLocationIndex(-1);
+
+          const results = await searchLocations(
+            query,
+            8,
+          );
+
+          setLocationSuggestions(results);
+          setLocationError(null);
+        } catch (error) {
+          console.error(
+            "Location search failed:",
+            error,
+          );
+
+          setLocationSuggestions([]);
+
+          setLocationError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load locations. Please try again.",
+          );
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      250,
+    );
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [locationSearch]);
+
+
+    /*
+   * ------------------------------------------------
+   * Close Preferred Regions Dropdown
+   * ------------------------------------------------
+   */
+
+  useEffect(() => {
+    const handleOutsideClick = (
+      event: MouseEvent,
+    ) => {
+      if (
+        locationWrapperRef.current &&
+        !locationWrapperRef.current.contains(
+          event.target as Node,
+        )
+      ) {
+        setLocationDropdownOpen(false);
+        setHighlightedLocationIndex(-1);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick,
+      );
+    };
+  }, []);
+
   /*
    * ------------------------------------------------
    * Helpers
@@ -546,6 +686,151 @@ export default function AcquisitionPreferencesSection({
     return Number.isNaN(parsed)
       ? undefined
       : parsed;
+  };
+
+
+
+    /*
+   * ------------------------------------------------
+   * Preferred Regions Handlers
+   * ------------------------------------------------
+   */
+
+  const handleLocationInputChange = (
+    value: string,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    setLocationSearch(value);
+
+    setLocationDropdownOpen(
+      value.trim().length >= 3,
+    );
+
+    setHighlightedLocationIndex(-1);
+  };
+
+  const handleSelectLocation = (
+    suggestion: ApiTargetLocation,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    const value =
+      suggestion.display_name?.trim();
+
+    if (!value) {
+      return;
+    }
+
+    if (
+      !Number.isFinite(suggestion.latitude) ||
+      !Number.isFinite(suggestion.longitude)
+    ) {
+      setLocationError(
+        "This location does not contain valid coordinates. Please choose another result.",
+      );
+
+      return;
+    }
+
+    if (
+      !targetLocations.some(
+        (location) =>
+          location.place_id ===
+          suggestion.place_id,
+      )
+    ) {
+      setTargetLocations((current) => [
+        ...current,
+        suggestion,
+      ]);
+    }
+
+    setLocationSearch("");
+    setLocationSuggestions([]);
+    setLocationDropdownOpen(false);
+    setHighlightedLocationIndex(-1);
+    setLocationError(null);
+  };
+
+  const handleRemoveLocation = (
+    placeId: string,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    setTargetLocations((current) =>
+      current.filter(
+        (location) =>
+          location.place_id !== placeId,
+      ),
+    );
+  };
+
+  const handleLocationKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (
+      !locationDropdownOpen ||
+      locationSuggestions.length === 0
+    ) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      setHighlightedLocationIndex(
+        (current) =>
+          current <
+          locationSuggestions.length - 1
+            ? current + 1
+            : 0,
+      );
+
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+
+      setHighlightedLocationIndex(
+        (current) =>
+          current > 0
+            ? current - 1
+            : locationSuggestions.length - 1,
+      );
+
+      return;
+    }
+
+    if (
+      event.key === "Enter" &&
+      highlightedLocationIndex >= 0
+    ) {
+      event.preventDefault();
+
+      const suggestion =
+        locationSuggestions[
+          highlightedLocationIndex
+        ];
+
+      if (suggestion) {
+        handleSelectLocation(suggestion);
+      }
+
+      return;
+    }
+
+    if (event.key === "Escape") {
+      setLocationDropdownOpen(false);
+      setHighlightedLocationIndex(-1);
+    }
   };
 
   /*
@@ -570,7 +855,7 @@ export default function AcquisitionPreferencesSection({
 
     onContinue?.({
       industries,
-
+      targetLocations,
       minimumYearsInOperation:
         toNumberOrUndefined(
           minimumYearsInOperation,
@@ -637,6 +922,141 @@ export default function AcquisitionPreferencesSection({
           onChange={setIndustries}
           disabled={disabled}
         />
+
+        {/* Preferred Regions */}
+
+        <div
+          ref={locationWrapperRef}
+          className="acquisition-preferences-section__field acquisition-preferences-section__location-field"
+        >
+          <label
+            htmlFor="preferred-regions"
+            className="acquisition-preferences-section__label"
+          >
+            Preferred Regions
+          </label>
+
+          <div className="acquisition-preferences-section__location-input-wrap">
+            <input
+              id="preferred-regions"
+              type="text"
+              value={locationSearch}
+              onChange={(event) =>
+                handleLocationInputChange(
+                  event.target.value,
+                )
+              }
+              onKeyDown={handleLocationKeyDown}
+              onFocus={() => {
+                if (
+                  locationSearch.trim().length >= 3
+                ) {
+                  setLocationDropdownOpen(true);
+                }
+              }}
+              placeholder="Search for a city, state, or county"
+              disabled={disabled}
+              autoComplete="off"
+              className="acquisition-preferences-section__input"
+              aria-expanded={locationDropdownOpen}
+              aria-autocomplete="list"
+            />
+
+            {locationLoading && (
+              <span className="acquisition-preferences-section__location-loading">
+                Searching...
+              </span>
+            )}
+
+            {locationDropdownOpen &&
+              locationSearch.trim().length >= 3 && (
+                <div
+                  className="acquisition-preferences-section__location-dropdown"
+                  role="listbox"
+                >
+                  {locationSuggestions.length > 0 ? (
+                    locationSuggestions.map(
+                      (suggestion, index) => (
+                        <button
+                          key={
+                            suggestion.place_id
+                          }
+                          type="button"
+                          role="option"
+                          aria-selected={
+                            highlightedLocationIndex ===
+                            index
+                          }
+                          className={`acquisition-preferences-section__location-option ${
+                            highlightedLocationIndex ===
+                            index
+                              ? "acquisition-preferences-section__location-option--highlighted"
+                              : ""
+                          }`}
+                          onMouseDown={(event) =>
+                            event.preventDefault()
+                          }
+                          onClick={() =>
+                            handleSelectLocation(
+                              suggestion,
+                            )
+                          }
+                        >
+                          {suggestion.display_name}
+                        </button>
+                      ),
+                    )
+                  ) : !locationLoading ? (
+                    <div className="acquisition-preferences-section__location-empty">
+                      No locations found.
+                    </div>
+                  ) : null}
+                </div>
+              )}
+          </div>
+
+          {locationError && (
+            <p
+              className="acquisition-preferences-section__location-error"
+              role="alert"
+            >
+              {locationError}
+            </p>
+          )}
+
+          {targetLocations.length > 0 && (
+            <div className="acquisition-preferences-section__pills">
+              {targetLocations.map(
+                (location) => (
+                  <div
+                    key={location.place_id}
+                    className="acquisition-preferences-section__pill"
+                  >
+                    <span>
+                      {location.display_name}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRemoveLocation(
+                          location.place_id,
+                        )
+                      }
+                      disabled={disabled}
+                      aria-label={`Remove ${location.display_name}`}
+                    >
+                      <X
+                        size={11}
+                        strokeWidth={1.5}
+                      />
+                    </button>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Minimum Years */}
 
