@@ -108,9 +108,9 @@ export default function BusinessPreview({ businessId }: BusinessPreviewProps) {
       </div>
 
       <div className="business-preview__hero">
-        {business.hero_image_url ? (
+        {business.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={business.hero_image_url} alt={business.name} />
+          <img src={business.image_url} alt={business.name} />
         ) : (
           <div className="business-preview__hero-placeholder" />
         )}
@@ -250,7 +250,9 @@ export default function BusinessPreview({ businessId }: BusinessPreviewProps) {
           <div className="business-preview__goal-card">
             <User size={16} strokeWidth={1.7} />
             <div>
-              <div className="business-preview__goal-title">Buyer Preference</div>
+              <div className="business-preview__goal-title">
+                Buyer Preference
+              </div>
               <div className="business-preview__goal-value">
                 {business.buyer_preference || "Not specified"}
               </div>
@@ -301,7 +303,9 @@ export default function BusinessPreview({ businessId }: BusinessPreviewProps) {
 
         <div className="business-preview__fin-grid">
           <div className="business-preview__fin-cell">
-            <div className="business-preview__fin-cell-label">Annual Revenue</div>
+            <div className="business-preview__fin-cell-label">
+              Annual Revenue
+            </div>
             <div className="business-preview__fin-cell-value">
               {business.annual_revenue_min && business.annual_revenue_max
                 ? `${formatMoney(business.annual_revenue_min)}–${formatMoney(
@@ -311,7 +315,9 @@ export default function BusinessPreview({ businessId }: BusinessPreviewProps) {
             </div>
           </div>
           <div className="business-preview__fin-cell">
-            <div className="business-preview__fin-cell-label">Annual Profit</div>
+            <div className="business-preview__fin-cell-label">
+              Annual Profit
+            </div>
             <div className="business-preview__fin-cell-value">
               {formatMoney(business.annual_profit)}
             </div>
@@ -382,9 +388,7 @@ export default function BusinessPreview({ businessId }: BusinessPreviewProps) {
           {business.legal_confirmed && (
             <div className="business-preview__legal-confirm">
               <CheckCircle2 size={18} strokeWidth={1.8} />
-              <span>
-                I have everything required to sell this business.
-              </span>
+              <span>I have everything required to sell this business.</span>
             </div>
           )}
         </div>

@@ -1,16 +1,5 @@
 export type BusinessStatus = "active" | "draft";
 
-export interface BusinessFinancials {
-  asking_price?: number;
-  annual_revenue_min?: number;
-  annual_revenue_max?: number;
-  annual_profit?: number;
-  adjusted_ebitda?: number;
-  real_estate_value?: number;
-  add_backs?: number;
-  bank_inventories?: number;
-}
-
 export interface Business {
   id: string;
   name: string;
@@ -20,8 +9,9 @@ export interface Business {
   state: string;
   status: BusinessStatus;
   completion_percent: number;
+
+  // Image (uploaded by seller, or placeholder if not yet uploaded)
   image_url?: string;
-  hero_image_url?: string;
 
   // Financial summary
   asking_price?: number;
