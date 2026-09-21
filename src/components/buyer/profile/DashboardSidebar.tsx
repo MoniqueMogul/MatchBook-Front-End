@@ -49,6 +49,7 @@ const mainNavigation: NavigationItem[] = [
   {
     label: "Documents",
     icon: FileText,
+    href: "/buyer/documents",
   },
 ];
 
