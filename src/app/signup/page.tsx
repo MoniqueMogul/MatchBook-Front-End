@@ -13,6 +13,16 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 
 const schema = yup.object().shape({
+  firstName: yup
+    .string()
+    .trim()
+    .required('First name is required'),
+
+  lastName: yup
+    .string()
+    .trim()
+    .required('Last name is required'),
+
   email: yup
     .string()
     .email('Enter a valid email')
@@ -43,7 +53,13 @@ export default function SignupPage() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
-        options: { shouldCreateUser: true },
+        options: {
+          shouldCreateUser: true,
+          data: {
+            first_name: data.firstName.trim(),
+            last_name: data.lastName.trim(),
+          },
+        },
       });
 
       if (error) {
@@ -65,11 +81,30 @@ export default function SignupPage() {
   return (
     <AuthLayout progress={5}>
       <h1 className="page-title">Create your account</h1>
+
       <p className="page-subtitle">
-        Enter your email and we&apos;ll send you a one-time password.
+        Enter your details and we&apos;ll send you a one-time password.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        <Input
+          label="First Name"
+          type="text"
+          placeholder="Enter your first name"
+          autoComplete="given-name"
+          {...register('firstName')}
+          error={errors.firstName?.message}
+        />
+
+        <Input
+          label="Last Name"
+          type="text"
+          placeholder="Enter your last name"
+          autoComplete="family-name"
+          {...register('lastName')}
+          error={errors.lastName?.message}
+        />
+
         <Input
           label="Email"
           type="email"
