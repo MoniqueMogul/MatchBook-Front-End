@@ -11,11 +11,14 @@ import {
   Check,
   Clock3,
   Inbox,
+  LoaderCircle,
   LockKeyhole,
   Mail,
   Send,
+  Sparkles,
 } from "lucide-react";
 
+import { generateConversationAiSuggestion } from "@/lib/api/messages/messages";
 import { readWarmIntroductions } from "@/lib/api/messages/messages.demo-storage";
 import type {
   MessageCategory,
@@ -30,6 +33,36 @@ import "./MessagesDashboard.css";
 
 interface MessagesDashboardProps {
   data: MessagesViewData;
+}
+
+interface ApiErrorLike {
+  response?: {
+    status?: number;
+  };
+}
+
+function getAiSuggestionErrorMessage(
+  error: unknown,
+): string {
+  const status =
+    typeof error === "object" && error !== null
+      ? (error as ApiErrorLike).response?.status
+      : undefined;
+
+  switch (status) {
+    case 403:
+      return "You do not have access to this conversation.";
+    case 404:
+      return "The conversation or required matching information could not be found.";
+    case 409:
+      return "An AI suggestion is already being generated. Please wait.";
+    case 429:
+      return "You've reached today's AI suggestion limit. Please try again tomorrow.";
+    case 503:
+      return "AI suggestion is temporarily unavailable. Please try again.";
+    default:
+      return "Unable to generate an AI suggestion. Please try again.";
+  }
 }
 
 const categoryOptions: Array<{
@@ -75,6 +108,19 @@ export default function MessagesDashboard({
     setBusinessConversationId,
   ] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [lastAiSuggestion, setLastAiSuggestion] = useState("");
+  const [
+    isGeneratingSuggestion,
+    setIsGeneratingSuggestion,
+  ] = useState(false);
+  const [
+    hasGeneratedSuggestion,
+    setHasGeneratedSuggestion,
+  ] = useState(false);
+  const [
+    aiSuggestionError,
+    setAiSuggestionError,
+  ] = useState<string | null>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -199,11 +245,24 @@ export default function MessagesDashboard({
         businessConversationId,
     ) ?? null;
 
+  function resetComposer() {
+    setDraft("");
+    setLastAiSuggestion("");
+    setHasGeneratedSuggestion(false);
+    setAiSuggestionError(null);
+  }
+
   function selectCategory(
     category: MessageCategory,
   ) {
     setActiveCategory(category);
     setSelectedConversationId(null);
+    resetComposer();
+  }
+
+  function closeConversation() {
+    setSelectedConversationId(null);
+    resetComposer();
   }
 
   function openConversation(
@@ -217,6 +276,7 @@ export default function MessagesDashboard({
       return;
     }
 
+    resetComposer();
     setSelectedConversationId(conversation.id);
 
     setConversations((current) =>
@@ -264,15 +324,63 @@ export default function MessagesDashboard({
       ),
     );
 
+    resetComposer();
     setNdaConversationId(null);
     setActiveCategory("open");
     setSelectedConversationId(conversationId);
   }
 
+  async function generateAiSuggestion() {
+    if (
+      !selectedConversation ||
+      isGeneratingSuggestion
+    ) {
+      return;
+    }
+
+    const hasManuallyEditedDraft =
+      Boolean(draft.trim()) &&
+      draft !== lastAiSuggestion;
+
+    if (
+      hasManuallyEditedDraft &&
+      !window.confirm(
+        "Generating a new AI suggestion will replace your current draft. Do you want to continue?",
+      )
+    ) {
+      return;
+    }
+
+    setIsGeneratingSuggestion(true);
+    setAiSuggestionError(null);
+
+    try {
+      const response =
+        await generateConversationAiSuggestion(
+          selectedConversation.id,
+          {},
+        );
+
+      setDraft(response.suggestion);
+      setLastAiSuggestion(response.suggestion);
+      setHasGeneratedSuggestion(true);
+    } catch (error: unknown) {
+      setAiSuggestionError(
+        getAiSuggestionErrorMessage(error),
+      );
+    } finally {
+      setIsGeneratingSuggestion(false);
+    }
+  }
+
   function sendMessage() {
     const content = draft.trim();
 
-    if (!selectedConversation || !content) {
+    if (
+      !selectedConversation ||
+      !content ||
+      isGeneratingSuggestion
+    ) {
       return;
     }
 
@@ -308,6 +416,9 @@ export default function MessagesDashboard({
     );
 
     setDraft("");
+    setLastAiSuggestion("");
+    setHasGeneratedSuggestion(false);
+    setAiSuggestionError(null);
   }
 
   function archiveConversation() {
@@ -328,6 +439,7 @@ export default function MessagesDashboard({
       ),
     );
 
+    resetComposer();
     setSelectedConversationId(null);
     setActiveCategory("open");
   }
@@ -339,9 +451,7 @@ export default function MessagesDashboard({
           <button
             type="button"
             className="messages-dashboard__back"
-            onClick={() =>
-              setSelectedConversationId(null)
-            }
+            onClick={closeConversation}
           >
             <ArrowLeft size={17} />
             Back to Messages
@@ -431,33 +541,76 @@ export default function MessagesDashboard({
             )}
           </div>
 
-          <div className="messages-dashboard__composer">
-            <textarea
-              aria-label="Message"
-              placeholder="Type a message..."
-              value={draft}
-              onChange={(event) =>
-                setDraft(event.target.value)
-              }
-              onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  !event.shiftKey
-                ) {
-                  event.preventDefault();
-                  sendMessage();
-                }
-              }}
-            />
+          <div className="messages-dashboard__composer-area">
+            <div className="messages-dashboard__ai-tools">
+              <button
+                type="button"
+                className="messages-dashboard__ai-button"
+                disabled={isGeneratingSuggestion}
+                aria-busy={isGeneratingSuggestion}
+                onClick={generateAiSuggestion}
+              >
+                {isGeneratingSuggestion ? (
+                  <LoaderCircle
+                    className="messages-dashboard__ai-spinner"
+                    size={16}
+                  />
+                ) : (
+                  <Sparkles size={16} />
+                )}
 
-            <button
-              type="button"
-              aria-label="Send message"
-              disabled={!draft.trim()}
-              onClick={sendMessage}
-            >
-              <Send size={23} />
-            </button>
+                {isGeneratingSuggestion
+                  ? "Generating..."
+                  : hasGeneratedSuggestion
+                    ? "Regenerate"
+                    : "Generate with AI"}
+              </button>
+
+              {aiSuggestionError && (
+                <p
+                  className="messages-dashboard__ai-error"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  {aiSuggestionError}
+                </p>
+              )}
+            </div>
+
+            <div className="messages-dashboard__composer">
+              <textarea
+                aria-label="Message"
+                placeholder="Type a message..."
+                value={draft}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+
+                  if (aiSuggestionError) {
+                    setAiSuggestionError(null);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                  ) {
+                    event.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+
+              <button
+                type="button"
+                aria-label="Send message"
+                disabled={
+                  !draft.trim() || isGeneratingSuggestion
+                }
+                onClick={sendMessage}
+              >
+                <Send size={23} />
+              </button>
+            </div>
           </div>
         </section>
       ) : (
