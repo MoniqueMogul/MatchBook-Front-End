@@ -338,17 +338,18 @@ export default function MessagesDashboard({
       return;
     }
 
-  const hasManuallyEditedDraft =
-   Boolean(draft.trim()) &&
-   draft !== lastAiSuggestion;
-  if (
-    hasManuallyEditedDraft &&
-    window.confirm(
-      "Generating a new AI suggestion will replace your current draft. Do you want to continue?",
-    )
-  ) {
-  return;
-}
+    const hasManuallyEditedDraft =
+      Boolean(draft.trim()) &&
+      draft !== lastAiSuggestion;
+
+    if (
+      hasManuallyEditedDraft &&
+      !window.confirm(
+        "Generating a new AI suggestion will replace your current draft. Do you want to continue?",
+      )
+    ) {
+      return;
+    }
 
     setIsGeneratingSuggestion(true);
     setAiSuggestionError(null);
