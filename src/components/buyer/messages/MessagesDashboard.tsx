@@ -108,6 +108,7 @@ export default function MessagesDashboard({
     setBusinessConversationId,
   ] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [lastAiSuggestion, setLastAiSuggestion] = useState("");
   const [
     isGeneratingSuggestion,
     setIsGeneratingSuggestion,
@@ -246,6 +247,7 @@ export default function MessagesDashboard({
 
   function resetComposer() {
     setDraft("");
+    setLastAiSuggestion("");
     setHasGeneratedSuggestion(false);
     setAiSuggestionError(null);
   }
@@ -336,6 +338,18 @@ export default function MessagesDashboard({
       return;
     }
 
+  const hasManuallyEditedDraft =
+   Boolean(draft.trim()) &&
+   draft !== lastAiSuggestion;
+  if (
+    hasManuallyEditedDraft &&
+    window.confirm(
+      "Generating a new AI suggestion will replace your current draft. Do you want to continue?",
+    )
+  ) {
+  return;
+}
+
     setIsGeneratingSuggestion(true);
     setAiSuggestionError(null);
 
@@ -347,6 +361,7 @@ export default function MessagesDashboard({
         );
 
       setDraft(response.suggestion);
+      setLastAiSuggestion(response.suggestion);
       setHasGeneratedSuggestion(true);
     } catch (error: unknown) {
       setAiSuggestionError(
@@ -360,7 +375,11 @@ export default function MessagesDashboard({
   function sendMessage() {
     const content = draft.trim();
 
-    if (!selectedConversation || !content) {
+    if (
+      !selectedConversation ||
+      !content ||
+      isGeneratingSuggestion
+    ) {
       return;
     }
 
@@ -396,6 +415,7 @@ export default function MessagesDashboard({
     );
 
     setDraft("");
+    setLastAiSuggestion("");
     setHasGeneratedSuggestion(false);
     setAiSuggestionError(null);
   }
@@ -582,7 +602,9 @@ export default function MessagesDashboard({
               <button
                 type="button"
                 aria-label="Send message"
-                disabled={!draft.trim()}
+                disabled={
+                  !draft.trim() || isGeneratingSuggestion
+                }
                 onClick={sendMessage}
               >
                 <Send size={23} />
