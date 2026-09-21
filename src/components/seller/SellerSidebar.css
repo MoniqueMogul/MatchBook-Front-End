@@ -19,25 +19,10 @@
 .seller-sidebar__logo {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
-.seller-sidebar__logo-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: #55994c;
-  color: #fff;
-  font-weight: 700;
-}
-
-.seller-sidebar__logo-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: #12161d;
+.seller-sidebar__logo img {
+  display: block;
 }
 
 .seller-sidebar__collapse {
@@ -46,6 +31,12 @@
   font-size: 20px;
   cursor: pointer;
   color: #52677d;
+  padding: 4px;
+  line-height: 1;
+}
+
+.seller-sidebar__collapse:hover {
+  color: #12161d;
 }
 
 .seller-sidebar__search {
@@ -68,6 +59,7 @@
   font-size: 14px;
   background: transparent;
   color: #12161d;
+  font-family: inherit;
 }
 
 .seller-sidebar__search input::placeholder {
@@ -100,6 +92,7 @@
   cursor: pointer;
   text-align: left;
   transition: background 0.15s ease;
+  font-family: inherit;
 }
 
 .seller-sidebar__item:hover {

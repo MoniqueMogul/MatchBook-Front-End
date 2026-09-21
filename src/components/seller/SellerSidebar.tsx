@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutGrid,
@@ -42,8 +43,13 @@ export default function SellerSidebar() {
     <aside className="seller-sidebar">
       <div className="seller-sidebar__header">
         <div className="seller-sidebar__logo">
-          <span className="seller-sidebar__logo-mark">M</span>
-          <span className="seller-sidebar__logo-text">matchbook</span>
+          <Image
+            src="/logo.png"
+            alt="MatchBook"
+            width={140}
+            height={32}
+            priority
+          />
         </div>
         <button className="seller-sidebar__collapse" aria-label="Collapse">
           ‹
@@ -64,7 +70,9 @@ export default function SellerSidebar() {
             <button
               key={item.label}
               onClick={() => item.href && router.push(item.href)}
-              className={`seller-sidebar__item ${active ? "seller-sidebar__item--active" : ""}`}
+              className={`seller-sidebar__item ${
+                active ? "seller-sidebar__item--active" : ""
+              }`}
             >
               <Icon size={20} strokeWidth={1.6} />
               <span>{item.label}</span>
@@ -81,7 +89,9 @@ export default function SellerSidebar() {
             <button
               key={item.label}
               onClick={() => item.href && router.push(item.href)}
-              className={`seller-sidebar__item ${active ? "seller-sidebar__item--active" : ""}`}
+              className={`seller-sidebar__item ${
+                active ? "seller-sidebar__item--active" : ""
+              }`}
             >
               <Icon size={20} strokeWidth={1.6} />
               <span>{item.label}</span>
