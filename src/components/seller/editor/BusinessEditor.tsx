@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Business } from "@/types/seller";
 import "./BusinessEditor.css";
 
@@ -74,6 +75,8 @@ export default function BusinessEditor({
   mode,
   business,
 }: BusinessEditorProps) {
+
+    const router = useRouter();
   const [activeTab, setActiveTab] =
     useState<EditorTab>("business-info");
 
@@ -370,10 +373,16 @@ export default function BusinessEditor({
         </h1>
 
         <button
-          type="button"
-          className="business-editor__preview-button"
-        >
-          Preview
+            type="button"
+            className="business-editor__preview-button"
+            disabled={mode === "create" || !business?.id}
+            onClick={() => {
+                if (mode === "edit" && business?.id) {
+                router.push(`/seller/listings/${business.id}`);
+                }
+            }}
+            >
+            Preview
         </button>
       </header>
 
