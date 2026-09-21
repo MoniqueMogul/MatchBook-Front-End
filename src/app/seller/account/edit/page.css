@@ -1,0 +1,11 @@
+.seller-account-edit-page {
+  display: flex;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.seller-account-edit-page__main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
