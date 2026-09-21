@@ -2,6 +2,11 @@
 
 import { useMemo, useState } from "react";
 import type { Business } from "@/types/seller";
+import "./BusinessEditor.css";
+
+import CoverImageModal, {
+  type CoverImageOption,
+} from "./CoverImageModal";
 
 type EditorMode = "create" | "edit";
 
@@ -25,6 +30,46 @@ const TABS: { id: EditorTab; label: string }[] = [
   { id: "legal", label: "Legal & Licensing" },
 ];
 
+const COVER_IMAGES: CoverImageOption[] = [
+  {
+    id: "laundry",
+    url: "https://images.unsplash.com/photo-1545173168-9f1947eebb7f?auto=format&fit=crop&w=900&q=80",
+    alt: "Laundry business",
+  },
+  {
+    id: "restaurant",
+    url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
+    alt: "Restaurant",
+  },
+  {
+    id: "technology",
+    url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80",
+    alt: "Technology",
+  },
+  {
+    id: "office",
+    url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80",
+    alt: "Office",
+  },
+  {
+    id: "retail",
+    url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=80",
+    alt: "Retail store",
+  },
+];
+
+const ACQUISITION_OPTIONS = [
+  "Asset Purchase",
+  "Stock Purchase",
+  "Either",
+];
+
+const CUSTOMER_BASE_OPTIONS = [
+  "B2B",
+  "B2C",
+  "B2B & B2C",
+];
+
 export default function BusinessEditor({
   mode,
   business,
@@ -32,12 +77,9 @@ export default function BusinessEditor({
   const [activeTab, setActiveTab] =
     useState<EditorTab>("business-info");
 
-  /*
-   * Keep a local editable copy.
-   *
-   * This is important because the editor should not directly mutate
-   * the Business object received from the page.
-   */
+  const [coverModalOpen, setCoverModalOpen] =
+    useState(false);
+
   const [form, setForm] = useState<Business>(() => {
     if (business) {
       return { ...business };
@@ -85,9 +127,13 @@ export default function BusinessEditor({
     };
   });
 
-  const pageTitle = mode === "create"
-    ? "New Business Profile"
-    : "Edit Business Profile";
+  const [aboutHistory, setAboutHistory] = useState<string[]>([]);
+  const [aboutHistoryIndex, setAboutHistoryIndex] = useState(-1);
+
+  const pageTitle =
+    mode === "create"
+      ? "New Business Profile"
+      : "Edit Business Profile";
 
   const location = useMemo(() => {
     if (form.city && form.state) {
@@ -107,18 +153,221 @@ export default function BusinessEditor({
     }));
   };
 
+  const updateDescription = (value: string) => {
+    setAboutHistory((current) => [
+      ...current.slice(0, aboutHistoryIndex + 1),
+      form.description,
+    ]);
+
+    setAboutHistoryIndex((current) => current + 1);
+
+    updateField("description", value);
+  };
+
+  const undoDescription = () => {
+    if (aboutHistoryIndex < 0) {
+      return;
+    }
+
+    const previousValue =
+      aboutHistory[aboutHistoryIndex] ?? "";
+
+    updateField("description", previousValue);
+
+    setAboutHistoryIndex((current) => current - 1);
+  };
+
+  const redoDescription = () => {
+    if (
+      aboutHistoryIndex + 1 >=
+      aboutHistory.length
+    ) {
+      return;
+    }
+
+    const nextValue =
+      aboutHistory[aboutHistoryIndex + 1] ?? "";
+
+    updateField("description", nextValue);
+
+    setAboutHistoryIndex((current) => current + 1);
+  };
+
+  const renderBusinessInformation = () => {
+    return (
+      <section className="business-editor__section">
+        <div className="business-editor__about">
+          <label
+            htmlFor="business-about"
+            className="business-editor__form-label"
+          >
+            About
+          </label>
+
+          <textarea
+            id="business-about"
+            className="business-editor__about-textarea"
+            value={form.description}
+            onChange={(event) =>
+              updateDescription(event.target.value)
+            }
+            placeholder="Write a brief description of your business..."
+          />
+
+          <div className="business-editor__ai-actions">
+            <button
+              type="button"
+              className="business-editor__icon-button"
+              aria-label="Undo"
+              onClick={undoDescription}
+              disabled={aboutHistoryIndex < 0}
+            >
+              ↶
+            </button>
+
+            <button
+              type="button"
+              className="business-editor__icon-button"
+              aria-label="Redo"
+              onClick={redoDescription}
+              disabled={
+                aboutHistoryIndex + 1 >=
+                aboutHistory.length
+              }
+            >
+              ↷
+            </button>
+
+            <button
+              type="button"
+              className="business-editor__ai-button"
+            >
+              ✨&nbsp; Rephrase with AI
+            </button>
+          </div>
+        </div>
+
+        <div className="business-editor__select-field">
+          <label
+            htmlFor="acquisition-type"
+            className="business-editor__form-label"
+          >
+            Acquisition Type
+          </label>
+
+          <select
+            id="acquisition-type"
+            className="business-editor__select"
+            value={form.acquisition_type ?? ""}
+            onChange={(event) =>
+              updateField(
+                "acquisition_type",
+                event.target.value
+              )
+            }
+          >
+            <option value="">Select an option</option>
+
+            {ACQUISITION_OPTIONS.map((option) => (
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="business-editor__select-field">
+          <label
+            htmlFor="customer-base"
+            className="business-editor__form-label"
+          >
+            Customer Base
+          </label>
+
+          <select
+            id="customer-base"
+            className="business-editor__select"
+            value={form.customer_base ?? ""}
+            onChange={(event) =>
+              updateField(
+                "customer_base",
+                event.target.value
+              )
+            }
+          >
+            <option value="">Select an option</option>
+
+            {CUSTOMER_BASE_OPTIONS.map((option) => (
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+    );
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "business-info":
+        return renderBusinessInformation();
+
+      case "sale-goals":
+        return (
+          <section className="business-editor__section">
+            <div className="business-editor__coming-soon">
+              Sale Goals
+            </div>
+          </section>
+        );
+
+      case "lease-assets":
+        return (
+          <section className="business-editor__section">
+            <div className="business-editor__coming-soon">
+              Lease &amp; Assets
+            </div>
+          </section>
+        );
+
+      case "finances":
+        return (
+          <section className="business-editor__section">
+            <div className="business-editor__coming-soon">
+              Finances
+            </div>
+          </section>
+        );
+
+      case "legal":
+        return (
+          <section className="business-editor__section">
+            <div className="business-editor__coming-soon">
+              Legal &amp; Licensing
+            </div>
+          </section>
+        );
+    }
+  };
+
   return (
     <div className="business-editor">
-      <header className="business-editor__header">
-        <div>
-          <h1>{pageTitle}</h1>
 
-          {location && (
-            <p className="business-editor__location">
-              {location}
-            </p>
-          )}
-        </div>
+      {/* =========================
+          HEADER
+         ========================= */}
+
+      <header className="business-editor__header">
+        <h1 className="business-editor__title">
+          {pageTitle}
+        </h1>
 
         <button
           type="button"
@@ -128,93 +377,144 @@ export default function BusinessEditor({
         </button>
       </header>
 
-      <section className="business-editor__cover">
-        <div className="business-editor__cover-placeholder">
+      {/* =========================
+          EDITOR CONTENT
+         ========================= */}
+
+      <div className="business-editor__workspace">
+
+        {/* Cover */}
+
+        <section className="business-editor__cover">
           {form.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
+              className="business-editor__cover-image"
               src={form.image_url}
-              alt={form.name || "Business cover"}
+              alt={
+                form.name ||
+                "Business cover"
+              }
             />
           ) : (
-            <span>Select a cover image</span>
+            <div className="business-editor__cover-placeholder">
+              <span className="business-editor__cover-icon">
+                ▧
+              </span>
+
+              <span>
+                Select a cover image
+              </span>
+
+              <small>
+                JPG, PNG up to 5MB
+              </small>
+            </div>
           )}
-        </div>
 
-        <button
-          type="button"
-          className="business-editor__cover-edit"
-          aria-label="Edit cover image"
-        >
-          ✎
-        </button>
-      </section>
-
-      <section className="business-editor__identity">
-        <div className="business-editor__identity-field">
-          <label htmlFor="business-name">Business Name</label>
-          <input
-            id="business-name"
-            value={form.name}
-            onChange={(event) =>
-              updateField("name", event.target.value)
-            }
-            placeholder="Enter business name"
-          />
-        </div>
-
-        <div className="business-editor__identity-field">
-          <label htmlFor="business-location">Location</label>
-          <input
-            id="business-location"
-            value={location}
-            onChange={(event) => {
-              /*
-               * Location parsing will be handled properly when we
-               * build the location field. For Stage 1 we only keep
-               * the existing city/state model intact.
-               */
-              updateField("city", event.target.value);
-              updateField("state", "");
-            }}
-            placeholder="City, State"
-          />
-        </div>
-      </section>
-
-      <nav
-        className="business-editor__tabs"
-        aria-label="Business editor sections"
-      >
-        {TABS.map((tab) => (
           <button
-            key={tab.id}
             type="button"
-            className={`business-editor__tab ${
-              activeTab === tab.id
-                ? "business-editor__tab--active"
-                : ""
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+            className="business-editor__cover-edit"
+            aria-label="Edit cover image"
+            onClick={() => setCoverModalOpen(true)}
+            >
+            ✎
+            </button>
+        </section>
 
-      <main className="business-editor__content">
-        <div className="business-editor__placeholder">
-          <h2>
-            {TABS.find((tab) => tab.id === activeTab)?.label}
-          </h2>
+        {/* Business identity */}
 
-          <p>
-            This section will be implemented next.
-          </p>
-        </div>
-      </main>
+        <section className="business-editor__identity">
+
+          <div className="business-editor__identity-field">
+            <label
+              htmlFor="business-name"
+              className="business-editor__identity-label"
+            >
+              Business Name
+            </label>
+
+            <input
+              id="business-name"
+              className="business-editor__identity-input"
+              value={form.name}
+              onChange={(event) =>
+                updateField(
+                  "name",
+                  event.target.value
+                )
+              }
+              placeholder="Business Name"
+            />
+          </div>
+
+          <div className="business-editor__identity-field">
+            <label
+              htmlFor="business-location"
+              className="business-editor__identity-label"
+            >
+              Location
+            </label>
+
+            <input
+              id="business-location"
+              className="business-editor__identity-input"
+              value={location}
+              onChange={(event) => {
+                updateField(
+                  "city",
+                  event.target.value
+                );
+
+                updateField(
+                  "state",
+                  ""
+                );
+              }}
+              placeholder="City, State"
+            />
+          </div>
+
+        </section>
+
+        {/* Tabs */}
+
+        <nav
+          className="business-editor__tabs"
+          aria-label="Business editor sections"
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`business-editor__tab ${
+                activeTab === tab.id
+                  ? "business-editor__tab--active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActiveTab(tab.id)
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Tab content */}
+
+        <main className="business-editor__body">
+          {renderTabContent()}
+        </main>
+
+      </div>
+
+      {/* =========================
+          FOOTER
+         ========================= */}
 
       <footer className="business-editor__footer">
+
         <button
           type="button"
           className="business-editor__button business-editor__button--discard"
@@ -223,6 +523,7 @@ export default function BusinessEditor({
         </button>
 
         <div className="business-editor__footer-right">
+
           <button
             type="button"
             className="business-editor__button business-editor__button--draft"
@@ -236,8 +537,21 @@ export default function BusinessEditor({
           >
             Publish
           </button>
+
         </div>
+
       </footer>
+      <CoverImageModal
+        open={coverModalOpen}
+        currentImage={form.image_url}
+        images={COVER_IMAGES}
+        onClose={() => setCoverModalOpen(false)}
+        onDone={(imageUrl) => {
+            updateField("image_url", imageUrl);
+            setCoverModalOpen(false);
+        }}
+        />
+
     </div>
   );
 }
