@@ -2,10 +2,15 @@ import api from "@/lib/api/client";
 import type { Business } from "@/types/seller";
 
 /* =====================================================
-   MOCK DATA — replace with real API when backend is ready
+   USE_MOCK flag
+   - true  → returns mock data (dev, backend not ready)
+   - false → hits the real backend
    ===================================================== */
 const USE_MOCK = true;
 
+/* =====================================================
+   Mock data
+   ===================================================== */
 const MOCK_BUSINESSES: Business[] = [
   {
     id: "biz_001",
@@ -22,21 +27,9 @@ const MOCK_BUSINESSES: Business[] = [
     annual_revenue_max: 900000,
     annual_profit: 200000,
     acquisition_type: "Asset Sale",
-    customer_base: "Retail + Wholesale",
-    work_schedule: "Owner-operated · ~35 hrs/week on roasting and fulfillment",
-    revenue_trend: "Growing 12% YoY",
-    premises_owned: true,
-    reason_for_selling: "Retiring after 15 years",
+    work_schedule: "Owner-operated · ~35 hrs/week",
     timeline: "Within 6 months",
-    buyer_preference: "2–4 weeks handover",
-    premises_type: "Long-Term Leasing",
-    lease_term_remaining: "3 years",
-    included_assets: ["Equipment", "Vehicles", "Inventory", "FF&E"],
     adjusted_ebitda: 375000,
-    real_estate_value: 1000000,
-    add_backs: 145000,
-    bank_inventories: 175000,
-    benchmark_delta: 34,
     year_established: "2010",
     legal_confirmed: true,
   },
@@ -54,22 +47,6 @@ const MOCK_BUSINESSES: Business[] = [
     annual_revenue_min: 400000,
     annual_revenue_max: 480000,
     annual_profit: 120000,
-    acquisition_type: "Asset Sale",
-    customer_base: "Membership",
-    work_schedule: "Owner-operated · ~25 hrs/week",
-    revenue_trend: "Stable",
-    premises_owned: false,
-    reason_for_selling: "Focusing on family",
-    timeline: "Flexible",
-    buyer_preference: "Open to operator",
-    premises_type: "Leased",
-    lease_term_remaining: "2 years",
-    included_assets: ["Equipment", "FF&E"],
-    adjusted_ebitda: 165000,
-    real_estate_value: 0,
-    add_backs: 45000,
-    bank_inventories: 20000,
-    benchmark_delta: 12,
     year_established: "2016",
     legal_confirmed: true,
   },
@@ -84,27 +61,7 @@ const MOCK_BUSINESSES: Business[] = [
     status: "draft",
     completion_percent: 65,
     asking_price: 890000,
-    annual_revenue_min: 600000,
-    annual_revenue_max: 700000,
-    annual_profit: 260000,
-    acquisition_type: "Asset Sale",
-    customer_base: "Walk-in + Commercial",
-    work_schedule: "Semi-absentee · ~15 hrs/week",
-    revenue_trend: "Stable",
-    premises_owned: false,
-    reason_for_selling: "",
-    timeline: "",
-    buyer_preference: "",
-    premises_type: "Long-Term Leasing",
-    lease_term_remaining: "5 years",
-    included_assets: ["Equipment", "Vehicles"],
-    adjusted_ebitda: 320000,
-    real_estate_value: 0,
-    add_backs: 60000,
-    bank_inventories: 25000,
-    benchmark_delta: 8,
     year_established: "2012",
-    legal_confirmed: false,
   },
   {
     id: "biz_004",
@@ -117,29 +74,99 @@ const MOCK_BUSINESSES: Business[] = [
     status: "draft",
     completion_percent: 45,
     asking_price: 1250000,
-    annual_revenue_min: 900000,
-    annual_revenue_max: 1100000,
-    annual_profit: 180000,
-    acquisition_type: "",
-    customer_base: "",
-    work_schedule: "",
-    revenue_trend: "",
-    premises_owned: false,
-    reason_for_selling: "",
-    timeline: "",
-    buyer_preference: "",
-    premises_type: "",
-    lease_term_remaining: "",
-    included_assets: [],
-    adjusted_ebitda: 240000,
-    real_estate_value: 0,
-    add_backs: 60000,
-    bank_inventories: 40000,
-    benchmark_delta: -3,
-    year_established: "2015",
-    legal_confirmed: false,
   },
 ];
+
+/* =====================================================
+   Backend response shape (matches BusinessRead schema)
+   ===================================================== */
+interface ApiBusiness {
+  id: string;
+  seller_id: string;
+  legal_name: string | null;
+  dba: string | null;
+  business_type: string;
+  industry: string;
+  city: string;
+  county: string | null;
+  state: string;
+  zip_code: string | null;
+  years_in_operation: number | null;
+  number_of_locations: number | null;
+  number_of_routes: number | null;
+  arr: string | null;
+  customer_concentration: string | null;
+  asking_price: string | null;
+  sde: string | null;
+  owner_involvement_hours_per_week: number | null;
+  transition_training_days: number | null;
+  deal_preference: string | null;
+  preferred_sale_timeline: string | null;
+  verification_status: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/* =====================================================
+   Mappers
+   ===================================================== */
+
+function parseDecimal(value: string | null): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function formatWorkSchedule(hours: number | null): string | undefined {
+  if (hours === null || hours === undefined) return undefined;
+  return `~${hours} hrs/week`;
+}
+
+function apiToUi(api: ApiBusiness): Business {
+  const uiStatus: "active" | "draft" =
+    api.status === "active" ? "active" : "draft";
+
+  return {
+    id: api.id,
+    name: api.legal_name || api.dba || "Untitled Business",
+    industry_name: api.industry,
+    description: "",
+    city: api.city,
+    state: api.state,
+    status: uiStatus,
+
+    completion_percent: api.verification_status === "verified" ? 100 : 60,
+    image_url: undefined,
+
+    asking_price: parseDecimal(api.asking_price),
+    annual_revenue_min: parseDecimal(api.arr),
+    annual_revenue_max: parseDecimal(api.arr),
+    annual_profit: undefined,
+    adjusted_ebitda: parseDecimal(api.sde),
+
+    acquisition_type: api.business_type,
+    work_schedule: formatWorkSchedule(api.owner_involvement_hours_per_week),
+    revenue_trend: undefined,
+    premises_owned: undefined,
+
+    reason_for_selling: undefined,
+    timeline: api.preferred_sale_timeline ?? undefined,
+    buyer_preference: undefined,
+
+    premises_type: undefined,
+    lease_term_remaining: undefined,
+    included_assets: [],
+
+    real_estate_value: undefined,
+    add_backs: undefined,
+    bank_inventories: undefined,
+    benchmark_delta: undefined,
+
+    year_established: api.years_in_operation?.toString(),
+    legal_confirmed: api.verification_status === "verified",
+  };
+}
 
 /* =====================================================
    API calls
@@ -151,8 +178,9 @@ export async function getSellerBusinesses(): Promise<Business[]> {
       setTimeout(() => resolve(MOCK_BUSINESSES), 400)
     );
   }
-  const res = await api.get<Business[]>("/intake/sellers/businesses");
-  return res.data;
+
+  const res = await api.get<ApiBusiness[]>("/intake/sellers/businesses");
+  return res.data.map(apiToUi);
 }
 
 export async function getBusinessById(id: string): Promise<Business | null> {
@@ -164,32 +192,41 @@ export async function getBusinessById(id: string): Promise<Business | null> {
       )
     );
   }
-  const res = await api.get<Business>(`/intake/sellers/businesses/${id}`);
-  return res.data;
+
+  try {
+    const res = await api.get<ApiBusiness>(`/intake/sellers/businesses/${id}`);
+    return apiToUi(res.data);
+  } catch (err: any) {
+    if (err?.response?.status === 404) return null;
+    throw err;
+  }
 }
 
 export async function publishBusiness(id: string): Promise<void> {
   if (USE_MOCK) {
     return new Promise((resolve) => setTimeout(resolve, 500));
   }
-  await api.patch(`/intake/sellers/businesses/${id}`, { status: "active" });
+
+  await api.patch(`/intake/sellers/businesses/${id}`, {
+    status: "active",
+  });
 }
 
 export async function unpublishBusiness(id: string): Promise<void> {
   if (USE_MOCK) {
     return new Promise((resolve) => setTimeout(resolve, 500));
   }
-  await api.patch(`/intake/sellers/businesses/${id}`, { status: "draft" });
+
+  await api.patch(`/intake/sellers/businesses/${id}`, {
+    status: "draft",
+  });
 }
 
 export async function deleteBusiness(
-  id: string,
+  _id: string,
   _password: string
 ): Promise<void> {
-  if (USE_MOCK) {
-    return new Promise((resolve) => setTimeout(resolve, 500));
-  }
-  await api.post(`/intake/sellers/businesses/${id}/delete`, {
-    password: _password,
-  });
+  throw new Error(
+    "Delete is not yet supported by the backend. Contact the backend team."
+  );
 }
