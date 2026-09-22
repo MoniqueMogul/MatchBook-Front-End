@@ -194,7 +194,7 @@ export default function BuyerProfilePreview({
               </h2>
 
               <p className="buyer-profile-preview__value">
-                About text goes here...
+                {profile?.about_me || "No information provided yet."}
               </p>
             </div>
           </section>
@@ -284,15 +284,20 @@ export default function BuyerProfilePreview({
           <section className="buyer-profile-preview__overview-card">
 
             <FinancePreview
-              data={{
-                fundingSource: "all_cash",
-                reportedCashAvailable: 500000,
-                verifiedCashAvailable: 450000,
-                financingAmountRequested: 1000000,
-                financingAmountApproved: 750000,
-                lenderName: "ABC Bank",
-                lenderApprovalStatus: "approved",
-                financialVerificationStatus: "verified",
+              // data={{
+              //   fundingSource: "all_cash",
+              //   reportedCashAvailable: 500000,
+              //   verifiedCashAvailable: 450000,
+              //   financingAmountRequested: 1000000,
+              //   financingAmountApproved: 750000,
+              //   lenderName: "ABC Bank",
+              //   lenderApprovalStatus: "approved",
+              //   financialVerificationStatus: "verified",
+              // }}
+
+             data={{
+                purchasePrice:
+                  preferences?.maximum_purchase_price ?? null,
               }}
             />
 

@@ -15,7 +15,7 @@ export interface BuyerProfile {
 
   current_industry: string | null;
   current_position: string | null;
-
+  about_me: string | null;
   business_experience_years: number | null;
   relevant_experience: string | null;
   available_hours_per_week: number | null;
@@ -36,7 +36,7 @@ export interface BuyerProfileCreatePayload {
 
   current_industry?: string | null;
   current_position?: string | null;
-
+  about_me?: string | null;
   business_experience_years?: number | null;
   relevant_experience?: string | null;
   available_hours_per_week?: number | null;
@@ -52,7 +52,7 @@ export interface BuyerProfileUpdatePayload {
 
   current_industry?: string | null;
   current_position?: string | null;
-
+  about_me?: string | null;
   business_experience_years?: number | null;
   relevant_experience?: string | null;
   available_hours_per_week?: number | null;

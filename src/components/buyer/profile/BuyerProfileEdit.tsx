@@ -137,10 +137,28 @@ export default function BuyerProfileEdit() {
    * Acquisition Preferences.
    */
 
-  const handleOverviewContinue = (data: {
+  const handleOverviewContinue = async (data: {
     about: string;
   }) => {
-    setActiveTab("industry-experience");
+    try {
+      setSaving(true);
+      setError(null);
+
+      const updatedProfile = await updateBuyerProfile({
+        about_me: data.about,
+      });
+
+      setProfile(updatedProfile);
+      setActiveTab("industry-experience");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save About information.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   /*
@@ -551,6 +569,7 @@ export default function BuyerProfileEdit() {
 
         {activeTab === "overview" && (
           <EditOverviewSection
+            initialAbout={profile?.about_me ?? ""}
             onContinue={handleOverviewContinue}
             disabled={saving}
           />
@@ -712,12 +731,28 @@ export default function BuyerProfileEdit() {
 
         {activeTab === "finances" && (
           <FinanceEdit
-            onBack={() =>
-              setActiveTab(
-                "acquisition-preferences",
-              )
-            }
-            disabled={saving}
+             purchasePrice={
+            preferences?.maximum_purchase_price != null
+              ? String(preferences.maximum_purchase_price)
+              : ""
+          }
+          onPurchasePriceChange={(value) => {
+            setPreferences((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    maximum_purchase_price:
+                      value.trim() === ""
+                        ? null
+                        : Number(value),
+                  }
+                : previous,
+            );
+          }}
+          onBack={() =>
+            setActiveTab("acquisition-preferences")
+          }
+          disabled={saving}
           />
         )}
 

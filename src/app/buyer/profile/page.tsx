@@ -32,7 +32,7 @@ const USE_MOCK_PROFILE = true;
 const MOCK_PROFILE: BuyerProfile = {
   id: "mock-buyer-profile-id",
   user_id: "mock-user-id",
-
+  about_me: "",
   buyer_type: "first_time_owner",
 
   current_industry: "Technology",

@@ -1,4 +1,4 @@
-.finance-edit {
+/* .finance-edit {
   width: 100%;
   min-height: 880px;
   box-sizing: border-box;
@@ -183,4 +183,176 @@
 
 .finance-edit {
   margin-bottom: 32px;
+} */
+
+
+
+
+.finance-edit {
+  width: 100%;
+  min-height: 880px;
+  box-sizing: border-box;
+  position: relative;
+
+  padding: 20px 20px 78px;
+
+  border: 1px solid #d8dce1;
+  border-radius: 5px;
+
+  background: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  margin-bottom: 32px;
+}
+
+/* Fields */
+
+.finance-edit__fields {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Purchase Price field */
+
+.field {
+  width: 320px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field label {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 400;
+  color: #333d4d;
+}
+
+.field input {
+  width: 320px;
+  height: 40px;
+
+  box-sizing: border-box;
+
+  padding: 0 12px;
+
+  border: 1px solid #b7bec7;
+  border-radius: 7px;
+
+  background: #f7f8f9;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  color: #12161d;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.field input::placeholder {
+  color: #8a929d;
+}
+
+.field input:focus {
+  border-color: #498441;
+
+  box-shadow: 0 0 0 2px rgba(73, 132, 65, 0.1);
+}
+
+.field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Remove number input spinner */
+
+.field input::-webkit-outer-spin-button,
+.field input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.field input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Validation error */
+
+.field-error {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  color: #c0392b;
+}
+
+/* Back navigation */
+
+.finance-edit__navigation {
+  position: absolute;
+
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.finance-edit__navigation button {
+  width: 50px;
+  height: 48px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #498441;
+  color: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 20px;
+
+  cursor: pointer;
+
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.finance-edit__navigation button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.finance-edit__navigation button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+
+@media (max-width: 700px) {
+  .finance-edit {
+    min-height: 0;
+    padding: 20px 16px 78px;
+  }
+
+  .field,
+  .field input {
+    width: 100%;
+  }
+
+  .finance-edit__navigation {
+    left: 16px;
+    right: 16px;
+  }
 }
