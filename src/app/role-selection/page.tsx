@@ -20,7 +20,9 @@ export default function RoleSelectionPage() {
       setRole(selected);
       setStep(3);
       console.log("🚀 Role selected:", selected);
-      // We don't navigate anywhere yet as the dashboard is not built.
+      if (selected === 'buyer') {
+        router.push('/buyer-onboarding/about-you');
+      }
     }
   };
 

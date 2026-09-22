@@ -6,7 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useRouter } from 'next/navigation';
 import AuthLayout from '@/components/common/AuthLayout';
-import { OtpInput } from '@/components/common/OtpInput';
+import { OtpInput } from '@/components/common/otpInput';
 import { PasswordInput } from '@/components/common/PasswordInput';
 import { Button } from '@/components/common/Button';
 import { useAuthStore } from '@/store/authStore';

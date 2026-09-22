@@ -180,6 +180,7 @@ export default function AboutYouPage() {
     });
 
     nextStep();
+    router.push('/buyer-dashboard');
   };
 
   const handleBack = () => {
