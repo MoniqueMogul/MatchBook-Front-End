@@ -1,47 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
 import { useRouter } from 'next/navigation';
 
 import AuthLayout from '@/components/common/AuthLayout';
 import { OtpInput } from '@/components/common/OtpInput';
-import { PasswordInput } from '@/components/common/PasswordInput';
 import { Button } from '@/components/common/Button';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
-
-const schema = yup.object().shape({
-  password: yup
-    .string()
-    .min(8, 'Must be at least 8 characters')
-    .required('Password is required'),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required('Confirm password is required'),
-});
-
-type VerifyFormValues = yup.InferType<typeof schema>;
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const { email, setStep } = useAuthStore();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<VerifyFormValues>({
-    resolver: yupResolver(schema),
-  });
-
   const [otp, setOtp] = useState('');
-  const [otpVerified, setOtpVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [timer, setTimer] = useState(27);
   const [resending, setResending] = useState(false);
@@ -58,7 +31,7 @@ export default function VerifyEmailPage() {
   }, [timer]);
 
   /* ------------------------------
-     Step 1 — Verify OTP
+     Verify OTP → redirect on success
      ------------------------------ */
   const handleVerifyOtp = async () => {
     if (otp.length !== 8) {
@@ -81,39 +54,14 @@ export default function VerifyEmailPage() {
         return;
       }
 
-      setOtpVerified(true);
+      // Session created. Move on.
+      setStep(2);
+      router.push('/role-selection');
     } catch (err) {
       setErrorMessage('Could not verify the code. Please try again.');
       console.error(err);
     } finally {
       setVerifying(false);
-    }
-  };
-
-  /* ------------------------------
-     Step 2 — Set password + continue
-     ------------------------------ */
-  const onSubmit = async (data: VerifyFormValues) => {
-    setSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-        return;
-      }
-
-      setStep(2);
-      router.push('/role-selection');
-    } catch (err) {
-      setErrorMessage('Something went wrong. Please try again.');
-      console.error(err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -138,7 +86,6 @@ export default function VerifyEmailPage() {
 
       setTimer(30);
       setOtp('');
-      setOtpVerified(false);
     } catch (err) {
       setErrorMessage('Could not resend the code. Please try again.');
       console.error(err);
@@ -195,59 +142,20 @@ export default function VerifyEmailPage() {
         )}
       </p>
 
-      {!otpVerified && (
-        <>
-          {errorMessage && (
-            <p className="form-group__error" style={{ marginTop: 8 }}>
-              {errorMessage}
-            </p>
-          )}
-          <Button
-            type="button"
-            onClick={handleVerifyOtp}
-            disabled={verifying || otp.length !== 8}
-            style={{ marginTop: '16px', width: '100%' }}
-          >
-            {verifying ? 'Verifying…' : 'Verify OTP'}
-          </Button>
-        </>
+      {errorMessage && (
+        <p className="form-group__error" style={{ marginTop: 8 }}>
+          {errorMessage}
+        </p>
       )}
 
-      {otpVerified && (
-        <>
-          <div className="divider" />
-          <h3 className="section-title">Set up Your Password</h3>
-
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <PasswordInput
-              label="Password"
-              placeholder="Placeholder text"
-              {...register('password')}
-              error={errors.password?.message}
-            />
-            <PasswordInput
-              label="Confirm Password"
-              placeholder="Placeholder text"
-              {...register('confirmPassword')}
-              error={errors.confirmPassword?.message}
-            />
-
-            {errorMessage && (
-              <p className="form-group__error" style={{ marginTop: 8 }}>
-                {errorMessage}
-              </p>
-            )}
-
-            <Button
-              type="submit"
-              disabled={submitting}
-              style={{ marginTop: '20px', width: '100%' }}
-            >
-              {submitting ? 'Saving…' : 'Verify & Continue'}
-            </Button>
-          </form>
-        </>
-      )}
+      <Button
+        type="button"
+        onClick={handleVerifyOtp}
+        disabled={verifying || otp.length !== 8}
+        style={{ marginTop: '16px', width: '100%' }}
+      >
+        {verifying ? 'Verifying…' : 'Verify & Continue'}
+      </Button>
     </AuthLayout>
   );
 }
