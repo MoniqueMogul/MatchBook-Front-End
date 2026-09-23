@@ -5,8 +5,6 @@ import {
   AlertTriangle,
   Check,
   ChevronLeft,
-  DollarSign,
-  FileText,
   LockKeyhole,
   MapPin,
   ShieldCheck,
@@ -36,6 +34,15 @@ function formatCurrency(value: number | null): string {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatCompactCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
   }).format(value);
 }
 
@@ -76,6 +83,7 @@ export default function MatchDetail({
     business,
     match,
     highlights,
+    financialVerification,
     ndaRequired,
     ndaSigned,
   } = data;
@@ -498,69 +506,214 @@ export default function MatchDetail({
               </div>
             </section>
 
-            <section className="match-detail__section">
+            <section className="match-detail__financial-section">
               <h2>Finances</h2>
 
-              <div className="match-detail__finance-grid">
-                <div>
-                  <DollarSign size={20} />
-                  <span>Asking Price</span>
-                  <strong>
-                    {formatCurrency(
-                      business.askingPrice,
-                    )}
-                  </strong>
-                </div>
+              <div className="match-detail__finance-card">
+                <dl className="match-detail__finance-list">
+                  <div>
+                    <dt>Annual Revenue</dt>
+                    <dd>
+                      {formatRevenueRange(
+                        business.annualRevenueMin,
+                        business.annualRevenueMax,
+                      )}
+                    </dd>
+                  </div>
 
-                <div>
-                  <TrendingUp size={20} />
-                  <span>Annual Revenue</span>
-                  <strong>
-                    {formatRevenueRange(
-                      business.annualRevenueMin,
-                      business.annualRevenueMax,
-                    )}
-                  </strong>
-                </div>
+                  <div>
+                    <dt>Annual Profit (SDE)</dt>
+                    <dd>
+                      {formatCurrency(
+                        business.annualProfit,
+                      )}
+                    </dd>
+                  </div>
 
-                <div>
-                  <DollarSign size={20} />
-                  <span>Annual Profit</span>
-                  <strong>
-                    {formatCurrency(
-                      business.annualProfit,
-                    )}
-                  </strong>
-                </div>
+                  <div>
+                    <dt>Asking Price</dt>
+                    <dd>
+                      {formatCurrency(
+                        business.askingPrice,
+                      )}
+                    </dd>
+                  </div>
 
-                <div>
-                  <TrendingUp size={20} />
-                  <span>Profit Margin</span>
-                  <strong>
-                    {business.estimatedProfitMargin !== null
-                      ? `${business.estimatedProfitMargin}%`
-                      : "N/A"}
-                  </strong>
+                  <div>
+                    <dt>Years in Operation</dt>
+                    <dd>
+                      {business.yearsInOperation !== null
+                        ? `${business.yearsInOperation} years`
+                        : "N/A"}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="match-detail__profit-margin">
+                  <div>
+                    <span>Est. profit margin</span>
+                    <strong>
+                      {business.estimatedProfitMargin !== null
+                        ? `~${business.estimatedProfitMargin}%`
+                        : "N/A"}
+                    </strong>
+                  </div>
+
+                  <div
+                    className="match-detail__profit-margin-track"
+                    aria-hidden="true"
+                  >
+                    <span
+                      style={{
+                        width:
+                          business.estimatedProfitMargin !==
+                          null
+                            ? `${Math.min(
+                                business.estimatedProfitMargin,
+                                100,
+                              )}%`
+                            : "0%",
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </section>
 
-            <section className="match-detail__section">
-              <h2>Financial Documents</h2>
+            <section className="match-detail__financial-metrics">
+              <div className="match-detail__financial-metrics-heading">
+                <h2>Financial Document Metrics</h2>
 
-              <div className="match-detail__document-card">
-                <FileText size={22} />
-
-                <div>
-                  <strong>
-                    Confidential financial documents
-                  </strong>
-                  <span>
-                    Documents will appear here when
-                    available.
+                {financialVerification.status ===
+                  "verified" && (
+                  <span className="match-detail__verified-badge">
+                    <ShieldCheck size={14} />
+                    Verified Financials
                   </span>
-                </div>
+                )}
               </div>
+
+              {financialVerification.status ===
+              "verified" ? (
+                <div className="match-detail__metrics-table-wrapper">
+                  <table className="match-detail__metrics-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">
+                          Financial Metrics
+                        </th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <th
+                              key={period.fiscalYear}
+                              scope="col"
+                            >
+                              {period.fiscalYear}
+                            </th>
+                          ),
+                        )}
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr>
+                        <th scope="row">Revenue</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {formatCompactCurrency(
+                                period.revenue,
+                              )}
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">SDE</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {formatCompactCurrency(
+                                period.sde,
+                              )}
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">SDE Margin</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {period.sdeMargin.toFixed(1)}%
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">EBITDA Margin</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {period.ebitdaMargin.toFixed(
+                                1,
+                              )}
+                              %
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">Working Capital</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {formatCompactCurrency(
+                                period.workingCapital,
+                              )}
+                            </td>
+                          ),
+                        )}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="match-detail__verification-lock">
+                  <div className="match-detail__verification-lock-copy">
+                    <span className="match-detail__verification-lock-icon">
+                      <LockKeyhole size={20} />
+                    </span>
+
+                    <div>
+                      <strong>
+                        Unlock P&amp;L statements and tax
+                        return details
+                      </strong>
+
+                      <span>
+                        Complete your identity and financial
+                        capacity verification to access
+                        two-year financials.
+                      </span>
+                    </div>
+                  </div>
+
+                  <button type="button">
+                    Finish Verification
+                  </button>
+                </div>
+              )}
             </section>
           </>
         )}

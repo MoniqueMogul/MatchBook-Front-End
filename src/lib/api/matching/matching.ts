@@ -147,6 +147,28 @@ export function getMatchViewDemoData(
       },
     ],
 
+    financialVerification: {
+      status: "verified",
+      periods: [
+        {
+          fiscalYear: "FY2023",
+          revenue: 650000,
+          sde: 180000,
+          sdeMargin: 27.7,
+          ebitdaMargin: 20,
+          workingCapital: 55000,
+        },
+        {
+          fiscalYear: "FY2024",
+          revenue: 720000,
+          sde: 200000,
+          sdeMargin: 27.8,
+          ebitdaMargin: 20.6,
+          workingCapital: 62000,
+        },
+      ],
+    },
+
     ndaRequired: true,
     ndaSigned: false,
   };

@@ -76,10 +76,30 @@ export interface MatchHighlight {
  * `match` contains deterministic Matching Engine output.
  * `business` contains business/listing display information.
  */
+
+export type FinancialVerificationStatus =
+  | "unverified"
+  | "verified";
+
+export interface FinancialMetricPeriod {
+  fiscalYear: string;
+  revenue: number;
+  sde: number;
+  sdeMargin: number;
+  ebitdaMargin: number;
+  workingCapital: number;
+}
+
+export interface FinancialVerificationDetails {
+  status: FinancialVerificationStatus;
+  periods: FinancialMetricPeriod[];
+}
+
 export interface BuyerMatchViewData {
   match: RankedMatch;
   business: MatchBusinessDetails;
   highlights: MatchHighlight[];
+  financialVerification: FinancialVerificationDetails;
 
   ndaRequired: boolean;
   ndaSigned: boolean;

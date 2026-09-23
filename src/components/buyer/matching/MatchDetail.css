@@ -494,61 +494,245 @@
   line-height: 1.6;
 }
 
-.match-detail__finance-grid {
+.match-detail__financial-section {
+  margin-top: 28px;
+}
+
+.match-detail__financial-section > h2 {
+  margin: 0 0 14px;
+  color: #333d4d;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.match-detail__finance-card {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.match-detail__finance-grid > div {
-  min-height: 118px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 7px;
-  padding: 18px;
-  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 24px;
+  padding: 20px 22px;
   border: 1px solid #e2e5e9;
-  border-radius: 10px;
-  background: #fafbfb;
-  color: #55994c;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
-.match-detail__finance-grid span {
+.match-detail__finance-list {
+  margin: 0;
+}
+
+.match-detail__finance-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 34px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.match-detail__finance-list > div:last-child {
+  border-bottom: 0;
+}
+
+.match-detail__finance-list dt {
   color: #667080;
+  font-size: 13px;
+}
+
+.match-detail__finance-list dd {
+  margin: 0;
+  color: #333d4d;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.match-detail__profit-margin {
+  align-self: start;
+  padding: 16px;
+  border-radius: 10px;
+  background: #f5faf4;
+}
+
+.match-detail__profit-margin > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.match-detail__profit-margin span {
+  color: #55994c;
   font-size: 12px;
 }
 
-.match-detail__finance-grid strong {
-  color: #333d4d;
-  font-size: 16px;
+.match-detail__profit-margin strong {
+  color: #55994c;
+  font-size: 20px;
+  font-weight: 600;
 }
 
-.match-detail__document-card {
+.match-detail__profit-margin-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.match-detail__profit-margin-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #55994c;
+}
+
+.match-detail__financial-metrics {
+  margin-top: 28px;
+}
+
+.match-detail__financial-metrics-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.match-detail__financial-metrics-heading h2 {
+  margin: 0;
+  color: #333d4d;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.match-detail__verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef7ec;
+  color: #55994c;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.match-detail__metrics-table-wrapper {
+  overflow-x: auto;
+  padding: 14px 18px 18px;
+  border: 1px solid #e2e5e9;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.match-detail__metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #333d4d;
+}
+
+.match-detail__metrics-table th,
+.match-detail__metrics-table td {
+  padding: 9px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.match-detail__metrics-table thead th {
+  border-bottom: 1px solid #e2e5e9;
+  color: #667080;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.match-detail__metrics-table th:first-child {
+  width: 60%;
+  padding-left: 0;
+  text-align: left;
+}
+
+.match-detail__metrics-table td,
+.match-detail__metrics-table thead th:not(:first-child) {
+  text-align: right;
+}
+
+.match-detail__metrics-table tbody th {
+  padding-left: 0;
+  color: #667080;
+  font-weight: 500;
+}
+
+.match-detail__metrics-table tbody td {
+  font-weight: 600;
+}
+
+.match-detail__verification-lock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px;
+  border: 1px dashed #d9dee3;
+  border-radius: 12px;
+  background: #fafbfb;
+}
+
+.match-detail__verification-lock-copy {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 18px;
-  border: 1px solid #e2e5e9;
-  border-radius: 10px;
-  background: #fafbfb;
-  color: #55994c;
 }
 
-.match-detail__document-card > div {
+.match-detail__verification-lock-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #eef0f2;
+  color: #333d4d;
+}
+
+.match-detail__verification-lock-copy > div {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
-.match-detail__document-card strong {
+.match-detail__verification-lock-copy strong {
   color: #333d4d;
   font-size: 14px;
 }
 
-.match-detail__document-card span {
+.match-detail__verification-lock-copy > div > span {
   color: #667080;
   font-size: 12px;
+  line-height: 1.5;
+}
+
+.match-detail__verification-lock > button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 7px;
+  background: #55994c;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.match-detail__verification-lock > button:hover {
+  background: #477f40;
+}
+
+.match-detail__verification-lock > button:focus-visible {
+  outline: 3px solid rgba(85, 153, 76, 0.3);
+  outline-offset: 2px;
 }
 
 .match-detail__modal-backdrop {
@@ -856,9 +1040,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .match-detail__finance-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 
   .match-detail__nda-signing-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -919,7 +1100,6 @@
 
   .match-detail__dimensions,
   .match-detail__info-grid,
-  .match-detail__finance-grid,
   .match-detail__nda-party-grid,
   .match-detail__nda-signing-row {
     grid-template-columns: 1fr;
@@ -959,6 +1139,28 @@
   }
 
   .match-detail__nda-submit {
+    width: 100%;
+  }
+
+  .match-detail__finance-card {
+    grid-template-columns: 1fr;
+  }
+
+  .match-detail__financial-metrics-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .match-detail__metrics-table {
+    min-width: 520px;
+  }
+
+  .match-detail__verification-lock {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .match-detail__verification-lock > button {
     width: 100%;
   }
 }
