@@ -7,6 +7,7 @@ import type {
   ApiMessage,
   ApiMessageCreate,
   MessageConversation,
+  MessageParticipant,
   MessagesViewData,
 } from "./messages.types";
 
@@ -69,6 +70,184 @@ export async function markMessageAsRead(
   );
 
   return response.data;
+}
+
+function getInitials(
+  firstName: string,
+  lastName: string,
+): string {
+  const initials = [firstName, lastName]
+    .map((name) => name.trim().charAt(0))
+    .filter(Boolean)
+    .join("")
+    .toUpperCase();
+
+  return initials || "?";
+}
+
+function formatMessageTime(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatRelativeTime(value: string): string {
+  const timestamp = new Date(value).getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return "";
+  }
+
+  const elapsedMilliseconds = Math.max(
+    0,
+    Date.now() - timestamp,
+  );
+  const elapsedMinutes = Math.floor(
+    elapsedMilliseconds / 60000,
+  );
+
+  if (elapsedMinutes < 1) {
+    return "Just now";
+  }
+
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes}m ago`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+
+  if (elapsedHours < 24) {
+    return `${elapsedHours}h ago`;
+  }
+
+  const elapsedDays = Math.floor(elapsedHours / 24);
+
+  if (elapsedDays < 30) {
+    return `${elapsedDays}d ago`;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(timestamp));
+}
+
+function getBusinessName(
+  conversation: ApiConversation,
+): string {
+  return (
+    conversation.business.dba?.trim() ||
+    conversation.business.legal_name?.trim() ||
+    "Business"
+  );
+}
+
+function mapApiConversation(
+  conversation: ApiConversation,
+  messages: ApiMessage[],
+  currentUserId: string,
+): MessageConversation {
+  const participantName = [
+    conversation.participant.first_name,
+    conversation.participant.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const latestTimestamp =
+    conversation.latest_message?.created_at ??
+    conversation.updated_at;
+
+  return {
+    id: conversation.id,
+    matchId: conversation.match_id,
+    category:
+      conversation.unread_count > 0 ? "new" : "open",
+    participant: {
+      id: conversation.participant.user_id,
+      name: participantName || "MatchBook User",
+      initials: getInitials(
+        conversation.participant.first_name,
+        conversation.participant.last_name,
+      ),
+    },
+    business: {
+      id: conversation.business.id,
+      name: getBusinessName(conversation),
+      city: conversation.business.city,
+      state: conversation.business.state,
+      description:
+        "Additional business details are not available in the conversation response.",
+      industry: conversation.business.industry,
+      acquisitionType: "N/A",
+      yearsInOperation: null,
+      employees: null,
+      askingPrice: null,
+      annualRevenueMin: null,
+      annualRevenueMax: null,
+      annualProfit: null,
+      ownerHoursPerWeek: null,
+      reasonForSelling: "N/A",
+      desiredTimeline: "N/A",
+      transitionSupport: "N/A",
+      propertyType: "N/A",
+      leaseTermRemaining: "N/A",
+      includedAssets: [],
+      estimatedProfitMargin: null,
+    },
+    preview:
+      conversation.latest_message?.content ??
+      "No messages yet.",
+    relativeTime: formatRelativeTime(latestTimestamp),
+    unreadCount: conversation.unread_count,
+    ndaRequired: true,
+    ndaSigned: true,
+    messages: messages.map((message) => ({
+      id: message.id,
+      sender:
+        message.sender_id === currentUserId
+          ? "current-user"
+          : "participant",
+      content: message.content,
+      sentAt: formatMessageTime(message.created_at),
+      read:
+        message.sender_id === currentUserId ||
+        message.read_at !== null,
+    })),
+  };
+}
+
+export async function getMessagesViewData(
+  currentUser: MessageParticipant,
+): Promise<MessagesViewData> {
+  const apiConversations = await getConversations();
+
+  const conversations = await Promise.all(
+    apiConversations.map(async (conversation) => {
+      const messages = await getConversationMessages(
+        conversation.id,
+      );
+
+      return mapApiConversation(
+        conversation,
+        messages,
+        currentUser.id,
+      );
+    }),
+  );
+
+  return {
+    currentUser,
+    conversations,
+  };
 }
 
 /**

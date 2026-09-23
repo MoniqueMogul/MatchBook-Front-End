@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -18,8 +17,11 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { generateConversationAiSuggestion } from "@/lib/api/messages/messages";
-import { readWarmIntroductions } from "@/lib/api/messages/messages.demo-storage";
+import {
+  generateConversationAiSuggestion,
+  markMessageAsRead,
+  sendConversationMessage,
+} from "@/lib/api/messages/messages";
 import type {
   MessageCategory,
   MessageConversation,
@@ -94,7 +96,14 @@ export default function MessagesDashboard({
     data.conversations,
   );
   const [activeCategory, setActiveCategory] =
-    useState<MessageCategory>("new");
+    useState<MessageCategory>(() =>
+      data.conversations.some(
+        (conversation) =>
+          conversation.category === "new",
+      )
+        ? "new"
+        : "open",
+    );
   const [
     selectedConversationId,
     setSelectedConversationId,
@@ -108,6 +117,12 @@ export default function MessagesDashboard({
     setBusinessConversationId,
   ] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [isSendingMessage, setIsSendingMessage] =
+    useState(false);
+  const [
+    messageSendError,
+    setMessageSendError,
+  ] = useState<string | null>(null);
   const [lastAiSuggestion, setLastAiSuggestion] = useState("");
   const [
     isGeneratingSuggestion,
@@ -122,85 +137,6 @@ export default function MessagesDashboard({
     setAiSuggestionError,
   ] = useState<string | null>(null);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const storedIntroductions =
-        readWarmIntroductions();
-
-      if (storedIntroductions.length === 0) {
-        return;
-      }
-
-      setConversations((current) => {
-        let next = [...current];
-
-        for (const introduction of storedIntroductions) {
-          const conversationId =
-            `demo-warm-${introduction.business.id}`;
-
-          const sentAt = new Intl.DateTimeFormat(
-            "en-US",
-            {
-              hour: "numeric",
-              minute: "2-digit",
-            },
-          ).format(
-            new Date(introduction.createdAt),
-          );
-
-          const storedConversation: MessageConversation = {
-            id: conversationId,
-            matchId:
-              `demo-match-${introduction.business.id}`,
-            category: "open",
-            participant: {
-              id:
-                `demo-seller-${introduction.business.id}`,
-              name: "Business Owner",
-              initials: "BO",
-            },
-            business: introduction.business,
-            preview: introduction.content,
-            relativeTime: "Just now",
-            unreadCount: 0,
-            ndaRequired: true,
-            ndaSigned: true,
-            messages: [
-              {
-                id:
-                  `demo-warm-message-${introduction.business.id}`,
-                sender: "current-user",
-                content: introduction.content,
-                sentAt,
-                read: true,
-              },
-            ],
-          };
-
-          const existingIndex = next.findIndex(
-            (conversation) =>
-              conversation.id === conversationId,
-          );
-
-          if (existingIndex >= 0) {
-            next[existingIndex] =
-              storedConversation;
-          } else {
-            next = [
-              storedConversation,
-              ...next,
-            ];
-          }
-        }
-
-        return next;
-      });
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, []);
 
   const categoryCounts = useMemo(() => {
     return conversations.reduce(
@@ -250,6 +186,7 @@ export default function MessagesDashboard({
     setLastAiSuggestion("");
     setHasGeneratedSuggestion(false);
     setAiSuggestionError(null);
+    setMessageSendError(null);
   }
 
   function selectCategory(
@@ -276,6 +213,14 @@ export default function MessagesDashboard({
       return;
     }
 
+    const unreadMessageIds = conversation.messages
+      .filter(
+        (message) =>
+          message.sender === "participant" &&
+          !message.read,
+      )
+      .map((message) => message.id);
+
     resetComposer();
     setSelectedConversationId(conversation.id);
 
@@ -284,6 +229,10 @@ export default function MessagesDashboard({
         item.id === conversation.id
           ? {
               ...item,
+              category:
+                item.category === "new"
+                  ? "open"
+                  : item.category,
               unreadCount: 0,
               messages: item.messages.map(
                 (message) => ({
@@ -295,6 +244,14 @@ export default function MessagesDashboard({
           : item,
       ),
     );
+
+    if (unreadMessageIds.length > 0) {
+      void Promise.allSettled(
+        unreadMessageIds.map((messageId) =>
+          markMessageAsRead(messageId),
+        ),
+      );
+    }
   }
 
   function signNdaAndOpen() {
@@ -373,52 +330,71 @@ export default function MessagesDashboard({
     }
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     const content = draft.trim();
 
     if (
       !selectedConversation ||
       !content ||
-      isGeneratingSuggestion
+      isGeneratingSuggestion ||
+      isSendingMessage
     ) {
       return;
     }
 
-    setConversations((current) =>
-      current.map((conversation) =>
-        conversation.id ===
-        selectedConversation.id
-          ? {
-              ...conversation,
-              preview: content,
-              relativeTime: "Just now",
-              messages: [
-                ...conversation.messages,
-                {
-                  id:
-                    `demo-message-${Date.now()}`,
-                  sender: "current-user",
-                  content,
-                  sentAt:
-                    new Intl.DateTimeFormat(
-                      "en-US",
-                      {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      },
-                    ).format(new Date()),
-                  read: true,
-                },
-              ],
-            }
-          : conversation,
-      ),
-    );
+    setIsSendingMessage(true);
+    setMessageSendError(null);
 
-    setDraft("");
-    setLastAiSuggestion("");
-    setHasGeneratedSuggestion(false);
-    setAiSuggestionError(null);
+    try {
+      const message = await sendConversationMessage(
+        selectedConversation.id,
+        {
+          content,
+        },
+      );
+
+      const sentAt = new Intl.DateTimeFormat(
+        "en-US",
+        {
+          hour: "numeric",
+          minute: "2-digit",
+        },
+      ).format(new Date(message.created_at));
+
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id ===
+          selectedConversation.id
+            ? {
+                ...conversation,
+                preview: message.content,
+                relativeTime: "Just now",
+                messages: [
+                  ...conversation.messages,
+                  {
+                    id: message.id,
+                    sender: "current-user",
+                    content: message.content,
+                    sentAt,
+                    read: message.read_at !== null,
+                  },
+                ],
+              }
+            : conversation,
+        ),
+      );
+
+      setDraft("");
+      setLastAiSuggestion("");
+      setHasGeneratedSuggestion(false);
+      setAiSuggestionError(null);
+    } catch {
+      setMessageSendError(
+        "Unable to send your message. Please try again.",
+      );
+    } finally {
+      setIsSendingMessage(false);
+    }
   }
 
   function archiveConversation() {
@@ -585,6 +561,10 @@ export default function MessagesDashboard({
                 onChange={(event) => {
                   setDraft(event.target.value);
 
+                  if (messageSendError) {
+                    setMessageSendError(null);
+                  }
+
                   if (aiSuggestionError) {
                     setAiSuggestionError(null);
                   }
@@ -595,7 +575,7 @@ export default function MessagesDashboard({
                     !event.shiftKey
                   ) {
                     event.preventDefault();
-                    sendMessage();
+                    void sendMessage();
                   }
                 }}
               />
@@ -604,13 +584,34 @@ export default function MessagesDashboard({
                 type="button"
                 aria-label="Send message"
                 disabled={
-                  !draft.trim() || isGeneratingSuggestion
+                  !draft.trim() ||
+                  isGeneratingSuggestion ||
+                  isSendingMessage
                 }
-                onClick={sendMessage}
+                onClick={() => {
+                  void sendMessage();
+                }}
               >
-                <Send size={23} />
+                {isSendingMessage ? (
+                  <LoaderCircle
+                    className="messages-dashboard__ai-spinner"
+                    size={20}
+                  />
+                ) : (
+                  <Send size={23} />
+                )}
               </button>
             </div>
+
+            {messageSendError && (
+              <p
+                className="messages-dashboard__ai-error"
+                role="alert"
+                aria-live="polite"
+              >
+                {messageSendError}
+              </p>
+            )}
           </div>
         </section>
       ) : (
