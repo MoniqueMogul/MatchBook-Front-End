@@ -6,7 +6,7 @@ import type { Business } from "@/types/seller";
    - true  → returns mock data (dev, backend not ready)
    - false → hits the real backend
    ===================================================== */
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 /* =====================================================
    Mock data
