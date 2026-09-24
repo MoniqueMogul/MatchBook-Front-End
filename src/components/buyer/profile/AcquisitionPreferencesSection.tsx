@@ -8,8 +8,17 @@ import {
   X,
 } from "lucide-react";
 
-import type { ApiTargetLocation } from "@/lib/api/buyerPreferences.types";
+import type {
+  ApiTargetLocation,
+  TargetIndustryPreference,
+} from "@/lib/api/buyerPreferences";
 import { searchLocations } from "@/lib/api/locations";
+import {
+  getBusinessModelOptions,
+  getIndustryOptions,
+  type BusinessModelOption,
+  type IndustryOption,
+} from "@/lib/api/taxonomy";
 
 import "./AcquisitionPreferencesSection.css";
 
@@ -35,8 +44,10 @@ type CustomerConcentrationOption =
   | "no";
 
 type AcquisitionPreferenceData = {
-  industries: string[];
-  
+  targetIndustryPreferences: TargetIndustryPreference[];
+  targetBusinessModels: string[];
+  targetBusinessTypes: string[];
+
   targetLocations: ApiTargetLocation[];
 
   minimumYearsInOperation?: number;
@@ -58,7 +69,9 @@ type AcquisitionPreferenceData = {
 };
 
 interface AcquisitionPreferencesSectionProps {
-  initialIndustries?: string[];
+  initialTargetIndustryPreferences?: TargetIndustryPreference[];
+  initialTargetBusinessModels?: string[];
+  initialTargetBusinessTypes?: string[];
   initialTargetLocations?: ApiTargetLocation[];
   initialMinimumYearsInOperation?: number | null;
   initialMinimumARR?: number | null;
@@ -90,17 +103,7 @@ interface AcquisitionPreferencesSectionProps {
  * ------------------------------------------------
  */
 
-const INDUSTRY_OPTIONS = [
-  "Food & Beverage",
-  "Retail",
-  "Health & Wellness",
-  "Beauty & Personal Care",
-  "Home & Professional Services",
-  "Automotive",
-  "Education & Childcare",
-  "Entertainment & Recreation",
-  "Technology",
-];
+
 
 const CUSTOMER_CONCENTRATION_OPTIONS = [
   "Yes",
@@ -159,9 +162,14 @@ const timelineOptions: Array<{
  * ------------------------------------------------
  */
 
+interface MultiSelectOption {
+  value: string;
+  label: string;
+}
+
 interface MultiSelectProps {
   label: string;
-  options: string[];
+  options: MultiSelectOption[];
   selected: string[];
   onChange: (values: string[]) => void;
   disabled?: boolean;
@@ -247,11 +255,11 @@ function MultiSelect({
         {open && (
           <div className="acquisition-preferences-section__dropdown">
             {options.map((option) => {
-              const selectedOption = selected.includes(option);
+              const selectedOption = selected.includes(option.value);
 
               return (
                 <label
-                  key={option}
+                  key={option.value}
                   className={`acquisition-preferences-section__dropdown-option ${
                     selectedOption
                       ? "acquisition-preferences-section__dropdown-option--selected"
@@ -261,11 +269,11 @@ function MultiSelect({
                   <input
                     type="checkbox"
                     checked={selectedOption}
-                    onChange={() => toggleValue(option)}
+                    onChange={() => toggleValue(option.value)}
                     disabled={disabled}
                   />
 
-                  <span>{option}</span>
+                  <span>{option.label}</span>
 
                   <span className="acquisition-preferences-section__check">
                     {selectedOption ? "✓" : ""}
@@ -284,7 +292,9 @@ function MultiSelect({
               key={value}
               className="acquisition-preferences-section__pill"
             >
-              <span>{value}</span>
+              <span>
+                {options.find((option) => option.value === value)?.label ?? value}
+              </span>
 
               <button
                 type="button"
@@ -415,7 +425,9 @@ function SingleSelect({
  */
 
 export default function AcquisitionPreferencesSection({
-  initialIndustries = [],
+  initialTargetIndustryPreferences = [],
+  initialTargetBusinessModels = [],
+  initialTargetBusinessTypes = [],
   initialTargetLocations = [],
   initialMinimumYearsInOperation = null,
   initialMinimumARR = null,
@@ -432,7 +444,7 @@ export default function AcquisitionPreferencesSection({
   initialDealPreference = null,
   initialRealEstatePreference = null,
 
-  initialTimeline = "exploring",
+  initialTimeline,
 
   onBack,
   onContinue,
@@ -444,8 +456,24 @@ export default function AcquisitionPreferencesSection({
    * ------------------------------------------------
    */
 
-  const [industries, setIndustries] =
-    useState<string[]>(initialIndustries);
+  const [targetIndustryPreferences, setTargetIndustryPreferences] =
+    useState<TargetIndustryPreference[]>(initialTargetIndustryPreferences);
+
+  const [targetBusinessModels, setTargetBusinessModels] =
+    useState<string[]>(initialTargetBusinessModels);
+
+  const [targetBusinessTypes, setTargetBusinessTypes] =
+    useState<string[]>(initialTargetBusinessTypes);
+
+  const [industryOptions, setIndustryOptions] =
+    useState<IndustryOption[]>([]);
+
+  const [businessModelOptions, setBusinessModelOptions] =
+    useState<BusinessModelOption[]>([]);
+
+  const [taxonomyLoading, setTaxonomyLoading] = useState(true);
+  const [taxonomyError, setTaxonomyError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   
     /*
@@ -570,11 +598,100 @@ export default function AcquisitionPreferencesSection({
     );
 
   const [timeline, setTimeline] =
-    useState<TimelineOption>(initialTimeline);
+    useState<TimelineOption | "">(initialTimeline ?? "");
 
 
 
     /*
+   * ------------------------------------------------
+   * Dynamic Backend Taxonomy
+   * ------------------------------------------------
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTaxonomy = async () => {
+      try {
+        setTaxonomyLoading(true);
+        setTaxonomyError(null);
+
+        const [industries, businessModels] = await Promise.all([
+          getIndustryOptions(),
+          getBusinessModelOptions(),
+        ]);
+
+        if (!cancelled) {
+          setIndustryOptions(industries);
+          setBusinessModelOptions(businessModels);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setTaxonomyError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load industry and business model options.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setTaxonomyLoading(false);
+        }
+      }
+    };
+
+    loadTaxonomy();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedIndustryValues = targetIndustryPreferences.map(
+    (item) => item.industry,
+  );
+
+  const updateIndustrySelection = (values: string[]) => {
+    setTargetIndustryPreferences((current) => {
+      const existing = new Map(
+        current.map((item) => [item.industry, item]),
+      );
+
+      return values.map((industry) =>
+        existing.get(industry) ?? {
+          industry,
+          sub_industries: [],
+        },
+      );
+    });
+    setValidationError(null);
+  };
+
+  const updateSubIndustries = (
+    industry: string,
+    subIndustries: string[],
+  ) => {
+    setTargetIndustryPreferences((current) =>
+      current.map((item) =>
+        item.industry === industry
+          ? { ...item, sub_industries: subIndustries }
+          : item,
+      ),
+    );
+    setValidationError(null);
+  };
+
+  const businessTypeOptions: MultiSelectOption[] = [
+    { value: "sole_proprietorship", label: "Sole Proprietorship" },
+    { value: "partnership", label: "Partnership" },
+    { value: "llc", label: "LLC" },
+    { value: "s_corporation", label: "S Corporation" },
+    { value: "c_corporation", label: "C Corporation" },
+    { value: "nonprofit", label: "Nonprofit" },
+    { value: "other", label: "Other" },
+  ];
+
+  /*
    * ------------------------------------------------
    * Preferred Regions Autocomplete
    * ------------------------------------------------
@@ -840,66 +957,119 @@ export default function AcquisitionPreferencesSection({
    */
 
   const handleContinue = () => {
-    const trainingDays =
-      sellerTrainingDays === ""
-        ? undefined
-        : Number.parseInt(
-            sellerTrainingDays.replace(" days", ""),
-            10,
-          );
+    setValidationError(null);
+
+    const hasMissingIndustrySubIndustry =
+      targetIndustryPreferences.some(
+        (item) => item.sub_industries.length === 0,
+      );
+
+    const requiredChecks = [
+      {
+        missing: targetIndustryPreferences.length === 0,
+        label: "industry preferences",
+      },
+      {
+        missing: hasMissingIndustrySubIndustry,
+        label: "at least one sub-industry for every selected industry",
+      },
+      {
+        missing: targetBusinessModels.length === 0,
+        label: "business models",
+      },
+      {
+        missing: targetBusinessTypes.length === 0,
+        label: "business types",
+      },
+      {
+        missing: targetLocations.length === 0,
+        label: "preferred regions",
+      },
+      {
+        missing: maximumPurchasePrice.trim() === "",
+        label: "maximum purchase budget",
+      },
+      {
+        missing: minimumSDE.trim() === "",
+        label: "minimum SDE",
+      },
+      {
+        missing: preferredSDE.trim() === "",
+        label: "preferred SDE",
+      },
+      {
+        missing: minimumARR.trim() === "",
+        label: "minimum ARR",
+      },
+      {
+        missing: preferredARR.trim() === "",
+        label: "preferred ARR",
+      },
+      {
+        missing: preferredOwnerHoursPerWeek.trim() === "",
+        label: "preferred owner hours",
+      },
+      {
+        missing: sellerTrainingDays === "",
+        label: "seller transition training",
+      },
+      {
+        missing: dealPreference === "",
+        label: "deal preference",
+      },
+      {
+        missing: customerConcentration === "",
+        label: "customer concentration preference",
+      },
+      {
+        missing: timeline === "",
+        label: "acquisition timeline",
+      },
+    ];
+
+    const missing = requiredChecks
+      .filter((check) => check.missing)
+      .map((check) => check.label);
+
+    if (missing.length > 0) {
+      setValidationError(
+        `Please complete all fields marked “Required for matching”. Missing: ${missing.join(", ")}.`,
+      );
+      return;
+    }
+
+    const trainingDays = Number.parseInt(
+      sellerTrainingDays.replace(" days", ""),
+      10,
+    );
 
     const customerConcentrationValue =
-      customerConcentration === ""
-        ? undefined
-        : customerConcentration === "yes";
+      customerConcentration === "yes";
 
     onContinue?.({
-      industries,
+      targetIndustryPreferences,
+      targetBusinessModels,
+      targetBusinessTypes,
       targetLocations,
       minimumYearsInOperation:
-        toNumberOrUndefined(
-          minimumYearsInOperation,
-        ),
-
-      minimumARR:
-        toNumberOrUndefined(minimumARR),
-
-      minimumSDE:
-        toNumberOrUndefined(minimumSDE),
-
+        toNumberOrUndefined(minimumYearsInOperation),
+      minimumARR: toNumberOrUndefined(minimumARR),
+      minimumSDE: toNumberOrUndefined(minimumSDE),
       maximumPurchasePrice:
-        toNumberOrUndefined(
-          maximumPurchasePrice,
-        ),
-
-      preferredARR:
-        toNumberOrUndefined(preferredARR),
-
-      preferredSDE:
-        toNumberOrUndefined(preferredSDE),
-
+        toNumberOrUndefined(maximumPurchasePrice),
+      preferredARR: toNumberOrUndefined(preferredARR),
+      preferredSDE: toNumberOrUndefined(preferredSDE),
       preferredOwnerHoursPerWeek:
-        toNumberOrUndefined(
-          preferredOwnerHoursPerWeek,
-        ),
-
-      customerConcentration:
-        customerConcentrationValue,
-
-      sellerTrainingDays:
-        trainingDays,
-
+        toNumberOrUndefined(preferredOwnerHoursPerWeek),
+      customerConcentration: customerConcentrationValue,
+      sellerTrainingDays: trainingDays,
       dealPreference:
-        dealPreference === ""
-          ? undefined
-          : dealPreference,
-
+        dealPreference === "" ? undefined : dealPreference,
       realEstatePreference:
         realEstatePreference === ""
           ? undefined
           : realEstatePreference,
-
-      timeline,
+      timeline: timeline === "" ? undefined : timeline,
     });
   };
 
@@ -911,15 +1081,94 @@ export default function AcquisitionPreferencesSection({
 
   return (
     <section className="acquisition-preferences-section">
+      {validationError && (
+        <div
+          className="acquisition-preferences-section__validation-error"
+          role="alert"
+        >
+          {validationError}
+        </div>
+      )}
+
+      {taxonomyError && (
+        <div
+          className="acquisition-preferences-section__validation-error"
+          role="alert"
+        >
+          {taxonomyError}
+        </div>
+      )}
+
       <div className="acquisition-preferences-section__fields">
 
-        {/* Industries */}
+        {/* Matching-required taxonomy */}
+
+        <div className="acquisition-preferences-section__field">
+          <label className="acquisition-preferences-section__label">
+            Which industries are you interested in?
+            <span className="acquisition-preferences-section__required">
+              Required for matching
+            </span>
+          </label>
+
+          <MultiSelect
+            label=""
+            options={industryOptions.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            selected={selectedIndustryValues}
+            onChange={updateIndustrySelection}
+            disabled={disabled || taxonomyLoading}
+          />
+
+          {targetIndustryPreferences.map((preference) => {
+            const industry = industryOptions.find(
+              (option) => option.value === preference.industry,
+            );
+
+            if (!industry) return null;
+
+            return (
+              <MultiSelect
+                key={preference.industry}
+                label={`Sub-industries for ${industry.label}`}
+                options={industry.sub_industries.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+                selected={preference.sub_industries}
+                onChange={(values) =>
+                  updateSubIndustries(preference.industry, values)
+                }
+                disabled={disabled || taxonomyLoading}
+              />
+            );
+          })}
+        </div>
 
         <MultiSelect
-          label="Which industries are you interested in?"
-          options={INDUSTRY_OPTIONS}
-          selected={industries}
-          onChange={setIndustries}
+          label="Preferred Business Models — Required for matching"
+          options={businessModelOptions.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+          selected={targetBusinessModels}
+          onChange={(values) => {
+            setTargetBusinessModels(values);
+            setValidationError(null);
+          }}
+          disabled={disabled || taxonomyLoading}
+        />
+
+        <MultiSelect
+          label="Preferred Business Types — Required for matching"
+          options={businessTypeOptions}
+          selected={targetBusinessTypes}
+          onChange={(values) => {
+            setTargetBusinessTypes(values);
+            setValidationError(null);
+          }}
           disabled={disabled}
         />
 
@@ -934,6 +1183,7 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Preferred Regions
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </label>
 
           <div className="acquisition-preferences-section__location-input-wrap">
@@ -1093,6 +1343,7 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Minimum Annual Recurring Revenue (ARR)
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </label>
 
           <input
@@ -1117,6 +1368,7 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Minimum Seller&apos;s Discretionary Earnings (SDE)
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </label>
 
           <input
@@ -1141,6 +1393,7 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Maximum Purchase Budget
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </label>
 
           <input
@@ -1167,6 +1420,7 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Preferred Annual Recurring Revenue (ARR)
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </label>
 
           <input
@@ -1191,6 +1445,7 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Preferred Seller&apos;s Discretionary Earnings (SDE)
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </label>
 
           <input
@@ -1215,6 +1470,7 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Preferred Owner Hours per Week
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </label>
 
           <input
@@ -1238,7 +1494,7 @@ export default function AcquisitionPreferencesSection({
         {/* Customer Concentration */}
 
         <SingleSelect
-          label="Would you consider a business where one customer makes up more than 25% of its revenue?"
+          label="Would you consider a business where one customer makes up more than 25% of its revenue? — Required for matching"
           value={
             customerConcentration === "yes"
               ? "Yes"
@@ -1258,7 +1514,7 @@ export default function AcquisitionPreferencesSection({
         {/* Seller Training */}
 
         <SingleSelect
-          label="How many days of seller transition training would you require?"
+          label="How many days of seller transition training would you require? — Required for matching"
           value={sellerTrainingDays}
           options={SELLER_TRAINING_OPTIONS}
           onChange={setSellerTrainingDays}
@@ -1268,7 +1524,7 @@ export default function AcquisitionPreferencesSection({
         {/* Deal Preference */}
 
         <SingleSelect
-          label="What is your preferred deal structure?"
+          label="What is your preferred deal structure? — Required for matching"
           value={
             dealPreference === "cash"
               ? "Cash"
@@ -1329,6 +1585,7 @@ export default function AcquisitionPreferencesSection({
         <fieldset className="acquisition-preferences-section__group acquisition-preferences-section__group--timeline">
           <legend className="acquisition-preferences-section__label">
             Acquisition Timeline
+            <span className="acquisition-preferences-section__required">Required for matching</span>
           </legend>
 
           <div className="acquisition-preferences-section__radio-grid">

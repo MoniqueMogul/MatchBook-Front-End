@@ -7,6 +7,7 @@ import "./EditOverviewSection.css";
 
 interface EditOverviewSectionProps {
   initialAbout?: string;
+  isOnboarding?: boolean;
   onContinue?: (data: {
     about: string;
   }) => void;
@@ -17,6 +18,7 @@ export default function EditOverviewSection({
   initialAbout = "",
   onContinue,
   disabled = false,
+  isOnboarding = false,
 }: EditOverviewSectionProps) {
   const [about, setAbout] = useState(initialAbout);
 
@@ -59,12 +61,20 @@ export default function EditOverviewSection({
           className="edit-overview-section__continue-button"
           onClick={handleContinue}
           disabled={disabled}
-          aria-label="Continue to next profile section"
+          aria-label={
+            isOnboarding
+              ? "Save and continue"
+              : "Continue to next profile section"
+          }
         >
-          <ChevronRight
-            size={32}
-            strokeWidth={1.5}
-          />
+          {isOnboarding ? (
+            "Save & Continue"
+          ) : (
+            <ChevronRight
+              size={32}
+              strokeWidth={1.5}
+            />
+          )}
         </button>
       </div>
     </section>

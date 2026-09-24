@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import "./ExperienceCredentialsEdit.css";
 
@@ -31,6 +31,10 @@ interface ExperienceCredentialsEditProps {
   onContinue: (data: ExperienceCredentialsData) => void;
   disabled?: boolean;
 }
+
+type FieldName = keyof ExperienceCredentialsData;
+
+type ValidationErrors = Partial<Record<FieldName, string>>;
 
 const DEFAULT_DATA: ExperienceCredentialsData = {
   buyerType: null,
@@ -71,18 +75,39 @@ const BUYER_TYPE_OPTIONS: Array<{
   },
 ];
 
+const MAX_EXPERIENCE_LENGTH = 2000;
+
 export default function ExperienceCredentialsEdit({
   initialData,
   onBack,
   onContinue,
   disabled = false,
 }: ExperienceCredentialsEditProps) {
-  const [data, setData] = useState<ExperienceCredentialsData>({
-    ...DEFAULT_DATA,
-    ...initialData,
-  });
+  const [data, setData] =
+    useState<ExperienceCredentialsData>({
+      ...DEFAULT_DATA,
+      ...initialData,
+    });
 
-  const updateField = <K extends keyof ExperienceCredentialsData>(
+  const [errors, setErrors] =
+    useState<ValidationErrors>({});
+
+  /*
+   * Keep the form synchronized with backend data
+   * when Edit mode loads the profile.
+   */
+  useEffect(() => {
+    setData({
+      ...DEFAULT_DATA,
+      ...initialData,
+    });
+
+    setErrors({});
+  }, [initialData]);
+
+  const updateField = <
+    K extends keyof ExperienceCredentialsData
+  >(
     field: K,
     value: ExperienceCredentialsData[K],
   ) => {
@@ -90,29 +115,206 @@ export default function ExperienceCredentialsEdit({
       ...current,
       [field]: value,
     }));
+
+    /*
+     * Clear the error for this field once
+     * the user starts correcting it.
+     */
+    setErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field];
+
+      return next;
+    });
+  };
+
+  const validate = (): ValidationErrors => {
+    const nextErrors: ValidationErrors = {};
+
+    /*
+     * Buyer Type
+     */
+    if (!data.buyerType) {
+      nextErrors.buyerType =
+        "Please select a buyer type.";
+    }
+
+    /*
+     * Current Industry
+     */
+    if (data.currentIndustry.trim().length > 150) {
+      nextErrors.currentIndustry =
+        "Current industry must be 150 characters or fewer.";
+    }
+
+    /*
+     * Current Position
+     */
+    if (data.currentPosition.trim().length > 150) {
+      nextErrors.currentPosition =
+        "Current position must be 150 characters or fewer.";
+    }
+
+    /*
+     * Years of Business Experience
+     */
+    const years = data.businessExperienceYears.trim();
+
+    if (years !== "") {
+      const numericYears = Number(years);
+
+      if (
+        !Number.isFinite(numericYears) ||
+        !Number.isInteger(numericYears) ||
+        numericYears < 0 ||
+        numericYears > 100
+      ) {
+        nextErrors.businessExperienceYears =
+          "Enter a whole number between 0 and 100.";
+      }
+    }
+
+    /*
+     * Relevant Experience
+     */
+    if (
+      data.relevantExperience.trim().length >
+      MAX_EXPERIENCE_LENGTH
+    ) {
+      nextErrors.relevantExperience =
+        "Relevant experience must be 2,000 characters or fewer.";
+    }
+
+    /*
+     * Available Hours Per Week
+     */
+    const hours =
+      data.availableHoursPerWeek.trim();
+
+    if (hours !== "") {
+      const numericHours = Number(hours);
+
+      if (
+        !Number.isFinite(numericHours) ||
+        !Number.isInteger(numericHours) ||
+        numericHours < 0 ||
+        numericHours > 168
+      ) {
+        nextErrors.availableHoursPerWeek =
+          "Enter a whole number between 0 and 168.";
+      }
+    }
+
+    /*
+     * City
+     */
+    if (data.city.trim().length > 100) {
+      nextErrors.city =
+        "City must be 100 characters or fewer.";
+    }
+
+    /*
+     * County
+     */
+    if (data.county.trim().length > 100) {
+      nextErrors.county =
+        "County must be 100 characters or fewer.";
+    }
+
+    /*
+     * State
+     */
+    if (data.state.trim().length > 100) {
+      nextErrors.state =
+        "State must be 100 characters or fewer.";
+    }
+
+    /*
+     * ZIP / Postal Code
+     *
+     * Allows international postal codes:
+     * letters, numbers, spaces and hyphens.
+     */
+    const zip = data.zipCode.trim();
+
+    if (zip !== "") {
+      if (zip.length < 3 || zip.length > 20) {
+        nextErrors.zipCode =
+          "ZIP / Postal Code must be between 3 and 20 characters.";
+      } else if (
+        !/^[A-Za-z0-9][A-Za-z0-9 -]*$/.test(zip)
+      ) {
+        nextErrors.zipCode =
+          "ZIP / Postal Code can contain only letters, numbers, spaces, and hyphens.";
+      }
+    }
+
+    return nextErrors;
   };
 
   const handleContinue = () => {
+    if (disabled) {
+      return;
+    }
+
+    const validationErrors = validate();
+
+    setErrors(validationErrors);
+
+    /*
+     * Stop here if validation failed.
+     */
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
+    /*
+     * Only send cleaned data to BuyerProfileEdit.
+     */
     onContinue({
       ...data,
-      currentIndustry: data.currentIndustry.trim(),
-      currentPosition: data.currentPosition.trim(),
+
+      currentIndustry:
+        data.currentIndustry.trim(),
+
+      currentPosition:
+        data.currentPosition.trim(),
+
       businessExperienceYears:
         data.businessExperienceYears.trim(),
-      relevantExperience: data.relevantExperience.trim(),
+
+      relevantExperience:
+        data.relevantExperience.trim(),
+
       availableHoursPerWeek:
         data.availableHoursPerWeek.trim(),
-      city: data.city.trim(),
-      county: data.county.trim(),
-      state: data.state.trim(),
-      zipCode: data.zipCode.trim(),
+
+      city:
+        data.city.trim(),
+
+      county:
+        data.county.trim(),
+
+      state:
+        data.state.trim(),
+
+      zipCode:
+        data.zipCode.trim(),
     });
   };
 
   return (
     <section className="experience-credentials-section">
       <div className="experience-credentials-section__fields">
-        {/* 1. Buyer Type */}
+
+        {/* =================================================
+            1. Buyer Type
+           ================================================= */}
+
         <fieldset className="experience-credentials-section__group">
           <legend className="experience-credentials-section__label">
             What best describes your buyer type? (Select one)
@@ -120,7 +322,8 @@ export default function ExperienceCredentialsEdit({
 
           <div className="experience-credentials-section__radio-grid">
             {BUYER_TYPE_OPTIONS.map((option) => {
-              const selected = data.buyerType === option.value;
+              const selected =
+                data.buyerType === option.value;
 
               return (
                 <label
@@ -134,9 +337,15 @@ export default function ExperienceCredentialsEdit({
                     checked={selected}
                     disabled={disabled}
                     onChange={() =>
-                      updateField("buyerType", option.value)
+                      updateField(
+                        "buyerType",
+                        option.value,
+                      )
                     }
                     className="experience-credentials-section__radio-input"
+                    aria-invalid={Boolean(
+                      errors.buyerType,
+                    )}
                   />
 
                   <span
@@ -159,9 +368,18 @@ export default function ExperienceCredentialsEdit({
               );
             })}
           </div>
+
+          {errors.buyerType && (
+            <p className="experience-credentials-section__error">
+              {errors.buyerType}
+            </p>
+          )}
         </fieldset>
 
-        {/* 2. Current Industry */}
+        {/* =================================================
+            2. Current Industry
+           ================================================= */}
+
         <div className="experience-credentials-section__field">
           <label
             htmlFor="current-industry"
@@ -177,13 +395,28 @@ export default function ExperienceCredentialsEdit({
             value={data.currentIndustry}
             disabled={disabled}
             onChange={(event) =>
-              updateField("currentIndustry", event.target.value)
+              updateField(
+                "currentIndustry",
+                event.target.value,
+              )
             }
             className="experience-credentials-section__input"
+            aria-invalid={Boolean(
+              errors.currentIndustry,
+            )}
           />
+
+          {errors.currentIndustry && (
+            <p className="experience-credentials-section__error">
+              {errors.currentIndustry}
+            </p>
+          )}
         </div>
 
-        {/* 3. Current Position */}
+        {/* =================================================
+            3. Current Position
+           ================================================= */}
+
         <div className="experience-credentials-section__field">
           <label
             htmlFor="current-position"
@@ -199,25 +432,43 @@ export default function ExperienceCredentialsEdit({
             value={data.currentPosition}
             disabled={disabled}
             onChange={(event) =>
-              updateField("currentPosition", event.target.value)
+              updateField(
+                "currentPosition",
+                event.target.value,
+              )
             }
             className="experience-credentials-section__input"
+            aria-invalid={Boolean(
+              errors.currentPosition,
+            )}
           />
+
+          {errors.currentPosition && (
+            <p className="experience-credentials-section__error">
+              {errors.currentPosition}
+            </p>
+          )}
         </div>
 
-        {/* 4. Years of Business Experience */}
+        {/* =================================================
+            4. Years of Business Experience
+           ================================================= */}
+
         <div className="experience-credentials-section__field">
           <label
             htmlFor="business-experience-years"
             className="experience-credentials-section__label"
           >
-            How many years of business experience do you have owning or operating a business? (Enter a number)
+            How many years of business experience do you
+            have owning or operating a business? (Enter a
+            number)
           </label>
 
           <input
             id="business-experience-years"
             type="number"
             min={0}
+            max={100}
             step={1}
             value={data.businessExperienceYears}
             disabled={disabled}
@@ -228,10 +479,22 @@ export default function ExperienceCredentialsEdit({
               )
             }
             className="experience-credentials-section__input"
+            aria-invalid={Boolean(
+              errors.businessExperienceYears,
+            )}
           />
+
+          {errors.businessExperienceYears && (
+            <p className="experience-credentials-section__error">
+              {errors.businessExperienceYears}
+            </p>
+          )}
         </div>
 
-        {/* 5. Relevant Experience */}
+        {/* =================================================
+            5. Relevant Experience
+           ================================================= */}
+
         <div className="experience-credentials-section__field">
           <label
             htmlFor="relevant-experience"
@@ -242,6 +505,7 @@ export default function ExperienceCredentialsEdit({
 
           <textarea
             id="relevant-experience"
+            maxLength={MAX_EXPERIENCE_LENGTH}
             value={data.relevantExperience}
             disabled={disabled}
             onChange={(event) =>
@@ -251,10 +515,22 @@ export default function ExperienceCredentialsEdit({
               )
             }
             className="experience-credentials-section__textarea"
+            aria-invalid={Boolean(
+              errors.relevantExperience,
+            )}
           />
+
+          {errors.relevantExperience && (
+            <p className="experience-credentials-section__error">
+              {errors.relevantExperience}
+            </p>
+          )}
         </div>
 
-        {/* 6. Available Hours per Week */}
+        {/* =================================================
+            6. Available Hours Per Week
+           ================================================= */}
+
         <div className="experience-credentials-section__field">
           <label
             htmlFor="available-hours-per-week"
@@ -278,16 +554,30 @@ export default function ExperienceCredentialsEdit({
               )
             }
             className="experience-credentials-section__input"
+            aria-invalid={Boolean(
+              errors.availableHoursPerWeek,
+            )}
           />
+
+          {errors.availableHoursPerWeek && (
+            <p className="experience-credentials-section__error">
+              {errors.availableHoursPerWeek}
+            </p>
+          )}
         </div>
 
-        {/* 7. Current Location */}
+        {/* =================================================
+            7. Current Location
+           ================================================= */}
+
         <fieldset className="experience-credentials-section__group">
           <legend className="experience-credentials-section__label">
             Current Location
           </legend>
 
           <div className="experience-credentials-section__location-grid">
+
+            {/* City */}
             <div className="experience-credentials-section__field">
               <label
                 htmlFor="current-city"
@@ -303,12 +593,23 @@ export default function ExperienceCredentialsEdit({
                 value={data.city}
                 disabled={disabled}
                 onChange={(event) =>
-                  updateField("city", event.target.value)
+                  updateField(
+                    "city",
+                    event.target.value,
+                  )
                 }
                 className="experience-credentials-section__input"
+                aria-invalid={Boolean(errors.city)}
               />
+
+              {errors.city && (
+                <p className="experience-credentials-section__error">
+                  {errors.city}
+                </p>
+              )}
             </div>
 
+            {/* County */}
             <div className="experience-credentials-section__field">
               <label
                 htmlFor="current-county"
@@ -324,12 +625,25 @@ export default function ExperienceCredentialsEdit({
                 value={data.county}
                 disabled={disabled}
                 onChange={(event) =>
-                  updateField("county", event.target.value)
+                  updateField(
+                    "county",
+                    event.target.value,
+                  )
                 }
                 className="experience-credentials-section__input"
+                aria-invalid={Boolean(
+                  errors.county,
+                )}
               />
+
+              {errors.county && (
+                <p className="experience-credentials-section__error">
+                  {errors.county}
+                </p>
+              )}
             </div>
 
+            {/* State */}
             <div className="experience-credentials-section__field">
               <label
                 htmlFor="current-state"
@@ -345,12 +659,25 @@ export default function ExperienceCredentialsEdit({
                 value={data.state}
                 disabled={disabled}
                 onChange={(event) =>
-                  updateField("state", event.target.value)
+                  updateField(
+                    "state",
+                    event.target.value,
+                  )
                 }
                 className="experience-credentials-section__input"
+                aria-invalid={Boolean(
+                  errors.state,
+                )}
               />
+
+              {errors.state && (
+                <p className="experience-credentials-section__error">
+                  {errors.state}
+                </p>
+              )}
             </div>
 
+            {/* ZIP */}
             <div className="experience-credentials-section__field">
               <label
                 htmlFor="current-zip-code"
@@ -366,14 +693,31 @@ export default function ExperienceCredentialsEdit({
                 value={data.zipCode}
                 disabled={disabled}
                 onChange={(event) =>
-                  updateField("zipCode", event.target.value)
+                  updateField(
+                    "zipCode",
+                    event.target.value,
+                  )
                 }
                 className="experience-credentials-section__input"
+                aria-invalid={Boolean(
+                  errors.zipCode,
+                )}
               />
+
+              {errors.zipCode && (
+                <p className="experience-credentials-section__error">
+                  {errors.zipCode}
+                </p>
+              )}
             </div>
+
           </div>
         </fieldset>
       </div>
+
+      {/* =================================================
+          Navigation
+         ================================================= */}
 
       <div className="experience-credentials-section__navigation">
         <button
@@ -383,7 +727,10 @@ export default function ExperienceCredentialsEdit({
           disabled={disabled}
           aria-label="Back to overview"
         >
-          <ArrowLeft size={20} strokeWidth={2} />
+          <ArrowLeft
+            size={20}
+            strokeWidth={2}
+          />
         </button>
 
         <button
@@ -393,7 +740,10 @@ export default function ExperienceCredentialsEdit({
           disabled={disabled}
           aria-label="Continue to acquisition preferences"
         >
-          <ArrowRight size={20} strokeWidth={2} />
+          <ArrowRight
+            size={20}
+            strokeWidth={2}
+          />
         </button>
       </div>
     </section>

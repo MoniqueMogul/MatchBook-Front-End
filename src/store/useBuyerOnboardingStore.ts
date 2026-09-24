@@ -1,71 +1,112 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
-/* ------------------------------------------------------------------ */
-/*  Data Contracts                                                     */
-/* ------------------------------------------------------------------ */
+export type BuyerProfileSection =
+  | "overview"
+  | "experience"
+  | "acquisition"
+  | "finances"
+  | "verification";
 
 export interface BuyerAboutYouData {
-  fullName: string;
-  country: string;
   state: string;
-  phoneCountryCode: string;
-  phoneNumber: string;
 }
 
 export interface BuyerOnboardingState {
   currentStep: number;
   totalSteps: number;
 
-  /* Step 1 */
   aboutYou: BuyerAboutYouData;
 
-  /* Actions */
-  setAboutYou: (data: Partial<BuyerAboutYouData>) => void;
+  completedSections: Record<
+    BuyerProfileSection,
+    boolean
+  >;
+
+  setAboutYou: (
+    data: Partial<BuyerAboutYouData>
+  ) => void;
+
   nextStep: () => void;
   prevStep: () => void;
+
+  markSectionCompleted: (
+    section: BuyerProfileSection
+  ) => void;
+
   resetOnboarding: () => void;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Defaults                                                           */
-/* ------------------------------------------------------------------ */
-
 const DEFAULT_ABOUT_YOU: BuyerAboutYouData = {
-  fullName: '',
-  country: 'United States',
-  state: '',
-  phoneCountryCode: '+1',
-  phoneNumber: '',
+  state: "",
 };
 
-/* ------------------------------------------------------------------ */
-/*  Store                                                              */
-/* ------------------------------------------------------------------ */
+const DEFAULT_COMPLETED_SECTIONS: Record<
+  BuyerProfileSection,
+  boolean
+> = {
+  overview: false,
+  experience: false,
+  acquisition: false,
+  finances: false,
+  verification: false,
+};
 
-export const useBuyerOnboardingStore = create<BuyerOnboardingState>((set) => ({
-  currentStep: 1,
-  totalSteps: 10,
+export const useBuyerOnboardingStore =
+  create<BuyerOnboardingState>((set) => ({
+    currentStep: 1,
+    totalSteps: 10,
 
-  aboutYou: { ...DEFAULT_ABOUT_YOU },
+    aboutYou: {
+      ...DEFAULT_ABOUT_YOU,
+    },
 
-  setAboutYou: (data) =>
-    set((state) => ({
-      aboutYou: { ...state.aboutYou, ...data },
-    })),
+    completedSections: {
+      ...DEFAULT_COMPLETED_SECTIONS,
+    },
 
-  nextStep: () =>
-    set((state) => ({
-      currentStep: Math.min(state.currentStep + 1, state.totalSteps),
-    })),
+    setAboutYou: (data) =>
+      set((state) => ({
+        aboutYou: {
+          ...state.aboutYou,
+          ...data,
+        },
+      })),
 
-  prevStep: () =>
-    set((state) => ({
-      currentStep: Math.max(state.currentStep - 1, 1),
-    })),
+    nextStep: () =>
+      set((state) => ({
+        currentStep: Math.min(
+          state.currentStep + 1,
+          state.totalSteps
+        ),
+      })),
 
-  resetOnboarding: () =>
-    set({
-      currentStep: 1,
-      aboutYou: { ...DEFAULT_ABOUT_YOU },
-    }),
-}));
+    prevStep: () =>
+      set((state) => ({
+        currentStep: Math.max(
+          state.currentStep - 1,
+          1
+        ),
+      })),
+
+    markSectionCompleted: (section) =>
+      set((state) => ({
+        completedSections: {
+          ...state.completedSections,
+          [section]: true,
+        },
+      })),
+
+    resetOnboarding: () =>
+      set({
+        currentStep: 1,
+        totalSteps: 10,
+
+        aboutYou: {
+          ...DEFAULT_ABOUT_YOU,
+        },
+
+        completedSections: {
+          ...DEFAULT_COMPLETED_SECTIONS,
+        },
+      }),
+  }));

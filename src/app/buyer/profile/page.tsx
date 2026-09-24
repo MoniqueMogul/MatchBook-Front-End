@@ -54,11 +54,23 @@ const MOCK_PROFILE: BuyerProfile = {
 };
 
 const MOCK_PREFERENCES: BuyerPreferences = {
-  target_industries: [
-    "Technology",
-    "Health & Wellness",
-    "Home & Professional Services",
+  target_industry_preferences: [
+    {
+      industry: "Technology",
+      sub_industries: [],
+    },
+    {
+      industry: "Health & Wellness",
+      sub_industries: [],
+    },
+    {
+      industry: "Home & Professional Services",
+      sub_industries: [],
+    },
   ],
+
+  target_business_models: [],
+  target_business_types: [],
 
   target_locations: [
     {

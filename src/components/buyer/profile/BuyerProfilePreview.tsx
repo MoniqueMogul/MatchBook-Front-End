@@ -210,7 +210,9 @@ export default function BuyerProfilePreview({
             <AcquisitionPreferencesPreview
               data={{
                 industries:
-                  preferences?.target_industries ?? [],
+                  preferences?.target_industry_preferences?.map(
+                    (item) => item.industry,
+                  ) ?? [],
 
                 targetLocations:
                   preferences?.target_locations ?? [],

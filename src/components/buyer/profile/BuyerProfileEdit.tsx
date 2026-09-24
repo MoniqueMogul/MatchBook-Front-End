@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
 
 import ExperienceCredentialsEdit, {
   type ExperienceCredentialsData,
@@ -21,31 +23,53 @@ import {
   saveBuyerPreferences,
   type BuyerPreferences,
   type BuyerPreferencesPayload,
+  type ApiTargetLocation,
+  type TargetIndustryPreference,
+  type DealPreference,
+  type RealEstatePreference,
 } from "@/lib/api/buyerPreferences";
 
 import {
   getBuyerProfile,
+  createBuyerProfile,
   updateBuyerProfile,
   type BuyerProfile,
+  type BuyerProfileCreatePayload,
   type BuyerProfileUpdatePayload,
 } from "@/lib/api/buyer";
 
 import "./BuyerProfileEdit.css";
 
-export default function BuyerProfileEdit() {
+interface BuyerProfileEditProps {
+  mode?: "edit" | "onboarding";
+}
+
+export default function BuyerProfileEdit({
+  mode = "edit",
+}: BuyerProfileEditProps) {
   const router = useRouter();
+  const isOnboarding = mode === "onboarding";
+
+  const markSectionCompleted =
+    useBuyerOnboardingStore(
+      (state) => state.markSectionCompleted
+    );
 
   const [activeTab, setActiveTab] =
     useState<ProfileTab>("overview");
 
   const [preferences, setPreferences] =
-    useState<BuyerPreferences | null>(null);
+    useState<BuyerPreferences | null>(
+      isOnboarding ? ({} as BuyerPreferences) : null,
+    );
 
   const [profile, setProfile] =
-    useState<BuyerProfile | null>(null);
+    useState<BuyerProfile | null>(
+      isOnboarding ? ({} as BuyerProfile) : null,
+    );
 
   const [loading, setLoading] =
-    useState(true);
+    useState(!isOnboarding);
 
   const [saving, setSaving] =
     useState(false);
@@ -55,7 +79,8 @@ export default function BuyerProfileEdit() {
 
   const [location, setLocation] =
     useState("");
-
+  const [userName, setUserName] = 
+    useState("");
   const [profileImage, setProfileImage] =
     useState<string | undefined>(undefined);
 
@@ -66,9 +91,25 @@ export default function BuyerProfileEdit() {
    * ------------------------------------------------
    * Initial GET
    * ------------------------------------------------
+   *
+   * Normal edit mode:
+   *   GET buyer profile
+   *   GET buyer preferences
+   *
+   * Onboarding mode:
+   *   No backend GET yet.
+   *   We keep initial Overview data in local frontend state
+   *   until the Experience step creates the profile.
    */
 
   useEffect(() => {
+    // During onboarding, the buyer profile does not exist yet.
+    // Do NOT call GET /intake/buyers/profile.
+    if (isOnboarding) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const loadProfile = async () => {
@@ -115,6 +156,33 @@ export default function BuyerProfileEdit() {
     return () => {
       cancelled = true;
     };
+  }, [isOnboarding]);
+
+  useEffect(() => {
+    const loadUserName = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return;
+      }
+
+      const firstName = user.user_metadata?.first_name;
+      const lastName = user.user_metadata?.last_name;
+
+      const fullName =
+        [firstName, lastName]
+          .filter(Boolean)
+          .join(" ") ||
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        "";
+
+      setUserName(fullName);
+    };
+
+    loadUserName();
   }, []);
 
   /*
@@ -133,28 +201,88 @@ export default function BuyerProfileEdit() {
    * Overview
    * ------------------------------------------------
    *
-   * Preferred Regions are now handled in
-   * Acquisition Preferences.
+   * Onboarding:
+   *   Save locally and continue.
+   *
+   * Edit:
+   *   PATCH backend immediately, preserving
+   *   the existing Buyer Profile behavior.
    */
 
   const handleOverviewContinue = async (data: {
     about: string;
   }) => {
-    try {
-      setSaving(true);
-      setError(null);
+    if (isOnboarding && !data.about.trim()) {
+      setError(
+        "Please tell sellers a little about yourself.",
+      );
+      return;
+    }
 
-      const updatedProfile = await updateBuyerProfile({
-        about_me: data.about,
+    setSaving(true);
+    setError(null);
+
+    try {
+      const nextProfile = {
+        ...(profile ?? ({} as BuyerProfile)),
+        about_me: data.about.trim(),
+      };
+
+      if (isOnboarding) {
+        // The buyer profile does not exist yet.
+        // Keep Overview data locally until Experience
+        // creates the profile with POST.
+        setProfile(nextProfile);
+
+        markSectionCompleted("overview");
+
+        setActiveTab("industry-experience");
+
+        return;
+      }
+
+      // Normal edit mode: profile already exists.
+      const savedProfile = await updateBuyerProfile({
+        buyer_type:
+          nextProfile.buyer_type ?? null,
+
+        current_industry:
+          nextProfile.current_industry ?? null,
+
+        current_position:
+          nextProfile.current_position ?? null,
+
+        business_experience_years:
+          nextProfile.business_experience_years ?? null,
+
+        relevant_experience:
+          nextProfile.relevant_experience ?? null,
+
+        available_hours_per_week:
+          nextProfile.available_hours_per_week ?? null,
+
+        city:
+          nextProfile.city ?? null,
+
+        county:
+          nextProfile.county ?? null,
+
+        state:
+          nextProfile.state ?? null,
+
+        zip_code:
+          nextProfile.zip_code ?? null,
+
+        about_me:
+          nextProfile.about_me,
       });
 
-      setProfile(updatedProfile);
-      setActiveTab("industry-experience");
+      setProfile(savedProfile);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to save About information.",
+          : "Failed to save your overview.",
       );
     } finally {
       setSaving(false);
@@ -167,54 +295,86 @@ export default function BuyerProfileEdit() {
    * ------------------------------------------------
    */
 
-  const handleExperienceCredentialsContinue = (
+  const handleExperienceCredentialsContinue = async (
     data: ExperienceCredentialsData,
   ) => {
-    setProfile((current) => {
-      if (!current) {
-        return current;
+    const buyerType = data.buyerType;
+
+    if (!buyerType) {
+      setError("Please select a buyer type.");
+      return;
+    }
+
+    const profileData: BuyerProfileCreatePayload = {
+      buyer_type: buyerType,
+
+      current_industry:
+        data.currentIndustry || null,
+
+      current_position:
+        data.currentPosition || null,
+
+      business_experience_years:
+        data.businessExperienceYears === ""
+          ? null
+          : Number(data.businessExperienceYears),
+
+      relevant_experience:
+        data.relevantExperience || null,
+
+      available_hours_per_week:
+        data.availableHoursPerWeek === ""
+          ? null
+          : Number(data.availableHoursPerWeek),
+
+      city:
+        data.city || null,
+
+      county:
+        data.county || null,
+
+      state:
+        data.state || null,
+
+      zip_code:
+        data.zipCode || null,
+
+      about_me:
+        profile?.about_me ?? null,
+    };
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      if (isOnboarding) {
+        const createdProfile =
+          await createBuyerProfile(profileData);
+
+        setProfile(createdProfile);
+
+        markSectionCompleted("experience");
+
+        setActiveTab("acquisition-preferences");
+
+        return;
       }
 
-      return {
-        ...current,
+      const updatedProfile =
+        await updateBuyerProfile(profileData);
 
-        buyer_type:
-          data.buyerType ?? current.buyer_type,
+      setProfile(updatedProfile);
 
-        current_industry:
-          data.currentIndustry || null,
-
-        current_position:
-          data.currentPosition || null,
-
-        business_experience_years:
-          data.businessExperienceYears === ""
-            ? null
-            : Number(data.businessExperienceYears),
-
-        relevant_experience:
-          data.relevantExperience || null,
-
-        available_hours_per_week:
-          data.availableHoursPerWeek === ""
-            ? null
-            : Number(data.availableHoursPerWeek),
-
-        city:
-          data.city || null,
-
-        county:
-          data.county || null,
-
-        state:
-          data.state || null,
-
-        zip_code:
-          data.zipCode || null,
-      };
-    });
-
-    setActiveTab("acquisition-preferences");
+      setActiveTab("acquisition-preferences");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save Experience & Credentials.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   /*
@@ -223,92 +383,123 @@ export default function BuyerProfileEdit() {
    * ------------------------------------------------
    */
 
-  const handleAcquisitionPreferencesContinue = (data: {
-    industries: string[];
-
-    targetLocations: NonNullable<
-      BuyerPreferences["target_locations"]
-    >;
+  const handleAcquisitionPreferencesContinue = async (data: {
+    targetIndustryPreferences: TargetIndustryPreference[];
+    targetBusinessModels: string[];
+    targetBusinessTypes: string[];
+    targetLocations: ApiTargetLocation[];
 
     minimumYearsInOperation?: number;
     minimumARR?: number;
     minimumSDE?: number;
-
     maximumPurchasePrice?: number;
     preferredARR?: number;
     preferredSDE?: number;
     preferredOwnerHoursPerWeek?: number;
-
     customerConcentration?: boolean;
     sellerTrainingDays?: number;
-
-    dealPreference?:
-      | "cash"
-      | "financing"
-      | "either";
-
-    realEstatePreference?:
-      | "included"
-      | "lease"
-      | "either";
-
+    dealPreference?: DealPreference;
+    realEstatePreference?: RealEstatePreference;
     timeline?:
       | "exploring"
       | "within-1-12"
       | "within-12-24"
       | "within-24-plus";
   }) => {
-    setPreferences((current) => ({
-      ...(current ?? {}),
+    setSaving(true);
+    setError(null);
 
-      target_industries:
-        data.industries,
+    try {
+      const nextPreferences: BuyerPreferences = {
+        ...(preferences ?? ({} as BuyerPreferences)),
 
-      /*
-       * Preferred Regions now belongs to
-       * Acquisition Preferences.
-       */
-      target_locations:
-        data.targetLocations,
+        target_industry_preferences:
+          data.targetIndustryPreferences,
+        target_business_models:
+          data.targetBusinessModels,
+        target_business_types:
+          data.targetBusinessTypes,
+        target_locations:
+          data.targetLocations,
 
-      minimum_years_in_operation:
-        data.minimumYearsInOperation ?? null,
+        minimum_years_in_operation:
+          data.minimumYearsInOperation ?? null,
+        minimum_required_arr:
+          data.minimumARR ?? null,
+        minimum_required_sde:
+          data.minimumSDE ?? null,
+        maximum_purchase_price:
+          data.maximumPurchasePrice ?? null,
+        preferred_arr:
+          data.preferredARR ?? null,
+        preferred_sde:
+          data.preferredSDE ?? null,
+        preferred_owner_hours_per_week:
+          data.preferredOwnerHoursPerWeek ?? null,
+        accepts_customer_concentration_above_25_percent:
+          data.customerConcentration ?? null,
+        required_transition_training_days:
+          data.sellerTrainingDays ?? null,
+        deal_preference:
+          data.dealPreference ?? null,
+        real_estate_preference:
+          data.realEstatePreference ?? null,
+        preferred_acquisition_timeline:
+          data.timeline ?? null,
+      };
 
-      minimum_required_arr:
-        data.minimumARR ?? null,
+      setPreferences(nextPreferences);
 
-      minimum_required_sde:
-        data.minimumSDE ?? null,
+      const savedPreferences =
+        await saveBuyerPreferences({
+          target_industry_preferences:
+            nextPreferences.target_industry_preferences ?? null,
+          target_business_models:
+            nextPreferences.target_business_models ?? null,
+          target_business_types:
+            nextPreferences.target_business_types ?? null,
+          target_locations:
+            nextPreferences.target_locations ?? null,
+          maximum_purchase_price:
+            nextPreferences.maximum_purchase_price ?? null,
+          minimum_required_sde:
+            nextPreferences.minimum_required_sde ?? null,
+          preferred_sde:
+            nextPreferences.preferred_sde ?? null,
+          minimum_required_arr:
+            nextPreferences.minimum_required_arr ?? null,
+          preferred_arr:
+            nextPreferences.preferred_arr ?? null,
+          preferred_owner_hours_per_week:
+            nextPreferences.preferred_owner_hours_per_week ?? null,
+          required_transition_training_days:
+            nextPreferences.required_transition_training_days ?? null,
+          deal_preference:
+            nextPreferences.deal_preference ?? null,
+          real_estate_preference:
+            nextPreferences.real_estate_preference ?? null,
+          minimum_years_in_operation:
+            nextPreferences.minimum_years_in_operation ?? null,
+          accepts_customer_concentration_above_25_percent:
+            nextPreferences
+              .accepts_customer_concentration_above_25_percent ??
+            null,
+          preferred_acquisition_timeline:
+            nextPreferences.preferred_acquisition_timeline ?? null,
+        });
 
-      maximum_purchase_price:
-        data.maximumPurchasePrice ?? null,
-
-      preferred_arr:
-        data.preferredARR ?? null,
-
-      preferred_sde:
-        data.preferredSDE ?? null,
-
-      preferred_owner_hours_per_week:
-        data.preferredOwnerHoursPerWeek ?? null,
-
-      accepts_customer_concentration_above_25_percent:
-        data.customerConcentration ?? null,
-
-      required_transition_training_days:
-        data.sellerTrainingDays ?? null,
-
-      deal_preference:
-        data.dealPreference ?? null,
-
-      real_estate_preference:
-        data.realEstatePreference ?? null,
-
-      preferred_acquisition_timeline:
-        data.timeline ?? null,
-    }));
-
-    setActiveTab("finances");
+      setPreferences(savedPreferences);
+      markSectionCompleted("acquisition");
+      setActiveTab("finances");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save acquisition preferences.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   /*
@@ -324,7 +515,8 @@ export default function BuyerProfileEdit() {
       }
 
       return {
-        buyer_type: profile.buyer_type,
+        buyer_type:
+          profile.buyer_type,
 
         current_industry:
           profile.current_industry ?? null,
@@ -363,8 +555,14 @@ export default function BuyerProfileEdit() {
 
   const buildBuyerPreferencesPayload =
     (): BuyerPreferencesPayload => ({
-      target_industries:
-        preferences?.target_industries ?? null,
+      target_industry_preferences:
+        preferences?.target_industry_preferences ?? null,
+
+      target_business_models:
+        preferences?.target_business_models ?? null,
+
+      target_business_types:
+        preferences?.target_business_types ?? null,
 
       target_locations:
         preferences?.target_locations ?? null,
@@ -415,13 +613,66 @@ export default function BuyerProfileEdit() {
    * FINAL SAVE
    * ------------------------------------------------
    *
-   * Buyer Profile  -> PATCH
-   * Buyer Preferences -> PUT
+   * ONBOARDING:
+   *   Profile is created during Experience.
+   *   Acquisition Preferences and Finance are persisted
+   *   through the preferences PUT request.
    *
-   * Both are saved before redirecting to preview.
+   * EDIT:
+   *   Existing backend PATCH + PUT behavior.
    */
 
   const handleSave = async () => {
+    /*
+     * ----------------------------------------------
+     * ONBOARDING MODE
+     * ----------------------------------------------
+     *
+     * For now, we only complete the frontend flow.
+     * Backend persistence will be connected later.
+     */
+    if (isOnboarding && activeTab !== "finances") {
+      return;
+    }
+
+    if (isOnboarding) {
+      setSaving(true);
+      setError(null);
+
+      try {
+        if (!preferences) {
+          throw new Error(
+            "Buyer preferences are unavailable.",
+          );
+        }
+
+        const savedPreferences =
+          await saveBuyerPreferences(
+            buildBuyerPreferencesPayload(),
+          );
+
+        setPreferences(savedPreferences);
+        markSectionCompleted("finances");
+        router.push("/buyer-dashboard");
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to save buyer preferences.",
+        );
+      } finally {
+        setSaving(false);
+      }
+
+      return;
+    }
+
+    /*
+     * ----------------------------------------------
+     * NORMAL EDIT MODE
+     * ----------------------------------------------
+     */
+
     if (!profile) {
       setError("Buyer profile is not loaded.");
       return;
@@ -482,21 +733,33 @@ export default function BuyerProfileEdit() {
    * ------------------------------------------------
    * CANCEL
    * ------------------------------------------------
-   *
-   * No API request.
-   * Preview will GET backend values again.
    */
 
   const handleCancel = () => {
+    /*
+     * During onboarding there is no existing
+     * profile preview to return to.
+     */
+    if (isOnboarding) {
+      router.push("/buyer-dashboard");
+      return;
+    }
+
+    /*
+     * Existing edit-mode behavior.
+     */
     const previewTabMap: Record<
       ProfileTab,
       string
     > = {
       overview: "overview",
+
       "industry-experience":
         "industry-experience",
+
       "acquisition-preferences":
         "acquisition-preferences",
+
       finances: "finances",
     };
 
@@ -549,7 +812,7 @@ export default function BuyerProfileEdit() {
         {/* Header */}
 
         <ProfileEditHeader
-          name="Original Name"
+          name={userName}
           location={location}
           imageSrc={profileImage}
           onLocationChange={setLocation}
@@ -563,14 +826,20 @@ export default function BuyerProfileEdit() {
         <ProfileTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          onboarding={isOnboarding}
         />
 
         {/* Overview */}
 
         {activeTab === "overview" && (
           <EditOverviewSection
-            initialAbout={profile?.about_me ?? ""}
-            onContinue={handleOverviewContinue}
+            isOnboarding={isOnboarding}
+            initialAbout={
+              profile?.about_me ?? ""
+            }
+            onContinue={
+              handleOverviewContinue
+            }
             disabled={saving}
           />
         )}
@@ -636,8 +905,16 @@ export default function BuyerProfileEdit() {
         {activeTab ===
           "acquisition-preferences" && (
           <AcquisitionPreferencesSection
-            initialIndustries={
-              preferences?.target_industries ?? []
+            initialTargetIndustryPreferences={
+              preferences?.target_industry_preferences ?? []
+            }
+
+            initialTargetBusinessModels={
+              preferences?.target_business_models ?? []
+            }
+
+            initialTargetBusinessTypes={
+              preferences?.target_business_types ?? []
             }
 
             initialTargetLocations={
@@ -645,7 +922,8 @@ export default function BuyerProfileEdit() {
             }
 
             initialMinimumYearsInOperation={
-              preferences?.minimum_years_in_operation ??
+              preferences
+                ?.minimum_years_in_operation ??
               null
             }
 
@@ -731,38 +1009,48 @@ export default function BuyerProfileEdit() {
 
         {activeTab === "finances" && (
           <FinanceEdit
-             purchasePrice={
-            preferences?.maximum_purchase_price != null
-              ? String(preferences.maximum_purchase_price)
-              : ""
-          }
-          onPurchasePriceChange={(value) => {
-            setPreferences((previous) =>
-              previous
-                ? {
-                    ...previous,
-                    maximum_purchase_price:
-                      value.trim() === ""
-                        ? null
-                        : Number(value),
-                  }
-                : previous,
-            );
-          }}
-          onBack={() =>
-            setActiveTab("acquisition-preferences")
-          }
-          disabled={saving}
+            purchasePrice={
+              preferences
+                ?.maximum_purchase_price != null
+                ? String(
+                    preferences.maximum_purchase_price,
+                  )
+                : ""
+            }
+
+            onPurchasePriceChange={(value) => {
+              setPreferences((previous) => ({
+                ...(previous ??
+                  ({} as BuyerPreferences)),
+
+                maximum_purchase_price:
+                  value.trim() === ""
+                    ? null
+                    : Number(value),
+              }));
+            }}
+
+            onBack={() =>
+              setActiveTab(
+                "acquisition-preferences",
+              )
+            }
+
+            disabled={saving}
           />
         )}
 
         {/* Global Save / Cancel */}
 
-        <ProfileFormActions
-          onCancel={handleCancel}
-          onSave={handleSave}
-          saving={saving}
-        />
+        {(!isOnboarding || activeTab === "finances") && (
+          <ProfileFormActions
+            onCancel={handleCancel}
+            onSave={handleSave}
+            saving={saving}
+          />
+        )}
+
+        {/* Profile Image Modal */}
 
         <ProfileImageModal
           isOpen={isImageModalOpen}

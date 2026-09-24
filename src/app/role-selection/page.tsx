@@ -16,11 +16,21 @@ export default function RoleSelectionPage() {
   const [selected, setSelected] = useState<'buyer' | 'seller' | null>(null);
 
   const handleNext = () => {
-    if (selected) {
-      setRole(selected);
-      setStep(3);
-      console.log("🚀 Role selected:", selected);
-      // We don't navigate anywhere yet as the dashboard is not built.
+    if (!selected) {
+      return;
+    }
+
+    setRole(selected);
+    setStep(3);
+
+    if (selected === 'buyer') {
+      router.push('/buyer-onboarding/about-you');
+      return;
+    }
+
+    if (selected === 'seller') {
+      router.push('/seller');
+      return;
     }
   };
 
