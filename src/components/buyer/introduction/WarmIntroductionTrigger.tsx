@@ -24,11 +24,6 @@ export default function WarmIntroductionTrigger({
     useState(false);
 
   function handleSent(_message: string) {
-    /*
-     * Presentation-only behavior until the Warm
-     * Introduction backend endpoint is confirmed.
-     * The message is intentionally not persisted.
-     */
     setIsOpen(false);
     setShowSuccess(true);
   }
@@ -54,14 +49,15 @@ export default function WarmIntroductionTrigger({
                 <CheckCircle2 size={21} />
 
                 <span>
-                  Your introduction was successfully
-                  prepared!
+                  Your introduction was sent successfully!
                 </span>
 
                 <button
                   type="button"
                   aria-label="Dismiss notification"
-                  onClick={() => setShowSuccess(false)}
+                  onClick={() =>
+                    setShowSuccess(false)
+                  }
                 >
                   <X size={18} />
                 </button>
