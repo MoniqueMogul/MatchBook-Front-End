@@ -102,13 +102,6 @@ export default function BuyerProfileEdit({
    */
 
   useEffect(() => {
-    // During onboarding, the buyer profile does not exist yet.
-    // Do NOT call GET /intake/buyers/profile.
-    if (isOnboarding) {
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
     const loadProfile = async () => {
@@ -116,6 +109,44 @@ export default function BuyerProfileEdit({
         setLoading(true);
         setError(null);
 
+        // During onboarding, check whether a buyer profile
+        // already exists for the authenticated user.
+        if (isOnboarding) {
+          try {
+            const profileData = await getBuyerProfile();
+
+            if (!cancelled) {
+              setProfile(profileData);
+            }
+          } catch (err) {
+            const status =
+              typeof err === "object" &&
+              err !== null &&
+              "response" in err
+                ? (
+                    err as {
+                      response?: {
+                        status?: number;
+                      };
+                    }
+                  ).response?.status
+                : undefined;
+
+            // 404 means this is a new buyer profile.
+            if (status !== 404) {
+              throw err;
+            }
+
+            if (!cancelled) {
+              setProfile({} as BuyerProfile);
+            }
+          }
+
+          return;
+        }
+
+        // Normal edit mode:
+        // load both profile and preferences.
         const [profileData, preferencesData] =
           await Promise.all([
             getBuyerProfile(),
@@ -227,11 +258,44 @@ export default function BuyerProfileEdit({
       };
 
       if (isOnboarding) {
-        const createdProfile = await createBuyerProfile({
-          about_me: data.about.trim(),
-        });
+        const savedProfile = profile?.id
+          ? await updateBuyerProfile({
+              buyer_type: profile.buyer_type ?? null,
 
-        setProfile(createdProfile);
+              current_industry:
+                profile.current_industry ?? null,
+
+              current_position:
+                profile.current_position ?? null,
+
+              business_experience_years:
+                profile.business_experience_years ?? null,
+
+              relevant_experience:
+                profile.relevant_experience ?? null,
+
+              available_hours_per_week:
+                profile.available_hours_per_week ?? null,
+
+              city:
+                profile.city ?? null,
+
+              county:
+                profile.county ?? null,
+
+              state:
+                profile.state ?? null,
+
+              zip_code:
+                profile.zip_code ?? null,
+
+              about_me: data.about.trim(),
+            })
+          : await createBuyerProfile({
+              about_me: data.about.trim(),
+            });
+
+        setProfile(savedProfile);
         markSectionCompleted("overview");
         setActiveTab("industry-experience");
         return;
