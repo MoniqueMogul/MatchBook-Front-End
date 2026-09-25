@@ -2,12 +2,12 @@
 
 import DashboardSidebar from "@/components/buyer/profile/DashboardSidebar";
 import DocumentsDashboard from "@/components/buyer/documents/DocumentsDashboard";
-import { getDocumentsDemoData } from "@/lib/api/documents/documents";
+import { getInitialDocumentsViewData } from "@/lib/api/documents/documents";
 
 import "./page.css";
 
 export default function BuyerDocumentsPage() {
-  const documentsData = getDocumentsDemoData();
+  const documentsData = getInitialDocumentsViewData();
 
   return (
     <div className="buyer-documents-page">

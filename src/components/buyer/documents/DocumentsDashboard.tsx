@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Banknote,
   Check,
@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 
 import {
-  readDemoDocuments,
-  saveDemoDocuments,
-} from "@/lib/api/documents/documents.demo-storage";
+  uploadAndVerifyBuyerDocuments,
+} from "@/lib/api/documents/documents";
 import type {
   DocumentsViewData,
   DocumentStatus,
+  DocumentUploadInput,
   VerifiedDocument,
 } from "@/lib/api/documents/documents.types";
 
@@ -48,25 +48,19 @@ export default function DocumentsDashboard({
   );
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  useEffect(() => {
-    const storedDocuments = readDemoDocuments();
-
-    if (storedDocuments.length > 0) {
-      setDocuments(storedDocuments);
-    }
-  }, []);
 
   const isVerified = documents.length > 0;
 
-  function handleVerifiedDocuments(
-    uploadedDocuments: VerifiedDocument[],
-  ) {
-    setDocuments((current) => {
-      const next = [...uploadedDocuments, ...current];
-      saveDemoDocuments(next);
-      return next;
-    });
+  async function handleVerifiedDocuments(
+    uploads: DocumentUploadInput[],
+  ): Promise<void> {
+    const uploadedDocuments =
+      await uploadAndVerifyBuyerDocuments(uploads);
 
+    setDocuments((current) => [
+      ...uploadedDocuments,
+      ...current,
+    ]);
     setIsUploadModalOpen(false);
   }
 
