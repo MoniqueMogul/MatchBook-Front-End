@@ -8,7 +8,8 @@ export type BuyerProfileSection =
   | "verification";
 
 export interface BuyerAboutYouData {
-  state: string;
+  countryCode: string;
+  phone: string;
 }
 
 export interface BuyerOnboardingState {
@@ -37,7 +38,8 @@ export interface BuyerOnboardingState {
 }
 
 const DEFAULT_ABOUT_YOU: BuyerAboutYouData = {
-  state: "",
+  countryCode: "+91",
+  phone: "",
 };
 
 const DEFAULT_COMPLETED_SECTIONS: Record<

@@ -32,7 +32,7 @@ export interface BuyerProfile {
 }
 
 export interface BuyerProfileCreatePayload {
-  buyer_type: BuyerType;
+  buyer_type?: BuyerType | null;
 
   current_industry?: string | null;
   current_position?: string | null;

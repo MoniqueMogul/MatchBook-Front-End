@@ -34,7 +34,6 @@ import {
   createBuyerProfile,
   updateBuyerProfile,
   type BuyerProfile,
-  type BuyerProfileCreatePayload,
   type BuyerProfileUpdatePayload,
 } from "@/lib/api/buyer";
 
@@ -98,8 +97,8 @@ export default function BuyerProfileEdit({
    *
    * Onboarding mode:
    *   No backend GET yet.
-   *   We keep initial Overview data in local frontend state
-   *   until the Experience step creates the profile.
+   *   Overview creates the buyer profile with POST.
+   *   Experience & Credentials updates it with PATCH.
    */
 
   useEffect(() => {
@@ -202,11 +201,10 @@ export default function BuyerProfileEdit({
    * ------------------------------------------------
    *
    * Onboarding:
-   *   Save locally and continue.
+   *   POST /intake/buyers/profile with about_me.
    *
    * Edit:
-   *   PATCH backend immediately, preserving
-   *   the existing Buyer Profile behavior.
+   *   PATCH /intake/buyers/profile immediately.
    */
 
   const handleOverviewContinue = async (data: {
@@ -229,15 +227,13 @@ export default function BuyerProfileEdit({
       };
 
       if (isOnboarding) {
-        // The buyer profile does not exist yet.
-        // Keep Overview data locally until Experience
-        // creates the profile with POST.
-        setProfile(nextProfile);
+        const createdProfile = await createBuyerProfile({
+          about_me: data.about.trim(),
+        });
 
+        setProfile(createdProfile);
         markSectionCompleted("overview");
-
         setActiveTab("industry-experience");
-
         return;
       }
 
@@ -305,7 +301,7 @@ export default function BuyerProfileEdit({
       return;
     }
 
-    const profileData: BuyerProfileCreatePayload = {
+    const profileData: BuyerProfileUpdatePayload = {
       buyer_type: buyerType,
 
       current_industry:
@@ -347,23 +343,16 @@ export default function BuyerProfileEdit({
       setSaving(true);
       setError(null);
 
-      if (isOnboarding) {
-        const createdProfile =
-          await createBuyerProfile(profileData);
-
-        setProfile(createdProfile);
-
-        markSectionCompleted("experience");
-
-        setActiveTab("acquisition-preferences");
-
-        return;
-      }
-
+      // Overview already created the buyer profile during onboarding.
+      // Experience & Credentials now updates that existing profile.
       const updatedProfile =
         await updateBuyerProfile(profileData);
 
       setProfile(updatedProfile);
+
+      if (isOnboarding) {
+        markSectionCompleted("experience");
+      }
 
       setActiveTab("acquisition-preferences");
     } catch (err) {
@@ -614,7 +603,8 @@ export default function BuyerProfileEdit({
    * ------------------------------------------------
    *
    * ONBOARDING:
-   *   Profile is created during Experience.
+   *   Profile is created during Overview.
+   *   Experience updates the profile with PATCH.
    *   Acquisition Preferences and Finance are persisted
    *   through the preferences PUT request.
    *
@@ -628,8 +618,9 @@ export default function BuyerProfileEdit({
      * ONBOARDING MODE
      * ----------------------------------------------
      *
-     * For now, we only complete the frontend flow.
-     * Backend persistence will be connected later.
+     * Acquisition Preferences are already persisted with PUT.
+     * Finance updates the local preferences state, and the
+     * final Save persists the complete preferences payload.
      */
     if (isOnboarding && activeTab !== "finances") {
       return;

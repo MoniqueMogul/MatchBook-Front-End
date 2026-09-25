@@ -308,6 +308,7 @@ const FOOTER_NAV: NavItem[] = [
     id: "account",
     label: "Account",
     icon: <AccountIcon />,
+    path: "/buyer/account",
   },
 ];
 
@@ -342,6 +343,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       pathname.startsWith("/buyer-onboarding/profile/")
     ) {
       return "profile";
+    }
+
+    if (
+      pathname === "/buyer/account" ||
+      pathname.startsWith("/buyer/account/")
+    ) {
+      return "account";
     }
 
     return undefined;

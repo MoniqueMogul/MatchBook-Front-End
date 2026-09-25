@@ -11,24 +11,27 @@ import {
 import "./AccountDetails.css";
 
 interface AccountDetailsProps {
-  firstName?: string;
-  lastName?: string;
-  region?: string;
-  phone?: string;
-  email?: string;
-  linkedin?: string;
+  firstName: string;
+  lastName: string;
+  region: string;
+  phone: string;
+  email: string;
   onEdit?: () => void;
 }
 
 export default function AccountDetails({
-  firstName = "Firstname",
-  lastName = "Lastname",
-  region = "Florida, USA",
-  phone = "+1562 787-8404",
-  email = "useremail@gmail.com",
-  linkedin = "linkedin.com",
+  firstName,
+  lastName,
+  region,
+  phone,
+  email,
   onEdit,
 }: AccountDetailsProps) {
+  const fullName =
+    [firstName, lastName]
+      .filter(Boolean)
+      .join(" ") || "Not available";
+
   return (
     <main className="account-details">
       <div className="account-details__content">
@@ -52,7 +55,7 @@ export default function AccountDetails({
             />
 
             <span className="account-details__value">
-              {firstName} {lastName}
+              {fullName}
             </span>
           </div>
         </section>
@@ -73,7 +76,7 @@ export default function AccountDetails({
             />
 
             <span className="account-details__value">
-              {region}
+              {region || "Not available"}
             </span>
           </div>
         </section>
@@ -95,7 +98,7 @@ export default function AccountDetails({
               />
 
               <span className="account-details__value">
-                {phone}
+                {phone || "Not available yet"}
               </span>
             </div>
 
@@ -107,7 +110,7 @@ export default function AccountDetails({
               />
 
               <span className="account-details__value">
-                {email}
+                {email || "Not available"}
               </span>
             </div>
           </div>
@@ -123,14 +126,14 @@ export default function AccountDetails({
 
           <div className="account-details__item">
             <div
-            className="account-details__linkedin-icon"
-            aria-hidden="true"
+              className="account-details__linkedin-icon"
+              aria-hidden="true"
             >
-            in
+              in
             </div>
 
             <span className="account-details__value">
-              {linkedin}
+              Coming soon
             </span>
           </div>
         </section>
