@@ -149,6 +149,35 @@ export async function getDocument(
   }
 }
 
+export async function listBuyerDocuments(): Promise<
+  VerifiedDocument[]
+> {
+  const buyerFinancialsId = await ensureBuyerFinancialsId();
+
+  try {
+    const response = await api.get<ApiDocumentResponse[]>(
+      "/verification/documents",
+      {
+        params: {
+          buyer_financials_id: buyerFinancialsId,
+        },
+      },
+    );
+
+    return response.data.map((document) =>
+      mapApiDocument(
+        document,
+        getDocumentTypeLabel(document.document_type),
+      ),
+    );
+  } catch (error) {
+    throw createDocumentError(
+      error,
+      "Unable to load your existing documents.",
+    );
+  }
+}
+
 export async function uploadAndVerifyBuyerDocuments(
   inputs: DocumentUploadInput[],
 ): Promise<VerifiedDocument[]> {
@@ -193,6 +222,26 @@ function mapApiDocument(
     uploadedAt: document.uploaded_at,
     sizeBytes: document.file_size ?? 0,
   };
+}
+
+function getDocumentTypeLabel(
+  type: ApiDocumentResponse["document_type"],
+): string {
+  const labels: Record<
+    ApiDocumentResponse["document_type"],
+    string
+  > = {
+    bank_statement: "Bank Statements",
+    tax_return: "Tax Returns",
+    profit_and_loss: "Profit and Loss Statement",
+    balance_sheet: "Balance Sheet",
+    proof_of_funds: "Proof of Funds",
+    loan_approval: "Lender Pre-Approval Letter",
+    business_license: "Business License",
+    other: "Other",
+  };
+
+  return labels[type];
 }
 
 function mapVerificationStatus(
