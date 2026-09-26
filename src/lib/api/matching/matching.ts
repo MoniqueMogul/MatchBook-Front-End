@@ -1,4 +1,4 @@
-﻿import api from "@/lib/api/client";
+import api from "@/lib/api/client";
 
 import type {
   BuyerMatchViewData,
@@ -79,6 +79,7 @@ export function getMatchViewDemoData(
   };
 
   return {
+    matchId: businessId,
     business,
 
     match: {

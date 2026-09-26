@@ -9,14 +9,14 @@ import { getMatchViewDemoData } from "@/lib/api/matching/matching";
 import "./page.css";
 
 export default function BuyerMatchDetailPage() {
-  const params = useParams<{ businessId: string }>();
+  const params = useParams<{ matchId: string }>();
 
-  const businessId = Array.isArray(params.businessId)
-    ? params.businessId[0]
-    : params.businessId;
+  const matchId = Array.isArray(params.matchId)
+    ? params.matchId[0]
+    : params.matchId;
 
   const matchData = getMatchViewDemoData(
-    businessId ?? "demo-business",
+    matchId ?? "demo-match",
   );
 
   return (

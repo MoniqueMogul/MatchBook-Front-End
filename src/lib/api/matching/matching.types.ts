@@ -96,6 +96,7 @@ export interface FinancialVerificationDetails {
 }
 
 export interface BuyerMatchViewData {
+  matchId: string;
   match: RankedMatch;
   business: MatchBusinessDetails;
   highlights: MatchHighlight[];
