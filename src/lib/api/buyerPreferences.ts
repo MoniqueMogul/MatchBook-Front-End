@@ -209,16 +209,18 @@ function buildBackendPayload(
   return {
     ...payload,
 
-    target_locations:
-      payload.target_locations?.map(
-        (location) => ({
-          state: location.state ?? null,
-          city: location.city ?? null,
-          county: location.county ?? null,
-          country_code:
-            location.country_code ?? null,
-        }),
-      ) ?? null,
+    ...(payload.target_locations !== undefined && {
+      target_locations:
+        payload.target_locations?.map(
+          (location) => ({
+            state: location.state ?? null,
+            city: location.city ?? null,
+            county: location.county ?? null,
+            country_code:
+              location.country_code ?? null,
+          }),
+        ),
+    }),
   };
 }
 

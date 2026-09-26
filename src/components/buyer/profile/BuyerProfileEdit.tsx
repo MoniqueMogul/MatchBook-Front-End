@@ -452,54 +452,53 @@ export default function BuyerProfileEdit({
       const savedPreferences =
         await saveBuyerPreferences({
           target_industry_preferences:
-            nextPreferences.target_industry_preferences ?? null,
+            nextPreferences.target_industry_preferences,
 
           target_business_models:
-            nextPreferences.target_business_models ?? null,
+            nextPreferences.target_business_models,
 
           target_business_types:
-            nextPreferences.target_business_types ?? null,
+            nextPreferences.target_business_types,
 
           target_locations:
-            nextPreferences.target_locations ?? null,
+            nextPreferences.target_locations,
 
           maximum_purchase_price:
-            nextPreferences.maximum_purchase_price ?? null,
+            nextPreferences.maximum_purchase_price,
 
           minimum_required_sde:
-            nextPreferences.minimum_required_sde ?? null,
+            nextPreferences.minimum_required_sde,
 
           preferred_sde:
-            nextPreferences.preferred_sde ?? null,
+            nextPreferences.preferred_sde,
 
           minimum_required_arr:
-            nextPreferences.minimum_required_arr ?? null,
+            nextPreferences.minimum_required_arr,
 
           preferred_arr:
-            nextPreferences.preferred_arr ?? null,
+            nextPreferences.preferred_arr,
 
           preferred_owner_hours_per_week:
-            nextPreferences.preferred_owner_hours_per_week ?? null,
+            nextPreferences.preferred_owner_hours_per_week,
 
           required_transition_training_days:
-            nextPreferences.required_transition_training_days ?? null,
+            nextPreferences.required_transition_training_days,
 
           deal_preference:
-            nextPreferences.deal_preference ?? null,
+            nextPreferences.deal_preference,
 
           real_estate_preference:
-            nextPreferences.real_estate_preference ?? null,
+            nextPreferences.real_estate_preference,
 
           minimum_years_in_operation:
-            nextPreferences.minimum_years_in_operation ?? null,
+            nextPreferences.minimum_years_in_operation,
 
           accepts_customer_concentration_above_25_percent:
             nextPreferences
-              .accepts_customer_concentration_above_25_percent ??
-            null,
+              .accepts_customer_concentration_above_25_percent,
 
           preferred_acquisition_timeline:
-            nextPreferences.preferred_acquisition_timeline ?? null,
+            nextPreferences.preferred_acquisition_timeline,
         });
 
       setPreferences(savedPreferences);
@@ -568,59 +567,61 @@ export default function BuyerProfileEdit({
    */
 
   const buildBuyerPreferencesPayload =
-    (): BuyerPreferencesPayload => ({
+  (): BuyerPreferencesPayload => {
+    if (!preferences) {
+      return {};
+    }
+
+    return {
       target_industry_preferences:
-        preferences?.target_industry_preferences ?? null,
+        preferences.target_industry_preferences,
 
       target_business_models:
-        preferences?.target_business_models ?? null,
+        preferences.target_business_models,
 
       target_business_types:
-        preferences?.target_business_types ?? null,
+        preferences.target_business_types,
 
       target_locations:
-        preferences?.target_locations ?? null,
+        preferences.target_locations,
 
       maximum_purchase_price:
-        preferences?.maximum_purchase_price ?? null,
+        preferences.maximum_purchase_price,
 
       minimum_required_sde:
-        preferences?.minimum_required_sde ?? null,
+        preferences.minimum_required_sde,
 
       preferred_sde:
-        preferences?.preferred_sde ?? null,
+        preferences.preferred_sde,
 
       minimum_required_arr:
-        preferences?.minimum_required_arr ?? null,
+        preferences.minimum_required_arr,
 
       preferred_arr:
-        preferences?.preferred_arr ?? null,
+        preferences.preferred_arr,
 
       preferred_owner_hours_per_week:
-        preferences?.preferred_owner_hours_per_week ?? null,
+        preferences.preferred_owner_hours_per_week,
 
       required_transition_training_days:
-        preferences?.required_transition_training_days ??
-        null,
+        preferences.required_transition_training_days,
 
       deal_preference:
-        preferences?.deal_preference ?? null,
+        preferences.deal_preference,
 
       real_estate_preference:
-        preferences?.real_estate_preference ?? null,
+        preferences.real_estate_preference,
 
       minimum_years_in_operation:
-        preferences?.minimum_years_in_operation ?? null,
+        preferences.minimum_years_in_operation,
 
       accepts_customer_concentration_above_25_percent:
-        preferences
-          ?.accepts_customer_concentration_above_25_percent ??
-        null,
+        preferences.accepts_customer_concentration_above_25_percent,
 
       preferred_acquisition_timeline:
-        preferences?.preferred_acquisition_timeline ??
-        null,
-    });
+        preferences.preferred_acquisition_timeline,
+    };
+  };
 
   /*
    * ------------------------------------------------
