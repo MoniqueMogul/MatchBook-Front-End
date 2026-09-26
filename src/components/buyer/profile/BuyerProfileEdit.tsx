@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
-
+import EditOverviewSection from "./EditOverviewSection";
 import ExperienceCredentialsEdit, {
   type ExperienceCredentialsData,
 } from "./ExperienceCredentialsEdit";
@@ -15,7 +15,6 @@ import ProfileImageModal from "./ProfileImageModal";
 import ProfileTabs, {
   type ProfileTab,
 } from "./ProfileTabs";
-import EditOverviewSection from "./EditOverviewSection";
 import ProfileFormActions from "./ProfileFormActions";
 
 import {
@@ -27,14 +26,14 @@ import {
   type TargetIndustryPreference,
   type DealPreference,
   type RealEstatePreference,
+  type BusinessType,
 } from "@/lib/api/buyerPreferences";
 
 import {
   getBuyerProfile,
-  createBuyerProfile,
-  updateBuyerProfile,
+  upsertBuyerProfile,
   type BuyerProfile,
-  type BuyerProfileUpdatePayload,
+  type BuyerProfilePayload,
 } from "@/lib/api/buyer";
 
 import "./BuyerProfileEdit.css";
@@ -51,7 +50,7 @@ export default function BuyerProfileEdit({
 
   const markSectionCompleted =
     useBuyerOnboardingStore(
-      (state) => state.markSectionCompleted
+      (state) => state.markSectionCompleted,
     );
 
   const [activeTab, setActiveTab] =
@@ -73,13 +72,17 @@ export default function BuyerProfileEdit({
   const [saving, setSaving] =
     useState(false);
 
+  const savingRef = useRef(false);
+
   const [error, setError] =
     useState<string | null>(null);
 
   const [location, setLocation] =
     useState("");
-  const [userName, setUserName] = 
+
+  const [userName, setUserName] =
     useState("");
+
   const [profileImage, setProfileImage] =
     useState<string | undefined>(undefined);
 
@@ -96,9 +99,8 @@ export default function BuyerProfileEdit({
    *   GET buyer preferences
    *
    * Onboarding mode:
-   *   No backend GET yet.
-   *   Overview creates the buyer profile with POST.
-   *   Experience & Credentials updates it with PATCH.
+   *   GET buyer profile when available.
+   *   PUT is used to create/update the profile.
    */
 
   useEffect(() => {
@@ -231,11 +233,9 @@ export default function BuyerProfileEdit({
    * Overview
    * ------------------------------------------------
    *
-   * Onboarding:
-   *   POST /intake/buyers/profile with about_me.
+   * PUT /intake/buyers/profile
    *
-   * Edit:
-   *   PATCH /intake/buyers/profile immediately.
+   * The backend handles both creation and updating.
    */
 
   const handleOverviewContinue = async (data: {
@@ -248,96 +248,25 @@ export default function BuyerProfileEdit({
       return;
     }
 
+    if (savingRef.current) {
+      return;
+    }
+
+    savingRef.current = true;
     setSaving(true);
     setError(null);
 
     try {
-      const nextProfile = {
-        ...(profile ?? ({} as BuyerProfile)),
+      const savedProfile = await upsertBuyerProfile({
         about_me: data.about.trim(),
-      };
-
-      if (isOnboarding) {
-        const savedProfile = profile?.id
-          ? await updateBuyerProfile({
-              buyer_type: profile.buyer_type ?? null,
-
-              current_industry:
-                profile.current_industry ?? null,
-
-              current_position:
-                profile.current_position ?? null,
-
-              business_experience_years:
-                profile.business_experience_years ?? null,
-
-              relevant_experience:
-                profile.relevant_experience ?? null,
-
-              available_hours_per_week:
-                profile.available_hours_per_week ?? null,
-
-              city:
-                profile.city ?? null,
-
-              county:
-                profile.county ?? null,
-
-              state:
-                profile.state ?? null,
-
-              zip_code:
-                profile.zip_code ?? null,
-
-              about_me: data.about.trim(),
-            })
-          : await createBuyerProfile({
-              about_me: data.about.trim(),
-            });
-
-        setProfile(savedProfile);
-        markSectionCompleted("overview");
-        setActiveTab("industry-experience");
-        return;
-      }
-
-      // Normal edit mode: profile already exists.
-      const savedProfile = await updateBuyerProfile({
-        buyer_type:
-          nextProfile.buyer_type ?? null,
-
-        current_industry:
-          nextProfile.current_industry ?? null,
-
-        current_position:
-          nextProfile.current_position ?? null,
-
-        business_experience_years:
-          nextProfile.business_experience_years ?? null,
-
-        relevant_experience:
-          nextProfile.relevant_experience ?? null,
-
-        available_hours_per_week:
-          nextProfile.available_hours_per_week ?? null,
-
-        city:
-          nextProfile.city ?? null,
-
-        county:
-          nextProfile.county ?? null,
-
-        state:
-          nextProfile.state ?? null,
-
-        zip_code:
-          nextProfile.zip_code ?? null,
-
-        about_me:
-          nextProfile.about_me,
       });
 
       setProfile(savedProfile);
+
+      if (isOnboarding) {
+        markSectionCompleted("overview");
+        setActiveTab("industry-experience");
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -345,6 +274,7 @@ export default function BuyerProfileEdit({
           : "Failed to save your overview.",
       );
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -365,7 +295,7 @@ export default function BuyerProfileEdit({
       return;
     }
 
-    const profileData: BuyerProfileUpdatePayload = {
+    const profileData: BuyerProfilePayload = {
       buyer_type: buyerType,
 
       current_industry:
@@ -407,10 +337,11 @@ export default function BuyerProfileEdit({
       setSaving(true);
       setError(null);
 
-      // Overview already created the buyer profile during onboarding.
-      // Experience & Credentials now updates that existing profile.
+      // PUT is an upsert:
+      // creates the profile if it does not exist,
+      // otherwise updates the supplied fields.
       const updatedProfile =
-        await updateBuyerProfile(profileData);
+        await upsertBuyerProfile(profileData);
 
       setProfile(updatedProfile);
 
@@ -439,7 +370,7 @@ export default function BuyerProfileEdit({
   const handleAcquisitionPreferencesContinue = async (data: {
     targetIndustryPreferences: TargetIndustryPreference[];
     targetBusinessModels: string[];
-    targetBusinessTypes: string[];
+    targetBusinessTypes: BusinessType[];
     targetLocations: ApiTargetLocation[];
 
     minimumYearsInOperation?: number;
@@ -453,6 +384,7 @@ export default function BuyerProfileEdit({
     sellerTrainingDays?: number;
     dealPreference?: DealPreference;
     realEstatePreference?: RealEstatePreference;
+
     timeline?:
       | "exploring"
       | "within-1-12"
@@ -468,35 +400,49 @@ export default function BuyerProfileEdit({
 
         target_industry_preferences:
           data.targetIndustryPreferences,
+
         target_business_models:
           data.targetBusinessModels,
+
         target_business_types:
           data.targetBusinessTypes,
+
         target_locations:
           data.targetLocations,
 
         minimum_years_in_operation:
           data.minimumYearsInOperation ?? null,
+
         minimum_required_arr:
           data.minimumARR ?? null,
+
         minimum_required_sde:
           data.minimumSDE ?? null,
+
         maximum_purchase_price:
           data.maximumPurchasePrice ?? null,
+
         preferred_arr:
           data.preferredARR ?? null,
+
         preferred_sde:
           data.preferredSDE ?? null,
+
         preferred_owner_hours_per_week:
           data.preferredOwnerHoursPerWeek ?? null,
+
         accepts_customer_concentration_above_25_percent:
           data.customerConcentration ?? null,
+
         required_transition_training_days:
           data.sellerTrainingDays ?? null,
+
         deal_preference:
           data.dealPreference ?? null,
+
         real_estate_preference:
           data.realEstatePreference ?? null,
+
         preferred_acquisition_timeline:
           data.timeline ?? null,
       };
@@ -507,36 +453,51 @@ export default function BuyerProfileEdit({
         await saveBuyerPreferences({
           target_industry_preferences:
             nextPreferences.target_industry_preferences ?? null,
+
           target_business_models:
             nextPreferences.target_business_models ?? null,
+
           target_business_types:
             nextPreferences.target_business_types ?? null,
+
           target_locations:
             nextPreferences.target_locations ?? null,
+
           maximum_purchase_price:
             nextPreferences.maximum_purchase_price ?? null,
+
           minimum_required_sde:
             nextPreferences.minimum_required_sde ?? null,
+
           preferred_sde:
             nextPreferences.preferred_sde ?? null,
+
           minimum_required_arr:
             nextPreferences.minimum_required_arr ?? null,
+
           preferred_arr:
             nextPreferences.preferred_arr ?? null,
+
           preferred_owner_hours_per_week:
             nextPreferences.preferred_owner_hours_per_week ?? null,
+
           required_transition_training_days:
             nextPreferences.required_transition_training_days ?? null,
+
           deal_preference:
             nextPreferences.deal_preference ?? null,
+
           real_estate_preference:
             nextPreferences.real_estate_preference ?? null,
+
           minimum_years_in_operation:
             nextPreferences.minimum_years_in_operation ?? null,
+
           accepts_customer_concentration_above_25_percent:
             nextPreferences
               .accepts_customer_concentration_above_25_percent ??
             null,
+
           preferred_acquisition_timeline:
             nextPreferences.preferred_acquisition_timeline ?? null,
         });
@@ -557,12 +518,12 @@ export default function BuyerProfileEdit({
 
   /*
    * ------------------------------------------------
-   * Build Buyer Profile PATCH payload
+   * Build Buyer Profile PUT payload
    * ------------------------------------------------
    */
 
   const buildBuyerProfilePayload =
-    (): BuyerProfileUpdatePayload | null => {
+    (): BuyerProfilePayload | null => {
       if (!profile) {
         return null;
       }
@@ -667,13 +628,12 @@ export default function BuyerProfileEdit({
    * ------------------------------------------------
    *
    * ONBOARDING:
-   *   Profile is created during Overview.
-   *   Experience updates the profile with PATCH.
-   *   Acquisition Preferences and Finance are persisted
-   *   through the preferences PUT request.
+   *   Buyer Profile uses PUT upsert.
+   *   Buyer Preferences use PUT upsert.
    *
    * EDIT:
-   *   Existing backend PATCH + PUT behavior.
+   *   Buyer Profile and Buyer Preferences both use
+   *   their respective PUT upsert endpoints.
    */
 
   const handleSave = async () => {
@@ -682,10 +642,14 @@ export default function BuyerProfileEdit({
      * ONBOARDING MODE
      * ----------------------------------------------
      *
-     * Acquisition Preferences are already persisted with PUT.
-     * Finance updates the local preferences state, and the
-     * final Save persists the complete preferences payload.
+     * Acquisition Preferences are already persisted
+     * with PUT.
+     *
+     * Finance updates the local preferences state,
+     * and the final Save persists the complete
+     * preferences payload.
      */
+
     if (isOnboarding && activeTab !== "finances") {
       return;
     }
@@ -753,9 +717,10 @@ export default function BuyerProfileEdit({
         savedProfile,
         savedPreferences,
       ] = await Promise.all([
-        updateBuyerProfile(
+        upsertBuyerProfile(
           buyerProfilePayload,
         ),
+
         saveBuyerPreferences(
           buyerPreferencesPayload,
         ),
@@ -795,6 +760,7 @@ export default function BuyerProfileEdit({
      * During onboarding there is no existing
      * profile preview to return to.
      */
+
     if (isOnboarding) {
       router.push("/buyer-dashboard");
       return;
@@ -803,6 +769,7 @@ export default function BuyerProfileEdit({
     /*
      * Existing edit-mode behavior.
      */
+
     const previewTabMap: Record<
       ProfileTab,
       string
@@ -945,12 +912,15 @@ export default function BuyerProfileEdit({
               zipCode:
                 profile?.zip_code ?? "",
             }}
+
             onBack={() =>
               setActiveTab("overview")
             }
+
             onContinue={
               handleExperienceCredentialsContinue
             }
+
             disabled={saving}
           />
         )}
@@ -1097,7 +1067,8 @@ export default function BuyerProfileEdit({
 
         {/* Global Save / Cancel */}
 
-        {(!isOnboarding || activeTab === "finances") && (
+        {(!isOnboarding ||
+          activeTab === "finances") && (
           <ProfileFormActions
             onCancel={handleCancel}
             onSave={handleSave}

@@ -31,23 +31,7 @@ export interface BuyerProfile {
   updated_at: string;
 }
 
-export interface BuyerProfileCreatePayload {
-  buyer_type?: BuyerType | null;
-
-  current_industry?: string | null;
-  current_position?: string | null;
-  about_me?: string | null;
-  business_experience_years?: number | null;
-  relevant_experience?: string | null;
-  available_hours_per_week?: number | null;
-
-  city?: string | null;
-  county?: string | null;
-  state?: string | null;
-  zip_code?: string | null;
-}
-
-export interface BuyerProfileUpdatePayload {
+export interface BuyerProfilePayload {
   buyer_type?: BuyerType | null;
 
   current_industry?: string | null;
@@ -65,6 +49,9 @@ export interface BuyerProfileUpdatePayload {
 
 /**
  * GET /intake/buyers/profile
+ *
+ * Retrieves the existing buyer profile for the
+ * authenticated user.
  */
 export async function getBuyerProfile(): Promise<BuyerProfile> {
   const response = await api.get<BuyerProfile>(
@@ -75,26 +62,20 @@ export async function getBuyerProfile(): Promise<BuyerProfile> {
 }
 
 /**
- * POST /intake/buyers/profile
+ * PUT /intake/buyers/profile
+ *
+ * Upsert behavior:
+ * - No profile exists → creates the profile
+ * - Profile exists → updates the supplied fields
+ * - Omitted fields are preserved by the backend
+ *
+ * This same endpoint is used throughout onboarding
+ * and for subsequent buyer profile edits.
  */
-export async function createBuyerProfile(
-  payload: BuyerProfileCreatePayload,
+export async function upsertBuyerProfile(
+  payload: BuyerProfilePayload,
 ): Promise<BuyerProfile> {
-  const response = await api.post<BuyerProfile>(
-    "/intake/buyers/profile",
-    payload,
-  );
-
-  return response.data;
-}
-
-/**
- * PATCH /intake/buyers/profile
- */
-export async function updateBuyerProfile(
-  payload: BuyerProfileUpdatePayload,
-): Promise<BuyerProfile> {
-  const response = await api.patch<BuyerProfile>(
+  const response = await api.put<BuyerProfile>(
     "/intake/buyers/profile",
     payload,
   );

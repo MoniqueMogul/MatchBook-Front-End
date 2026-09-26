@@ -10,6 +10,15 @@ export type RealEstatePreference =
   | "lease"
   | "either";
 
+export type BusinessType =
+  | "sole_proprietorship"
+  | "partnership"
+  | "llc"
+  | "s_corporation"
+  | "c_corporation"
+  | "nonprofit"
+  | "other";
+
 export interface TargetIndustryPreference {
   industry: string;
   sub_industries: string[];
@@ -44,7 +53,7 @@ interface BackendBuyerPreferences {
     | null;
 
   target_business_models?: string[] | null;
-  target_business_types?: string[] | null;
+  target_business_types?: BusinessType[] | null;
 
   target_locations?:
     | BackendTargetLocation[]
@@ -85,7 +94,7 @@ export interface BuyerPreferences {
     | null;
 
   target_business_models?: string[] | null;
-  target_business_types?: string[] | null;
+  target_business_types?: BusinessType[] | null;
 
   target_locations?: ApiTargetLocation[] | null;
 
@@ -121,7 +130,7 @@ export interface BuyerPreferencesPayload {
     | null;
 
   target_business_models?: string[] | null;
-  target_business_types?: string[] | null;
+  target_business_types?: BusinessType[] | null;
 
   target_locations?: ApiTargetLocation[] | null;
 

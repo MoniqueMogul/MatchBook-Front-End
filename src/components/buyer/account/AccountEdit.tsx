@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   getBuyerProfile,
-  updateBuyerProfile,
+  upsertBuyerProfile,
   type BuyerProfile,
 } from "@/lib/api/buyer";
 
@@ -166,7 +166,7 @@ export default function AccountEdit() {
        * Existing county, zip code, buyer type, and
        * other Buyer Profile fields remain untouched.
        */
-      await updateBuyerProfile({
+      await upsertBuyerProfile({
         city: city.trim() || null,
         state: state.trim() || null,
       });
