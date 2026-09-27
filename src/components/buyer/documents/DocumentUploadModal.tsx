@@ -19,8 +19,8 @@ import {
   uploadSlotDefinitions,
 } from "@/lib/api/documents/documents.types";
 import type {
+  DocumentUploadInput,
   FundingSource,
-  VerifiedDocument,
 } from "@/lib/api/documents/documents.types";
 
 import "./DocumentUploadModal.css";
@@ -28,12 +28,8 @@ import "./DocumentUploadModal.css";
 type UploadSlotKey =
   (typeof uploadSlotDefinitions)[number]["key"];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ACCEPTED_TYPES = new Set([
-  "application/pdf",
-  "image/png",
-  "image/jpeg",
-]);
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const ACCEPTED_TYPES = new Set(["application/pdf"]);
 
 interface SlotState {
   file: File | null;
@@ -42,7 +38,9 @@ interface SlotState {
 
 interface DocumentUploadModalProps {
   onClose: () => void;
-  onVerify: (documents: VerifiedDocument[]) => void;
+  onVerify: (
+    documents: DocumentUploadInput[],
+  ) => Promise<void>;
 }
 
 export default function DocumentUploadModal({
@@ -70,6 +68,7 @@ export default function DocumentUploadModal({
     ),
   );
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -109,7 +108,7 @@ export default function DocumentUploadModal({
         ...current,
         [slotKey]: {
           file,
-          error: "Please upload a PDF, PNG, or JPG.",
+          error: "Please upload a PDF document.",
         },
       }));
       return;
@@ -120,7 +119,7 @@ export default function DocumentUploadModal({
         ...current,
         [slotKey]: {
           file,
-          error: "Your file is too large!",
+          error: "The PDF must be 20 MB or smaller.",
         },
       }));
       return;
@@ -148,7 +147,7 @@ export default function DocumentUploadModal({
     setSlotFile(slotKey, event.dataTransfer.files?.[0] ?? null);
   }
 
-  function handleVerify() {
+  async function handleVerify() {
     const filledSlots = uploadSlotDefinitions.filter(
       (slot) => slots[slot.key].file,
     );
@@ -169,23 +168,32 @@ export default function DocumentUploadModal({
       return;
     }
 
-    const uploadedDocuments: VerifiedDocument[] = filledSlots.map(
+    const uploads: DocumentUploadInput[] = filledSlots.map(
       (slot) => {
         const file = slots[slot.key].file as File;
 
         return {
-          id: `demo-document-${slot.key}-${Date.now()}`,
-          name: file.name,
-          type: slot.label,
-          status: "pending",
-          visibility: "private",
-          uploadedAt: new Date().toISOString(),
-          sizeBytes: file.size,
+          file,
+          documentType: slot.documentType,
+          displayType: slot.label,
         };
       },
     );
 
-    onVerify(uploadedDocuments);
+    setIsSubmitting(true);
+    setFormError("");
+
+    try {
+      await onVerify(uploads);
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "The documents could not be uploaded.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (typeof document === "undefined") {
@@ -302,7 +310,7 @@ export default function DocumentUploadModal({
                     fileInputRefs.current[slot.key] = element;
                   }}
                   type="file"
-                  accept="application/pdf,image/png,image/jpeg"
+                  accept="application/pdf"
                   className="document-upload-modal__file-input"
                   onChange={(event) =>
                     handleInputChange(slot.key, event)
@@ -365,7 +373,7 @@ export default function DocumentUploadModal({
                   >
                     <Upload size={16} strokeWidth={1.4} />
                     <span>Click to upload or drag and drop</span>
-                    <small>PDF, PNG or JPG up to 10MB</small>
+                    <small>PDF up to 20MB</small>
                   </div>
                 )}
               </div>
@@ -386,9 +394,12 @@ export default function DocumentUploadModal({
           <button
             type="button"
             className="document-upload-modal__verify-button"
+            disabled={isSubmitting}
             onClick={handleVerify}
           >
-            Verify Documents
+            {isSubmitting
+              ? "Uploading and verifying..."
+              : "Verify Documents"}
           </button>
         </footer>
       </section>

@@ -14,12 +14,13 @@ import {
 } from "lucide-react";
 
 import {
-  readDemoDocuments,
-  saveDemoDocuments,
-} from "@/lib/api/documents/documents.demo-storage";
+  listBuyerDocuments,
+  uploadAndVerifyBuyerDocuments,
+} from "@/lib/api/documents/documents";
 import type {
   DocumentsViewData,
   DocumentStatus,
+  DocumentUploadInput,
   VerifiedDocument,
 } from "@/lib/api/documents/documents.types";
 
@@ -47,32 +48,96 @@ export default function DocumentsDashboard({
     data.documents,
   );
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] =
+    useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    const storedDocuments = readDemoDocuments();
+    let isActive = true;
 
-    if (storedDocuments.length > 0) {
-      setDocuments(storedDocuments);
+    async function loadDocuments(): Promise<void> {
+      try {
+        const existingDocuments = await listBuyerDocuments();
+
+        if (isActive) {
+          setDocuments(existingDocuments);
+          setLoadError("");
+        }
+      } catch (error) {
+        if (isActive) {
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load your existing documents.",
+          );
+        }
+      } finally {
+        if (isActive) {
+          setIsLoadingDocuments(false);
+        }
+      }
     }
+
+    void loadDocuments();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const isVerified = documents.length > 0;
 
-  function handleVerifiedDocuments(
-    uploadedDocuments: VerifiedDocument[],
-  ) {
-    setDocuments((current) => {
-      const next = [...uploadedDocuments, ...current];
-      saveDemoDocuments(next);
-      return next;
-    });
+  async function handleVerifiedDocuments(
+    uploads: DocumentUploadInput[],
+  ): Promise<void> {
+    const uploadedDocuments =
+      await uploadAndVerifyBuyerDocuments(uploads);
 
+    setDocuments((current) => [
+      ...uploadedDocuments,
+      ...current,
+    ]);
+    setLoadError("");
     setIsUploadModalOpen(false);
+  }
+
+  if (isLoadingDocuments) {
+    return (
+      <main className="documents-dashboard">
+        <h1>Documents</h1>
+
+        <div
+          className="documents-dashboard__pending-banner"
+          role="status"
+        >
+          <Clock3 size={20} />
+          <div>
+            <strong>Loading Documents</strong>
+            <span>
+              We are securely loading your existing documents.
+            </span>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="documents-dashboard">
       <h1>Documents</h1>
+
+      {loadError && (
+        <div
+          className="documents-dashboard__pending-banner"
+          role="alert"
+        >
+          <XCircle size={20} />
+          <div>
+            <strong>Documents Could Not Be Loaded</strong>
+            <span>{loadError}</span>
+          </div>
+        </div>
+      )}
 
       {isVerified ? (
         <div className="documents-dashboard__pending-banner">
