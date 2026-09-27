@@ -195,14 +195,14 @@ export default function BuyerProfileEdit({
     };
   }, [isOnboarding]);
 
+  const completedSections = useBuyerOnboardingStore(
+      (state) => state.completedSections,
+    );
+  
   useEffect(() => {
     if (!isOnboarding) {
       return;
     }
-
-    const completedSections =
-      useBuyerOnboardingStore.getState()
-        .completedSections;
 
     if (!completedSections.overview) {
       setActiveTab("overview");
@@ -223,7 +223,7 @@ export default function BuyerProfileEdit({
       setActiveTab("finances");
       return;
     }
-  }, [isOnboarding]);
+  }, [isOnboarding, completedSections]);
 
   useEffect(() => {
     const loadUserName = async () => {
@@ -672,6 +672,47 @@ export default function BuyerProfileEdit({
    *   their respective PUT upsert endpoints.
    */
 
+  const handleFinanceContinue = async () => {
+    if (savingRef.current) {
+      return;
+    }
+
+    if (!preferences) {
+      setError("Buyer preferences are unavailable.");
+      return;
+    }
+
+    savingRef.current = true;
+    setSaving(true);
+    setError(null);
+
+    try {
+      const savedPreferences = await saveBuyerPreferences(
+        buildBuyerPreferencesPayload(),
+      );
+
+      setPreferences(savedPreferences);
+
+      if (isOnboarding) {
+        markSectionCompleted("finances");
+        completeOnboarding();
+        router.push("/buyer-dashboard");
+        return;
+      }
+
+      router.push("/buyer/profile");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save finance information.",
+      );
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     /*
      * ----------------------------------------------
@@ -686,42 +727,10 @@ export default function BuyerProfileEdit({
      * preferences payload.
      */
 
-    if (isOnboarding && activeTab !== "finances") {
-      return;
-    }
-
     if (isOnboarding) {
-      setSaving(true);
-      setError(null);
-
-      try {
-        if (!preferences) {
-          throw new Error(
-            "Buyer preferences are unavailable.",
-          );
-        }
-
-        const savedPreferences =
-          await saveBuyerPreferences(
-            buildBuyerPreferencesPayload(),
-          );
-
-        setPreferences(savedPreferences);
-        markSectionCompleted("finances");
-        completeOnboarding();
-        router.push("/buyer-dashboard");
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to save buyer preferences.",
-        );
-      } finally {
-        setSaving(false);
-      }
-
       return;
     }
+
 
     /*
      * ----------------------------------------------
@@ -893,7 +902,7 @@ export default function BuyerProfileEdit({
 
         {activeTab === "overview" && (
           <EditOverviewSection
-            isOnboarding={isOnboarding}
+            mode={mode}
             initialAbout={
               profile?.about_me ?? ""
             }
@@ -909,6 +918,7 @@ export default function BuyerProfileEdit({
         {activeTab ===
           "industry-experience" && (
           <ExperienceCredentialsEdit
+            mode={mode}
             initialData={{
               buyerType:
                 profile?.buyer_type ?? null,
@@ -1073,33 +1083,25 @@ export default function BuyerProfileEdit({
 
         {activeTab === "finances" && (
           <FinanceEdit
+            mode={mode}
             purchasePrice={
-              preferences
-                ?.maximum_purchase_price != null
-                ? String(
-                    preferences.maximum_purchase_price,
-                  )
+              preferences?.maximum_purchase_price != null
+                ? String(preferences.maximum_purchase_price)
                 : ""
             }
-
             onPurchasePriceChange={(value) => {
               setPreferences((previous) => ({
-                ...(previous ??
-                  ({} as BuyerPreferences)),
-
+                ...(previous ?? ({} as BuyerPreferences)),
                 maximum_purchase_price:
                   value.trim() === ""
                     ? null
                     : Number(value),
               }));
             }}
-
             onBack={() =>
-              setActiveTab(
-                "acquisition-preferences",
-              )
+              setActiveTab("acquisition-preferences")
             }
-
+            onContinue={handleFinanceContinue}
             disabled={saving}
           />
         )}

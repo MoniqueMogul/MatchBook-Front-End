@@ -485,16 +485,20 @@
 import "./FinanceEdit.css";
 
 interface FinanceEditProps {
+  mode?: "edit" | "onboarding";
   purchasePrice: string;
   onPurchasePriceChange: (value: string) => void;
   onBack: () => void;
+  onContinue?: () => void;
   disabled?: boolean;
 }
 
 export default function FinanceEdit({
+  mode = "edit",
   purchasePrice,
   onPurchasePriceChange,
   onBack,
+  onContinue,
   disabled = false,
 }: FinanceEditProps) {
   const handlePurchasePriceChange = (
@@ -525,15 +529,37 @@ export default function FinanceEdit({
       </div>
 
       <div className="finance-edit__navigation">
+      <button
+        type="button"
+        onClick={onBack}
+        disabled={disabled}
+        aria-label="Back to Acquisition Preferences"
+      >
+        ←
+      </button>
+
+      {mode === "onboarding" ? (
         <button
           type="button"
-          onClick={onBack}
+          className="finance-edit__continue-button"
+          onClick={onContinue}
           disabled={disabled}
-          aria-label="Back to Acquisition Preferences"
         >
-          ←
+          Save & Continue
+          <span aria-hidden="true">→</span>
         </button>
-      </div>
+      ) : (
+        <button
+          type="button"
+          className="finance-edit__next-button"
+          onClick={onContinue}
+          disabled={disabled}
+          aria-label="Save finance information"
+        >
+          →
+        </button>
+      )}
+    </div>
     </section>
   );
 }

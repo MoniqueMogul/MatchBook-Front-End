@@ -6,8 +6,8 @@ import { ChevronRight } from "lucide-react";
 import "./EditOverviewSection.css";
 
 interface EditOverviewSectionProps {
+  mode?: "edit" | "onboarding";
   initialAbout?: string;
-  isOnboarding?: boolean;
   onContinue?: (data: {
     about: string;
   }) => void;
@@ -15,10 +15,10 @@ interface EditOverviewSectionProps {
 }
 
 export default function EditOverviewSection({
+  mode = "edit",
   initialAbout = "",
   onContinue,
   disabled = false,
-  isOnboarding = false,
 }: EditOverviewSectionProps) {
   const [about, setAbout] = useState(initialAbout);
 
@@ -62,12 +62,12 @@ export default function EditOverviewSection({
           onClick={handleContinue}
           disabled={disabled}
           aria-label={
-            isOnboarding
-              ? "Save and continue"
-              : "Continue to next profile section"
+             mode === "onboarding"
+            ? "Save and continue"
+            : "Continue to next profile section"
           }
-        >
-          {isOnboarding ? (
+          >
+          {mode === "onboarding" ? (
             "Save & Continue"
           ) : (
             <ChevronRight

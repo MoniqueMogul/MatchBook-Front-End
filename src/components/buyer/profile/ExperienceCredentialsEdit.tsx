@@ -26,6 +26,7 @@ export interface ExperienceCredentialsData {
 }
 
 interface ExperienceCredentialsEditProps {
+  mode?: "edit" | "onboarding";
   initialData?: Partial<ExperienceCredentialsData>;
   onBack: () => void;
   onContinue: (data: ExperienceCredentialsData) => void;
@@ -78,6 +79,7 @@ const BUYER_TYPE_OPTIONS: Array<{
 const MAX_EXPERIENCE_LENGTH = 2000;
 
 export default function ExperienceCredentialsEdit({
+  mode = "edit",
   initialData,
   onBack,
   onContinue,
@@ -732,19 +734,33 @@ export default function ExperienceCredentialsEdit({
             strokeWidth={2}
           />
         </button>
-
-        <button
-          type="button"
-          className="experience-credentials-section__navigation-button"
-          onClick={handleContinue}
-          disabled={disabled}
-          aria-label="Continue to acquisition preferences"
-        >
-          <ArrowRight
-            size={20}
-            strokeWidth={2}
-          />
-        </button>
+        {mode === "onboarding" ? (
+          <button
+            type="button"
+            className="experience-credentials-section__continue-button"
+            onClick={handleContinue}
+            disabled={disabled}
+          >
+            Save & Continue
+            <ArrowRight
+              size={18}
+              strokeWidth={2}
+            />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="experience-credentials-section__navigation-button"
+            onClick={handleContinue}
+            disabled={disabled}
+            aria-label="Continue to acquisition preferences"
+          >
+            <ArrowRight
+              size={20}
+              strokeWidth={2}
+            />
+          </button>
+        )}
       </div>
     </section>
   );

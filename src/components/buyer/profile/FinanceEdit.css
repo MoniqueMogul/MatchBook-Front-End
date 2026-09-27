@@ -306,7 +306,64 @@
 
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
+}
+
+.finance-edit__continue-button {
+  min-width: 150px;
+  height: 48px;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: #498441;
+  color: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.finance-edit__continue-button:hover:not(:disabled) {
+  background: #3d7137;
+}
+
+.finance-edit__continue-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.finance-edit__next-button {
+  width: 50px;
+  height: 48px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #498441;
+  color: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 20px;
+
+  cursor: pointer;
+}
+
+.finance-edit__next-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.finance-edit__next-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .finance-edit__navigation button {
