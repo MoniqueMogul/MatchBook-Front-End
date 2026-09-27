@@ -89,23 +89,32 @@ export default function DocumentsDashboard({
 
   async function handleVerifiedDocuments(
     uploads: DocumentUploadInput[],
-  ): Promise<void> {
-    const uploadedDocuments =
-      await uploadAndVerifyBuyerDocuments(uploads);
+  ): Promise<Array<{ file: File; error?: Error }>> {
+    const outcomes = await uploadAndVerifyBuyerDocuments(uploads);
 
-    setDocuments((current) => [
-      ...uploadedDocuments,
-      ...current,
-    ]);
-    setLoadError("");
-    setIsUploadModalOpen(false);
+    const succeeded = outcomes
+      .map((outcome) => outcome.document)
+      .filter(
+        (document): document is VerifiedDocument =>
+          document !== undefined,
+      );
+
+    if (succeeded.length > 0) {
+      setDocuments((current) => [...succeeded, ...current]);
+      setLoadError("");
+    }
+
+    return outcomes.map((outcome) => ({
+      file: outcome.input.file,
+      error: outcome.error,
+    }));
   }
 
-  if (isLoadingDocuments) {
-    return (
-      <main className="documents-dashboard">
-        <h1>Documents</h1>
+  return (
+    <main className="documents-dashboard">
+      <h1>Documents</h1>
 
+      {isLoadingDocuments && (
         <div
           className="documents-dashboard__pending-banner"
           role="status"
@@ -118,15 +127,9 @@ export default function DocumentsDashboard({
             </span>
           </div>
         </div>
-      </main>
-    );
-  }
+      )}
 
-  return (
-    <main className="documents-dashboard">
-      <h1>Documents</h1>
-
-      {loadError && (
+      {!isLoadingDocuments && loadError && (
         <div
           className="documents-dashboard__pending-banner"
           role="alert"
@@ -139,7 +142,7 @@ export default function DocumentsDashboard({
         </div>
       )}
 
-      {isVerified ? (
+      {!isLoadingDocuments && isVerified ? (
         <div className="documents-dashboard__pending-banner">
           <Clock3 size={20} />
           <div>
@@ -186,7 +189,7 @@ export default function DocumentsDashboard({
         </div>
       )}
 
-      {isVerified ? (
+      {isLoadingDocuments ? null : isVerified ? (
         <section className="documents-dashboard__table-section">
           <div className="documents-dashboard__table-header">
             <div>

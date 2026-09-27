@@ -40,7 +40,7 @@ interface DocumentUploadModalProps {
   onClose: () => void;
   onVerify: (
     documents: DocumentUploadInput[],
-  ) => Promise<void>;
+  ) => Promise<Array<{ file: File; error?: Error }>>;
 }
 
 export default function DocumentUploadModal({
@@ -184,7 +184,25 @@ export default function DocumentUploadModal({
     setFormError("");
 
     try {
-      await onVerify(uploads);
+      const outcomes = await onVerify(uploads);
+      const failures = outcomes.filter(
+        (outcome) => outcome.error,
+      );
+
+      if (failures.length > 0) {
+        const failedNames = failures
+          .map((outcome) => outcome.file.name)
+          .join(", ");
+
+        setFormError(
+          failures.length === uploads.length
+            ? "None of the documents could be uploaded. Please try again."
+            : `Some documents could not be uploaded: ${failedNames}. The rest were submitted successfully.`,
+        );
+        return;
+      }
+
+      onClose();
     } catch (error) {
       setFormError(
         error instanceof Error

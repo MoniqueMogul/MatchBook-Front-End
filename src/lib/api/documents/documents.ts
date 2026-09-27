@@ -178,31 +178,50 @@ export async function listBuyerDocuments(): Promise<
   }
 }
 
+export interface DocumentUploadOutcome {
+  input: DocumentUploadInput;
+  document?: VerifiedDocument;
+  error?: Error;
+}
+
 export async function uploadAndVerifyBuyerDocuments(
   inputs: DocumentUploadInput[],
-): Promise<VerifiedDocument[]> {
+): Promise<DocumentUploadOutcome[]> {
   const buyerFinancialsId = await ensureBuyerFinancialsId();
-  const documents: VerifiedDocument[] = [];
 
-  for (const input of inputs) {
-    const upload = await initiateDocumentUpload(
+  const settled = await Promise.allSettled(
+    inputs.map(async (input) => {
+      const upload = await initiateDocumentUpload(
+        input,
+        buyerFinancialsId,
+      );
+
+      await uploadToPresignedUrl(upload, input.file);
+      await confirmDocumentUpload(upload.document_id);
+
+      const verified = await triggerDocumentVerification(
+        upload.document_id,
+      );
+
+      return mapApiDocument(verified, input.displayType);
+    }),
+  );
+
+  return settled.map((result, index) => {
+    const input = inputs[index];
+
+    if (result.status === "fulfilled") {
+      return { input, document: result.value };
+    }
+
+    return {
       input,
-      buyerFinancialsId,
-    );
-
-    await uploadToPresignedUrl(upload, input.file);
-    await confirmDocumentUpload(upload.document_id);
-
-    const verified = await triggerDocumentVerification(
-      upload.document_id,
-    );
-
-    documents.push(
-      mapApiDocument(verified, input.displayType),
-    );
-  }
-
-  return documents;
+      error: createDocumentError(
+        result.reason,
+        `Unable to upload ${input.file.name}.`,
+      ),
+    };
+  });
 }
 
 function mapApiDocument(
@@ -241,7 +260,7 @@ function getDocumentTypeLabel(
     other: "Other",
   };
 
-  return labels[type];
+  return labels[type] ?? "Other";
 }
 
 function mapVerificationStatus(
