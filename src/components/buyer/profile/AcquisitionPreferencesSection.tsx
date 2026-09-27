@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import {
   ChevronDown,
   ChevronLeft,
@@ -47,7 +52,6 @@ type AcquisitionPreferenceData = {
   targetIndustryPreferences: TargetIndustryPreference[];
   targetBusinessModels: string[];
   targetBusinessTypes: string[];
-
   targetLocations: ApiTargetLocation[];
 
   minimumYearsInOperation?: number;
@@ -69,10 +73,13 @@ type AcquisitionPreferenceData = {
 };
 
 interface AcquisitionPreferencesSectionProps {
+  mode?: "edit" | "onboarding";
+
   initialTargetIndustryPreferences?: TargetIndustryPreference[];
   initialTargetBusinessModels?: string[];
   initialTargetBusinessTypes?: string[];
   initialTargetLocations?: ApiTargetLocation[];
+
   initialMinimumYearsInOperation?: number | null;
   initialMinimumARR?: number | null;
   initialMinimumSDE?: number | null;
@@ -91,19 +98,13 @@ interface AcquisitionPreferencesSectionProps {
   initialTimeline?: TimelineOption;
 
   onBack?: () => void;
-
   onContinue?: (data: AcquisitionPreferenceData) => void;
-
   disabled?: boolean;
 }
 
-/*
- * ------------------------------------------------
+/* ------------------------------------------------
  * Options
- * ------------------------------------------------
- */
-
-
+ * ------------------------------------------------ */
 
 const CUSTOMER_CONCENTRATION_OPTIONS = [
   "Yes",
@@ -156,11 +157,40 @@ const timelineOptions: Array<{
   },
 ];
 
-/*
- * ------------------------------------------------
+const BUSINESS_TYPE_OPTIONS: MultiSelectOption[] = [
+  {
+    value: "sole_proprietorship",
+    label: "Sole Proprietorship",
+  },
+  {
+    value: "partnership",
+    label: "Partnership",
+  },
+  {
+    value: "llc",
+    label: "LLC",
+  },
+  {
+    value: "s_corporation",
+    label: "S Corporation",
+  },
+  {
+    value: "c_corporation",
+    label: "C Corporation",
+  },
+  {
+    value: "nonprofit",
+    label: "Nonprofit",
+  },
+  {
+    value: "other",
+    label: "Other",
+  },
+];
+
+/* ------------------------------------------------
  * Multi Select
- * ------------------------------------------------
- */
+ * ------------------------------------------------ */
 
 interface MultiSelectOption {
   value: string;
@@ -169,6 +199,7 @@ interface MultiSelectOption {
 
 interface MultiSelectProps {
   label: string;
+  required?: boolean;
   options: MultiSelectOption[];
   selected: string[];
   onChange: (values: string[]) => void;
@@ -177,45 +208,68 @@ interface MultiSelectProps {
 
 function MultiSelect({
   label,
+  required = false,
   options,
   selected,
   onChange,
   disabled = false,
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const wrapperRef =
+    useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handlePointerDown = (event: MouseEvent) => {
+    const handlePointerDown = (
+      event: MouseEvent,
+    ) => {
       if (
         wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
+        !wrapperRef.current.contains(
+          event.target as Node,
+        )
       ) {
         setOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener(
+      "mousedown",
+      handlePointerDown,
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener(
+        "mousedown",
+        handlePointerDown,
+      );
     };
   }, []);
 
   const toggleValue = (value: string) => {
-    if (disabled) return;
+    if (disabled) {
+      return;
+    }
 
     onChange(
       selected.includes(value)
-        ? selected.filter((item) => item !== value)
+        ? selected.filter(
+            (item) => item !== value,
+          )
         : [...selected, value],
     );
   };
 
   const removeValue = (value: string) => {
-    if (disabled) return;
+    if (disabled) {
+      return;
+    }
 
-    onChange(selected.filter((item) => item !== value));
+    onChange(
+      selected.filter(
+        (item) => item !== value,
+      ),
+    );
   };
 
   return (
@@ -223,9 +277,19 @@ function MultiSelect({
       ref={wrapperRef}
       className="acquisition-preferences-section__select-field"
     >
-      <label className="acquisition-preferences-section__label">
-        {label}
-      </label>
+      {label && (
+        <label className="acquisition-preferences-section__label">
+          {label}
+          {required && (
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
+          )}
+        </label>
+      )}
 
       <div className="acquisition-preferences-section__select-wrap">
         <button
@@ -235,7 +299,10 @@ function MultiSelect({
               ? "acquisition-preferences-section__select-trigger--open"
               : ""
           }`}
-          onClick={() => !disabled && setOpen((current) => !current)}
+          onClick={() =>
+            !disabled &&
+            setOpen((current) => !current)
+          }
           disabled={disabled}
           aria-expanded={open}
         >
@@ -255,7 +322,8 @@ function MultiSelect({
         {open && (
           <div className="acquisition-preferences-section__dropdown">
             {options.map((option) => {
-              const selectedOption = selected.includes(option.value);
+              const selectedOption =
+                selected.includes(option.value);
 
               return (
                 <label
@@ -269,7 +337,9 @@ function MultiSelect({
                   <input
                     type="checkbox"
                     checked={selectedOption}
-                    onChange={() => toggleValue(option.value)}
+                    onChange={() =>
+                      toggleValue(option.value)
+                    }
                     disabled={disabled}
                   />
 
@@ -293,16 +363,24 @@ function MultiSelect({
               className="acquisition-preferences-section__pill"
             >
               <span>
-                {options.find((option) => option.value === value)?.label ?? value}
+                {options.find(
+                  (option) =>
+                    option.value === value,
+                )?.label ?? value}
               </span>
 
               <button
                 type="button"
-                onClick={() => removeValue(value)}
+                onClick={() =>
+                  removeValue(value)
+                }
                 disabled={disabled}
                 aria-label={`Remove ${value}`}
               >
-                <X size={11} strokeWidth={1.5} />
+                <X
+                  size={11}
+                  strokeWidth={1.5}
+                />
               </button>
             </div>
           ))}
@@ -312,14 +390,13 @@ function MultiSelect({
   );
 }
 
-/*
- * ------------------------------------------------
+/* ------------------------------------------------
  * Single Select
- * ------------------------------------------------
- */
+ * ------------------------------------------------ */
 
 interface SingleSelectProps {
   label: string;
+  required?: boolean;
   value: string;
   options: string[];
   onChange: (value: string) => void;
@@ -328,28 +405,41 @@ interface SingleSelectProps {
 
 function SingleSelect({
   label,
+  required = false,
   value,
   options,
   onChange,
   disabled = false,
 }: SingleSelectProps) {
   const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const wrapperRef =
+    useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handlePointerDown = (event: MouseEvent) => {
+    const handlePointerDown = (
+      event: MouseEvent,
+    ) => {
       if (
         wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
+        !wrapperRef.current.contains(
+          event.target as Node,
+        )
       ) {
         setOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener(
+      "mousedown",
+      handlePointerDown,
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener(
+        "mousedown",
+        handlePointerDown,
+      );
     };
   }, []);
 
@@ -360,6 +450,15 @@ function SingleSelect({
     >
       <label className="acquisition-preferences-section__label">
         {label}
+
+        {required && (
+          <span
+            className="acquisition-preferences-section__required"
+            aria-hidden="true"
+          >
+            *
+          </span>
+        )}
       </label>
 
       <div className="acquisition-preferences-section__select-wrap">
@@ -370,11 +469,16 @@ function SingleSelect({
               ? "acquisition-preferences-section__select-trigger--open"
               : ""
           }`}
-          onClick={() => !disabled && setOpen((current) => !current)}
+          onClick={() =>
+            !disabled &&
+            setOpen((current) => !current)
+          }
           disabled={disabled}
           aria-expanded={open}
         >
-          <span>{value || "Select an option"}</span>
+          <span>
+            {value || "Select an option"}
+          </span>
 
           <ChevronDown
             size={14}
@@ -407,7 +511,9 @@ function SingleSelect({
                 <span>{option}</span>
 
                 <span className="acquisition-preferences-section__check">
-                  {value === option ? "✓" : ""}
+                  {value === option
+                    ? "✓"
+                    : ""}
                 </span>
               </button>
             ))}
@@ -418,17 +524,18 @@ function SingleSelect({
   );
 }
 
-/*
- * ------------------------------------------------
+/* ------------------------------------------------
  * Main Component
- * ------------------------------------------------
- */
+ * ------------------------------------------------ */
 
 export default function AcquisitionPreferencesSection({
+  mode = "edit",
+
   initialTargetIndustryPreferences = [],
   initialTargetBusinessModels = [],
   initialTargetBusinessTypes = [],
   initialTargetLocations = [],
+
   initialMinimumYearsInOperation = null,
   initialMinimumARR = null,
   initialMinimumSDE = null,
@@ -450,45 +557,73 @@ export default function AcquisitionPreferencesSection({
   onContinue,
   disabled = false,
 }: AcquisitionPreferencesSectionProps) {
-  /*
-   * ------------------------------------------------
+  /* ------------------------------------------------
    * State
-   * ------------------------------------------------
-   */
+   * ------------------------------------------------ */
 
-  const [targetIndustryPreferences, setTargetIndustryPreferences] =
-    useState<TargetIndustryPreference[]>(initialTargetIndustryPreferences);
+  const [
+    targetIndustryPreferences,
+    setTargetIndustryPreferences,
+  ] = useState<TargetIndustryPreference[]>(
+    initialTargetIndustryPreferences,
+  );
 
-  const [targetBusinessModels, setTargetBusinessModels] =
-    useState<string[]>(initialTargetBusinessModels);
+  const [
+    targetBusinessModels,
+    setTargetBusinessModels,
+  ] = useState<string[]>(
+    initialTargetBusinessModels,
+  );
 
-  const [targetBusinessTypes, setTargetBusinessTypes] =
-    useState<string[]>(initialTargetBusinessTypes);
+  const [
+    targetBusinessTypes,
+    setTargetBusinessTypes,
+  ] = useState<string[]>(
+    initialTargetBusinessTypes,
+  );
 
-  const [industryOptions, setIndustryOptions] =
-    useState<IndustryOption[]>([]);
+  const [
+    industryOptions,
+    setIndustryOptions,
+  ] = useState<IndustryOption[]>([]);
 
-  const [businessModelOptions, setBusinessModelOptions] =
-    useState<BusinessModelOption[]>([]);
+  const [
+    businessModelOptions,
+    setBusinessModelOptions,
+  ] = useState<BusinessModelOption[]>(
+    [],
+  );
 
-  const [taxonomyLoading, setTaxonomyLoading] = useState(true);
-  const [taxonomyError, setTaxonomyError] = useState<string | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [
+    taxonomyLoading,
+    setTaxonomyLoading,
+  ] = useState(true);
 
-  
-    /*
-   * ------------------------------------------------
+  const [
+    taxonomyError,
+    setTaxonomyError,
+  ] = useState<string | null>(null);
+
+  const [
+    validationError,
+    setValidationError,
+  ] = useState<string | null>(null);
+
+  /* ------------------------------------------------
    * Preferred Regions
-   * ------------------------------------------------
-   */
+   * ------------------------------------------------ */
 
-  const [targetLocations, setTargetLocations] =
-    useState<ApiTargetLocation[]>(
-      initialTargetLocations,
-    );
+  const [
+    targetLocations,
+    setTargetLocations,
+  ] = useState<ApiTargetLocation[]>(
+    initialTargetLocations,
+  );
 
-  const [locationSearch, setLocationSearch] =
-    useState("");
+  const [
+    locationSearch,
+    setLocationSearch,
+  ] = useState("");
 
   const [
     locationSuggestions,
@@ -500,11 +635,15 @@ export default function AcquisitionPreferencesSection({
     setLocationDropdownOpen,
   ] = useState(false);
 
-  const [locationLoading, setLocationLoading] =
-    useState(false);
+  const [
+    locationLoading,
+    setLocationLoading,
+  ] = useState(false);
 
-  const [locationError, setLocationError] =
-    useState<string | null>(null);
+  const [
+    locationError,
+    setLocationError,
+  ] = useState<string | null>(null);
 
   const [
     highlightedLocationIndex,
@@ -514,99 +653,138 @@ export default function AcquisitionPreferencesSection({
   const locationWrapperRef =
     useRef<HTMLDivElement>(null);
 
-  const [minimumYearsInOperation, setMinimumYearsInOperation] =
-    useState(
-      initialMinimumYearsInOperation !== null &&
-        initialMinimumYearsInOperation !== undefined
-        ? String(initialMinimumYearsInOperation)
-        : "",
-    );
+  /* ------------------------------------------------
+   * Numeric / select fields
+   * ------------------------------------------------ */
 
-  const [minimumARR, setMinimumARR] =
-    useState(
-      initialMinimumARR !== null &&
-        initialMinimumARR !== undefined
-        ? String(initialMinimumARR)
-        : "",
-    );
+  const [
+    minimumYearsInOperation,
+    setMinimumYearsInOperation,
+  ] = useState(
+    initialMinimumYearsInOperation !==
+      null &&
+      initialMinimumYearsInOperation !==
+        undefined
+      ? String(initialMinimumYearsInOperation)
+      : "",
+  );
 
-  const [minimumSDE, setMinimumSDE] =
-    useState(
-      initialMinimumSDE !== null &&
-        initialMinimumSDE !== undefined
-        ? String(initialMinimumSDE)
-        : "",
-    );
+  const [
+    minimumARR,
+    setMinimumARR,
+  ] = useState(
+    initialMinimumARR !== null &&
+      initialMinimumARR !== undefined
+      ? String(initialMinimumARR)
+      : "",
+  );
 
-  const [maximumPurchasePrice, setMaximumPurchasePrice] =
-    useState(
-      initialMaximumPurchasePrice !== null &&
-        initialMaximumPurchasePrice !== undefined
-        ? String(initialMaximumPurchasePrice)
-        : "",
-    );
+  const [
+    minimumSDE,
+    setMinimumSDE,
+  ] = useState(
+    initialMinimumSDE !== null &&
+      initialMinimumSDE !== undefined
+      ? String(initialMinimumSDE)
+      : "",
+  );
 
-  const [preferredARR, setPreferredARR] =
-    useState(
-      initialPreferredARR !== null &&
-        initialPreferredARR !== undefined
-        ? String(initialPreferredARR)
-        : "",
-    );
+  const [
+    maximumPurchasePrice,
+    setMaximumPurchasePrice,
+  ] = useState(
+    initialMaximumPurchasePrice !==
+      null &&
+      initialMaximumPurchasePrice !==
+        undefined
+      ? String(initialMaximumPurchasePrice)
+      : "",
+  );
 
-  const [preferredSDE, setPreferredSDE] =
-    useState(
-      initialPreferredSDE !== null &&
-        initialPreferredSDE !== undefined
-        ? String(initialPreferredSDE)
-        : "",
-    );
+  const [
+    preferredARR,
+    setPreferredARR,
+  ] = useState(
+    initialPreferredARR !== null &&
+      initialPreferredARR !== undefined
+      ? String(initialPreferredARR)
+      : "",
+  );
 
-  const [preferredOwnerHoursPerWeek, setPreferredOwnerHoursPerWeek] =
-    useState(
-      initialPreferredOwnerHoursPerWeek !== null &&
-        initialPreferredOwnerHoursPerWeek !== undefined
-        ? String(initialPreferredOwnerHoursPerWeek)
-        : "",
-    );
+  const [
+    preferredSDE,
+    setPreferredSDE,
+  ] = useState(
+    initialPreferredSDE !== null &&
+      initialPreferredSDE !== undefined
+      ? String(initialPreferredSDE)
+      : "",
+  );
 
-  const [customerConcentration, setCustomerConcentration] =
+  const [
+    preferredOwnerHoursPerWeek,
+    setPreferredOwnerHoursPerWeek,
+  ] = useState(
+    initialPreferredOwnerHoursPerWeek !==
+      null &&
+      initialPreferredOwnerHoursPerWeek !==
+        undefined
+      ? String(
+          initialPreferredOwnerHoursPerWeek,
+        )
+      : "",
+  );
+
+  const [
+    customerConcentration,
+    setCustomerConcentration,
+  ] =
     useState<CustomerConcentrationOption>(
       initialCustomerConcentration === true
         ? "yes"
-        : initialCustomerConcentration === false
+        : initialCustomerConcentration ===
+            false
           ? "no"
           : "",
     );
 
-  const [sellerTrainingDays, setSellerTrainingDays] =
-    useState(
-      initialSellerTrainingDays !== null &&
-        initialSellerTrainingDays !== undefined
-        ? `${initialSellerTrainingDays} days`
-        : "",
-    );
+  const [
+    sellerTrainingDays,
+    setSellerTrainingDays,
+  ] = useState(
+    initialSellerTrainingDays !== null &&
+      initialSellerTrainingDays !==
+        undefined
+      ? `${initialSellerTrainingDays} days`
+      : "",
+  );
 
-  const [dealPreference, setDealPreference] =
-    useState<DealPreferenceOption | "">(
-      initialDealPreference ?? "",
-    );
+  const [
+    dealPreference,
+    setDealPreference,
+  ] = useState<
+    DealPreferenceOption | ""
+  >(initialDealPreference ?? "");
 
-  const [realEstatePreference, setRealEstatePreference] =
-    useState<RealEstatePreferenceOption | "">(
-      initialRealEstatePreference ?? "",
-    );
+  const [
+    realEstatePreference,
+    setRealEstatePreference,
+  ] = useState<
+    RealEstatePreferenceOption | ""
+  >(
+    initialRealEstatePreference ?? "",
+  );
 
-  const [timeline, setTimeline] =
-    useState<TimelineOption | "">(initialTimeline ?? "");
+  const [
+    timeline,
+    setTimeline,
+  ] = useState<TimelineOption | "">(
+    initialTimeline ?? "",
+  );
 
-
-
-    /*
-   * ------------------------------------------------
-   * Dynamic Backend Taxonomy
-   * ------------------------------------------------
-   */
+  /* ------------------------------------------------
+   * Load backend taxonomy
+   * ------------------------------------------------ */
 
   useEffect(() => {
     let cancelled = false;
@@ -616,14 +794,19 @@ export default function AcquisitionPreferencesSection({
         setTaxonomyLoading(true);
         setTaxonomyError(null);
 
-        const [industries, businessModels] = await Promise.all([
+        const [
+          industries,
+          businessModels,
+        ] = await Promise.all([
           getIndustryOptions(),
           getBusinessModelOptions(),
         ]);
 
         if (!cancelled) {
           setIndustryOptions(industries);
-          setBusinessModelOptions(businessModels);
+          setBusinessModelOptions(
+            businessModels,
+          );
         }
       } catch (error) {
         if (!cancelled) {
@@ -647,23 +830,37 @@ export default function AcquisitionPreferencesSection({
     };
   }, []);
 
-  const selectedIndustryValues = targetIndustryPreferences.map(
-    (item) => item.industry,
-  );
+  /* ------------------------------------------------
+   * Industry helpers
+   * ------------------------------------------------ */
 
-  const updateIndustrySelection = (values: string[]) => {
-    setTargetIndustryPreferences((current) => {
-      const existing = new Map(
-        current.map((item) => [item.industry, item]),
-      );
+  const selectedIndustryValues =
+    targetIndustryPreferences.map(
+      (item) => item.industry,
+    );
 
-      return values.map((industry) =>
-        existing.get(industry) ?? {
-          industry,
-          sub_industries: [],
-        },
-      );
-    });
+  const updateIndustrySelection = (
+    values: string[],
+  ) => {
+    setTargetIndustryPreferences(
+      (current) => {
+        const existing = new Map(
+          current.map((item) => [
+            item.industry,
+            item,
+          ]),
+        );
+
+        return values.map(
+          (industry) =>
+            existing.get(industry) ?? {
+              industry,
+              sub_industries: [],
+            },
+        );
+      },
+    );
+
     setValidationError(null);
   };
 
@@ -671,34 +868,29 @@ export default function AcquisitionPreferencesSection({
     industry: string,
     subIndustries: string[],
   ) => {
-    setTargetIndustryPreferences((current) =>
-      current.map((item) =>
-        item.industry === industry
-          ? { ...item, sub_industries: subIndustries }
-          : item,
-      ),
+    setTargetIndustryPreferences(
+      (current) =>
+        current.map((item) =>
+          item.industry === industry
+            ? {
+                ...item,
+                sub_industries:
+                  subIndustries,
+              }
+            : item,
+        ),
     );
+
     setValidationError(null);
   };
 
-  const businessTypeOptions: MultiSelectOption[] = [
-    { value: "sole_proprietorship", label: "Sole Proprietorship" },
-    { value: "partnership", label: "Partnership" },
-    { value: "llc", label: "LLC" },
-    { value: "s_corporation", label: "S Corporation" },
-    { value: "c_corporation", label: "C Corporation" },
-    { value: "nonprofit", label: "Nonprofit" },
-    { value: "other", label: "Other" },
-  ];
-
-  /*
-   * ------------------------------------------------
-   * Preferred Regions Autocomplete
-   * ------------------------------------------------
-   */
+  /* ------------------------------------------------
+   * Location autocomplete
+   * ------------------------------------------------ */
 
   useEffect(() => {
-    const query = locationSearch.trim();
+    const query =
+      locationSearch.trim();
 
     if (query.length < 3) {
       setLocationSuggestions([]);
@@ -710,52 +902,52 @@ export default function AcquisitionPreferencesSection({
       return;
     }
 
-    const timeoutId = window.setTimeout(
-      async () => {
-        try {
-          setLocationLoading(true);
-          setLocationError(null);
-          setLocationDropdownOpen(true);
-          setHighlightedLocationIndex(-1);
+    const timeoutId =
+      window.setTimeout(
+        async () => {
+          try {
+            setLocationLoading(true);
+            setLocationError(null);
+            setLocationDropdownOpen(true);
+            setHighlightedLocationIndex(
+              -1,
+            );
 
-          const results = await searchLocations(
-            query,
-            8,
-          );
+            const results =
+              await searchLocations(
+                query,
+                8,
+              );
 
-          setLocationSuggestions(results);
-          setLocationError(null);
-        } catch (error) {
-          console.error(
-            "Location search failed:",
-            error,
-          );
+            setLocationSuggestions(
+              results,
+            );
+          } catch (error) {
+            console.error(
+              "Location search failed:",
+              error,
+            );
 
-          setLocationSuggestions([]);
+            setLocationSuggestions([]);
 
-          setLocationError(
-            error instanceof Error
-              ? error.message
-              : "Unable to load locations. Please try again.",
-          );
-        } finally {
-          setLocationLoading(false);
-        }
-      },
-      250,
-    );
+            setLocationError(
+              error instanceof Error
+                ? error.message
+                : "Unable to load locations. Please try again.",
+            );
+          } finally {
+            setLocationLoading(false);
+          }
+        },
+        250,
+      );
 
     return () => {
-      window.clearTimeout(timeoutId);
+      window.clearTimeout(
+        timeoutId,
+      );
     };
   }, [locationSearch]);
-
-
-    /*
-   * ------------------------------------------------
-   * Close Preferred Regions Dropdown
-   * ------------------------------------------------
-   */
 
   useEffect(() => {
     const handleOutsideClick = (
@@ -768,7 +960,9 @@ export default function AcquisitionPreferencesSection({
         )
       ) {
         setLocationDropdownOpen(false);
-        setHighlightedLocationIndex(-1);
+        setHighlightedLocationIndex(
+          -1,
+        );
       }
     };
 
@@ -785,11 +979,9 @@ export default function AcquisitionPreferencesSection({
     };
   }, []);
 
-  /*
-   * ------------------------------------------------
+  /* ------------------------------------------------
    * Helpers
-   * ------------------------------------------------
-   */
+   * ------------------------------------------------ */
 
   const toNumberOrUndefined = (
     value: string,
@@ -805,13 +997,9 @@ export default function AcquisitionPreferencesSection({
       : parsed;
   };
 
-
-
-    /*
-   * ------------------------------------------------
-   * Preferred Regions Handlers
-   * ------------------------------------------------
-   */
+  /* ------------------------------------------------
+   * Location handlers
+   * ------------------------------------------------ */
 
   const handleLocationInputChange = (
     value: string,
@@ -826,7 +1014,10 @@ export default function AcquisitionPreferencesSection({
       value.trim().length >= 3,
     );
 
-    setHighlightedLocationIndex(-1);
+    setHighlightedLocationIndex(
+      -1,
+    );
+    setLocationError(null);
   };
 
   const handleSelectLocation = (
@@ -843,16 +1034,11 @@ export default function AcquisitionPreferencesSection({
       return;
     }
 
-    if (
-      !Number.isFinite(suggestion.latitude) ||
-      !Number.isFinite(suggestion.longitude)
-    ) {
-      setLocationError(
-        "This location does not contain valid coordinates. Please choose another result.",
-      );
-
-      return;
-    }
+    /*
+     * Coordinates are provider metadata.
+     * They are not required for selecting
+     * or persisting a preferred region.
+     */
 
     if (
       !targetLocations.some(
@@ -861,17 +1047,22 @@ export default function AcquisitionPreferencesSection({
           suggestion.place_id,
       )
     ) {
-      setTargetLocations((current) => [
-        ...current,
-        suggestion,
-      ]);
+      setTargetLocations(
+        (current) => [
+          ...current,
+          suggestion,
+        ],
+      );
     }
 
     setLocationSearch("");
     setLocationSuggestions([]);
     setLocationDropdownOpen(false);
-    setHighlightedLocationIndex(-1);
+    setHighlightedLocationIndex(
+      -1,
+    );
     setLocationError(null);
+    setValidationError(null);
   };
 
   const handleRemoveLocation = (
@@ -881,16 +1072,20 @@ export default function AcquisitionPreferencesSection({
       return;
     }
 
-    setTargetLocations((current) =>
-      current.filter(
-        (location) =>
-          location.place_id !== placeId,
-      ),
+    setTargetLocations(
+      (current) =>
+        current.filter(
+          (location) =>
+            location.place_id !==
+            placeId,
+        ),
     );
+
+    setValidationError(null);
   };
 
   const handleLocationKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement>,
+    event: KeyboardEvent<HTMLInputElement>,
   ) => {
     if (
       !locationDropdownOpen ||
@@ -920,7 +1115,8 @@ export default function AcquisitionPreferencesSection({
         (current) =>
           current > 0
             ? current - 1
-            : locationSuggestions.length - 1,
+            : locationSuggestions.length -
+              1,
       );
 
       return;
@@ -938,7 +1134,9 @@ export default function AcquisitionPreferencesSection({
         ];
 
       if (suggestion) {
-        handleSelectLocation(suggestion);
+        handleSelectLocation(
+          suggestion,
+        );
       }
 
       return;
@@ -946,138 +1144,207 @@ export default function AcquisitionPreferencesSection({
 
     if (event.key === "Escape") {
       setLocationDropdownOpen(false);
-      setHighlightedLocationIndex(-1);
+      setHighlightedLocationIndex(
+        -1,
+      );
     }
   };
 
-  /*
-   * ------------------------------------------------
-   * Continue
-   * ------------------------------------------------
-   */
+  /* ------------------------------------------------
+   * Continue validation
+   *
+   * Required fields are based on the backend
+   * readiness requirements.
+   *
+   * Optional:
+   * - minimum years in operation
+   * - real estate preference
+   * - sub-industries
+   * ------------------------------------------------ */
 
   const handleContinue = () => {
     setValidationError(null);
 
-    const hasMissingIndustrySubIndustry =
-      targetIndustryPreferences.some(
-        (item) => item.sub_industries.length === 0,
-      );
-
     const requiredChecks = [
       {
-        missing: targetIndustryPreferences.length === 0,
-        label: "industry preferences",
+        missing:
+          targetIndustryPreferences.length ===
+          0,
+        label: "industries",
       },
       {
-        missing: hasMissingIndustrySubIndustry,
-        label: "at least one sub-industry for every selected industry",
-      },
-      {
-        missing: targetBusinessModels.length === 0,
+        missing:
+          targetBusinessModels.length ===
+          0,
         label: "business models",
       },
       {
-        missing: targetBusinessTypes.length === 0,
+        missing:
+          targetBusinessTypes.length ===
+          0,
         label: "business types",
       },
       {
-        missing: targetLocations.length === 0,
+        missing:
+          targetLocations.length === 0,
         label: "preferred regions",
       },
       {
-        missing: maximumPurchasePrice.trim() === "",
-        label: "maximum purchase budget",
-      },
-      {
-        missing: minimumSDE.trim() === "",
-        label: "minimum SDE",
-      },
-      {
-        missing: preferredSDE.trim() === "",
-        label: "preferred SDE",
-      },
-      {
-        missing: minimumARR.trim() === "",
+        missing:
+          minimumARR.trim() === "",
         label: "minimum ARR",
       },
       {
-        missing: preferredARR.trim() === "",
+        missing:
+          minimumSDE.trim() === "",
+        label: "minimum SDE",
+      },
+      {
+        missing:
+          maximumPurchasePrice.trim() ===
+          "",
+        label: "maximum purchase budget",
+      },
+      {
+        missing:
+          preferredARR.trim() === "",
         label: "preferred ARR",
       },
       {
-        missing: preferredOwnerHoursPerWeek.trim() === "",
+        missing:
+          preferredSDE.trim() === "",
+        label: "preferred SDE",
+      },
+      {
+        missing:
+          preferredOwnerHoursPerWeek.trim() ===
+          "",
         label: "preferred owner hours",
       },
       {
-        missing: sellerTrainingDays === "",
-        label: "seller transition training",
-      },
-      {
-        missing: dealPreference === "",
-        label: "deal preference",
-      },
-      {
-        missing: customerConcentration === "",
+        missing:
+          customerConcentration === "",
         label: "customer concentration preference",
       },
       {
-        missing: timeline === "",
+        missing:
+          sellerTrainingDays === "",
+        label: "seller transition training",
+      },
+      {
+        missing:
+          dealPreference === "",
+        label: "deal preference",
+      },
+      {
+        missing:
+          timeline === "",
         label: "acquisition timeline",
       },
     ];
 
-    const missing = requiredChecks
-      .filter((check) => check.missing)
-      .map((check) => check.label);
+    const missing =
+      requiredChecks
+        .filter(
+          (check) => check.missing,
+        )
+        .map(
+          (check) => check.label,
+        );
 
     if (missing.length > 0) {
       setValidationError(
-        `Please complete all fields marked “Required for matching”. Missing: ${missing.join(", ")}.`,
+        `Please complete the required fields before continuing. Missing: ${missing.join(", ")}.`,
       );
+
       return;
     }
 
-    const trainingDays = Number.parseInt(
-      sellerTrainingDays.replace(" days", ""),
-      10,
-    );
+    const trainingDays =
+      Number.parseInt(
+        sellerTrainingDays.replace(
+          " days",
+          "",
+        ),
+        10,
+      );
 
     const customerConcentrationValue =
-      customerConcentration === "yes";
+      customerConcentration ===
+      "yes";
 
     onContinue?.({
       targetIndustryPreferences,
       targetBusinessModels,
       targetBusinessTypes,
       targetLocations,
+
+      /*
+       * Optional fields are still included
+       * when the user has entered them.
+       */
       minimumYearsInOperation:
-        toNumberOrUndefined(minimumYearsInOperation),
-      minimumARR: toNumberOrUndefined(minimumARR),
-      minimumSDE: toNumberOrUndefined(minimumSDE),
+        toNumberOrUndefined(
+          minimumYearsInOperation,
+        ),
+
+      minimumARR:
+        toNumberOrUndefined(
+          minimumARR,
+        ),
+
+      minimumSDE:
+        toNumberOrUndefined(
+          minimumSDE,
+        ),
+
       maximumPurchasePrice:
-        toNumberOrUndefined(maximumPurchasePrice),
-      preferredARR: toNumberOrUndefined(preferredARR),
-      preferredSDE: toNumberOrUndefined(preferredSDE),
+        toNumberOrUndefined(
+          maximumPurchasePrice,
+        ),
+
+      preferredARR:
+        toNumberOrUndefined(
+          preferredARR,
+        ),
+
+      preferredSDE:
+        toNumberOrUndefined(
+          preferredSDE,
+        ),
+
       preferredOwnerHoursPerWeek:
-        toNumberOrUndefined(preferredOwnerHoursPerWeek),
-      customerConcentration: customerConcentrationValue,
-      sellerTrainingDays: trainingDays,
+        toNumberOrUndefined(
+          preferredOwnerHoursPerWeek,
+        ),
+
+      customerConcentration:
+        customerConcentrationValue,
+
+      sellerTrainingDays:
+        trainingDays,
+
       dealPreference:
-        dealPreference === "" ? undefined : dealPreference,
+        dealPreference === ""
+          ? undefined
+          : dealPreference,
+
       realEstatePreference:
-        realEstatePreference === ""
+        realEstatePreference ===
+        ""
           ? undefined
           : realEstatePreference,
-      timeline: timeline === "" ? undefined : timeline,
+
+      timeline:
+        timeline === ""
+          ? undefined
+          : timeline,
     });
   };
 
-  /*
-   * ------------------------------------------------
+  /* ------------------------------------------------
    * Render
-   * ------------------------------------------------
-   */
+   * ------------------------------------------------ */
 
   return (
     <section className="acquisition-preferences-section">
@@ -1099,80 +1366,143 @@ export default function AcquisitionPreferencesSection({
         </div>
       )}
 
+      <p className="acquisition-preferences-section__required-note">
+        Fields marked{" "}
+        <span
+          className="acquisition-preferences-section__required"
+          aria-hidden="true"
+        >
+          *
+        </span>{" "}
+        are required for matching.
+      </p>
+
       <div className="acquisition-preferences-section__fields">
+        {/* ------------------------------------------------
+         * Industries
+         * ------------------------------------------------ */}
 
-        {/* Matching-required taxonomy */}
-
-        <div className="acquisition-preferences-section__field">
-          <label className="acquisition-preferences-section__label">
-            Which industries are you interested in?
-            <span className="acquisition-preferences-section__required">
-              Required for matching
-            </span>
-          </label>
-
-          <MultiSelect
-            label=""
-            options={industryOptions.map((option) => ({
+        <MultiSelect
+          label="Which industries are you interested in?"
+          required
+          options={industryOptions.map(
+            (option) => ({
               value: option.value,
               label: option.label,
-            }))}
-            selected={selectedIndustryValues}
-            onChange={updateIndustrySelection}
-            disabled={disabled || taxonomyLoading}
-          />
+            }),
+          )}
+          selected={
+            selectedIndustryValues
+          }
+          onChange={
+            updateIndustrySelection
+          }
+          disabled={
+            disabled ||
+            taxonomyLoading
+          }
+        />
 
-          {targetIndustryPreferences.map((preference) => {
-            const industry = industryOptions.find(
-              (option) => option.value === preference.industry,
-            );
+        {/* ------------------------------------------------
+         * Optional sub-industries
+         * ------------------------------------------------ */}
 
-            if (!industry) return null;
+        {targetIndustryPreferences.map(
+          (preference) => {
+            const industry =
+              industryOptions.find(
+                (option) =>
+                  option.value ===
+                  preference.industry,
+              );
+
+            if (!industry) {
+              return null;
+            }
 
             return (
               <MultiSelect
-                key={preference.industry}
-                label={`Sub-industries for ${industry.label}`}
-                options={industry.sub_industries.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                }))}
-                selected={preference.sub_industries}
-                onChange={(values) =>
-                  updateSubIndustries(preference.industry, values)
+                key={
+                  preference.industry
                 }
-                disabled={disabled || taxonomyLoading}
+                label={`Sub-industries for ${industry.label}`}
+                options={industry.sub_industries.map(
+                  (option) => ({
+                    value: option.value,
+                    label: option.label,
+                  }),
+                )}
+                selected={
+                  preference.sub_industries
+                }
+                onChange={(values) =>
+                  updateSubIndustries(
+                    preference.industry,
+                    values,
+                  )
+                }
+                disabled={
+                  disabled ||
+                  taxonomyLoading
+                }
               />
             );
-          })}
-        </div>
+          },
+        )}
+
+        {/* ------------------------------------------------
+         * Business Models
+         * ------------------------------------------------ */}
 
         <MultiSelect
-          label="Preferred Business Models — Required for matching"
-          options={businessModelOptions.map((option) => ({
-            value: option.value,
-            label: option.label,
-          }))}
-          selected={targetBusinessModels}
+          label="Preferred Business Models"
+          required
+          options={businessModelOptions.map(
+            (option) => ({
+              value: option.value,
+              label: option.label,
+            }),
+          )}
+          selected={
+            targetBusinessModels
+          }
           onChange={(values) => {
-            setTargetBusinessModels(values);
+            setTargetBusinessModels(
+              values,
+            );
             setValidationError(null);
           }}
-          disabled={disabled || taxonomyLoading}
+          disabled={
+            disabled ||
+            taxonomyLoading
+          }
         />
 
+        {/* ------------------------------------------------
+         * Business Types
+         * ------------------------------------------------ */}
+
         <MultiSelect
-          label="Preferred Business Types — Required for matching"
-          options={businessTypeOptions}
-          selected={targetBusinessTypes}
+          label="Preferred Business Types"
+          required
+          options={
+            BUSINESS_TYPE_OPTIONS
+          }
+          selected={
+            targetBusinessTypes
+          }
           onChange={(values) => {
-            setTargetBusinessTypes(values);
+            setTargetBusinessTypes(
+              values,
+            );
             setValidationError(null);
           }}
           disabled={disabled}
         />
 
-        {/* Preferred Regions */}
+        {/* ------------------------------------------------
+         * Preferred Regions
+         * ------------------------------------------------ */}
 
         <div
           ref={locationWrapperRef}
@@ -1183,7 +1513,13 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Preferred Regions
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
 
           <div className="acquisition-preferences-section__location-input-wrap">
@@ -1196,20 +1532,29 @@ export default function AcquisitionPreferencesSection({
                   event.target.value,
                 )
               }
-              onKeyDown={handleLocationKeyDown}
+              onKeyDown={
+                handleLocationKeyDown
+              }
               onFocus={() => {
                 if (
-                  locationSearch.trim().length >= 3
+                  locationSearch
+                    .trim()
+                    .length >= 3
                 ) {
-                  setLocationDropdownOpen(true);
+                  setLocationDropdownOpen(
+                    true,
+                  );
                 }
               }}
               placeholder="Search for a city, state, or county"
               disabled={disabled}
               autoComplete="off"
               className="acquisition-preferences-section__input"
-              aria-expanded={locationDropdownOpen}
+              aria-expanded={
+                locationDropdownOpen
+              }
               aria-autocomplete="list"
+              aria-controls="preferred-regions-list"
             />
 
             {locationLoading && (
@@ -1219,14 +1564,21 @@ export default function AcquisitionPreferencesSection({
             )}
 
             {locationDropdownOpen &&
-              locationSearch.trim().length >= 3 && (
+              locationSearch
+                .trim()
+                .length >= 3 && (
                 <div
+                  id="preferred-regions-list"
                   className="acquisition-preferences-section__location-dropdown"
                   role="listbox"
                 >
-                  {locationSuggestions.length > 0 ? (
+                  {locationSuggestions.length >
+                  0 ? (
                     locationSuggestions.map(
-                      (suggestion, index) => (
+                      (
+                        suggestion,
+                        index,
+                      ) => (
                         <button
                           key={
                             suggestion.place_id
@@ -1243,7 +1595,9 @@ export default function AcquisitionPreferencesSection({
                               ? "acquisition-preferences-section__location-option--highlighted"
                               : ""
                           }`}
-                          onMouseDown={(event) =>
+                          onMouseDown={(
+                            event,
+                          ) =>
                             event.preventDefault()
                           }
                           onClick={() =>
@@ -1252,7 +1606,9 @@ export default function AcquisitionPreferencesSection({
                             )
                           }
                         >
-                          {suggestion.display_name}
+                          {
+                            suggestion.display_name
+                          }
                         </button>
                       ),
                     )
@@ -1274,16 +1630,21 @@ export default function AcquisitionPreferencesSection({
             </p>
           )}
 
-          {targetLocations.length > 0 && (
+          {targetLocations.length >
+            0 && (
             <div className="acquisition-preferences-section__pills">
               {targetLocations.map(
                 (location) => (
                   <div
-                    key={location.place_id}
-                    className="acquisition-preferences-section__pill"
+                    key={
+                      location.place_id
+                    }
+                    className="acquisition-preferences-section__pill acquisition-preferences-section__location-pill"
                   >
                     <span>
-                      {location.display_name}
+                      {
+                        location.display_name
+                      }
                     </span>
 
                     <button
@@ -1308,14 +1669,16 @@ export default function AcquisitionPreferencesSection({
           )}
         </div>
 
-        {/* Minimum Years */}
+        {/* ------------------------------------------------
+         * Optional: Minimum Years
+         * ------------------------------------------------ */}
 
         <div className="acquisition-preferences-section__field">
           <label
             htmlFor="minimum-years-in-operation"
             className="acquisition-preferences-section__label"
           >
-            Minimum Years in Operation
+            Minimum Years in Business
           </label>
 
           <input
@@ -1323,7 +1686,9 @@ export default function AcquisitionPreferencesSection({
             type="number"
             min="0"
             step="1"
-            value={minimumYearsInOperation}
+            value={
+              minimumYearsInOperation
+            }
             onChange={(event) =>
               setMinimumYearsInOperation(
                 event.target.value,
@@ -1335,15 +1700,23 @@ export default function AcquisitionPreferencesSection({
           />
         </div>
 
-        {/* Minimum ARR */}
+        {/* ------------------------------------------------
+         * Minimum ARR
+         * ------------------------------------------------ */}
 
         <div className="acquisition-preferences-section__field">
           <label
             htmlFor="minimum-arr"
             className="acquisition-preferences-section__label"
           >
-            Minimum Annual Recurring Revenue (ARR)
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+            Minimum ARR
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
 
           <input
@@ -1352,7 +1725,9 @@ export default function AcquisitionPreferencesSection({
             min="0"
             value={minimumARR}
             onChange={(event) =>
-              setMinimumARR(event.target.value)
+              setMinimumARR(
+                event.target.value,
+              )
             }
             placeholder="Value"
             disabled={disabled}
@@ -1360,15 +1735,23 @@ export default function AcquisitionPreferencesSection({
           />
         </div>
 
-        {/* Minimum SDE */}
+        {/* ------------------------------------------------
+         * Minimum SDE
+         * ------------------------------------------------ */}
 
         <div className="acquisition-preferences-section__field">
           <label
             htmlFor="minimum-sde"
             className="acquisition-preferences-section__label"
           >
-            Minimum Seller&apos;s Discretionary Earnings (SDE)
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+            Minimum SDE
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
 
           <input
@@ -1377,7 +1760,9 @@ export default function AcquisitionPreferencesSection({
             min="0"
             value={minimumSDE}
             onChange={(event) =>
-              setMinimumSDE(event.target.value)
+              setMinimumSDE(
+                event.target.value,
+              )
             }
             placeholder="Value"
             disabled={disabled}
@@ -1385,7 +1770,9 @@ export default function AcquisitionPreferencesSection({
           />
         </div>
 
-        {/* Maximum Purchase Price */}
+        {/* ------------------------------------------------
+         * Maximum Purchase Budget
+         * ------------------------------------------------ */}
 
         <div className="acquisition-preferences-section__field">
           <label
@@ -1393,14 +1780,22 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Maximum Purchase Budget
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
 
           <input
             id="maximum-purchase-price"
             type="number"
             min="0"
-            value={maximumPurchasePrice}
+            value={
+              maximumPurchasePrice
+            }
             onChange={(event) =>
               setMaximumPurchasePrice(
                 event.target.value,
@@ -1412,15 +1807,23 @@ export default function AcquisitionPreferencesSection({
           />
         </div>
 
-        {/* Preferred ARR */}
+        {/* ------------------------------------------------
+         * Preferred ARR
+         * ------------------------------------------------ */}
 
         <div className="acquisition-preferences-section__field">
           <label
             htmlFor="preferred-arr"
             className="acquisition-preferences-section__label"
           >
-            Preferred Annual Recurring Revenue (ARR)
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+            Preferred ARR
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
 
           <input
@@ -1429,7 +1832,9 @@ export default function AcquisitionPreferencesSection({
             min="0"
             value={preferredARR}
             onChange={(event) =>
-              setPreferredARR(event.target.value)
+              setPreferredARR(
+                event.target.value,
+              )
             }
             placeholder="Value"
             disabled={disabled}
@@ -1437,15 +1842,23 @@ export default function AcquisitionPreferencesSection({
           />
         </div>
 
-        {/* Preferred SDE */}
+        {/* ------------------------------------------------
+         * Preferred SDE
+         * ------------------------------------------------ */}
 
         <div className="acquisition-preferences-section__field">
           <label
             htmlFor="preferred-sde"
             className="acquisition-preferences-section__label"
           >
-            Preferred Seller&apos;s Discretionary Earnings (SDE)
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+            Preferred SDE
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
 
           <input
@@ -1454,7 +1867,9 @@ export default function AcquisitionPreferencesSection({
             min="0"
             value={preferredSDE}
             onChange={(event) =>
-              setPreferredSDE(event.target.value)
+              setPreferredSDE(
+                event.target.value,
+              )
             }
             placeholder="Value"
             disabled={disabled}
@@ -1462,7 +1877,9 @@ export default function AcquisitionPreferencesSection({
           />
         </div>
 
-        {/* Preferred Owner Hours */}
+        {/* ------------------------------------------------
+         * Preferred Owner Hours
+         * ------------------------------------------------ */}
 
         <div className="acquisition-preferences-section__field">
           <label
@@ -1470,7 +1887,13 @@ export default function AcquisitionPreferencesSection({
             className="acquisition-preferences-section__label"
           >
             Preferred Owner Hours per Week
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
 
           <input
@@ -1479,7 +1902,9 @@ export default function AcquisitionPreferencesSection({
             min="0"
             max="168"
             step="1"
-            value={preferredOwnerHoursPerWeek}
+            value={
+              preferredOwnerHoursPerWeek
+            }
             onChange={(event) =>
               setPreferredOwnerHoursPerWeek(
                 event.target.value,
@@ -1491,149 +1916,216 @@ export default function AcquisitionPreferencesSection({
           />
         </div>
 
-        {/* Customer Concentration */}
+        {/* ------------------------------------------------
+         * Customer Concentration
+         * ------------------------------------------------ */}
 
         <SingleSelect
-          label="Would you consider a business where one customer makes up more than 25% of its revenue? — Required for matching"
+          label="Customer concentration above 25%?"
+          required
           value={
-            customerConcentration === "yes"
+            customerConcentration ===
+            "yes"
               ? "Yes"
-              : customerConcentration === "no"
+              : customerConcentration ===
+                  "no"
                 ? "No"
                 : ""
           }
-          options={CUSTOMER_CONCENTRATION_OPTIONS}
-          onChange={(value) =>
+          options={
+            CUSTOMER_CONCENTRATION_OPTIONS
+          }
+          onChange={(value) => {
             setCustomerConcentration(
               value.toLowerCase() as CustomerConcentrationOption,
-            )
-          }
+            );
+            setValidationError(null);
+          }}
           disabled={disabled}
         />
 
-        {/* Seller Training */}
+        {/* ------------------------------------------------
+         * Seller Training
+         * ------------------------------------------------ */}
 
         <SingleSelect
-          label="How many days of seller transition training would you require? — Required for matching"
-          value={sellerTrainingDays}
-          options={SELLER_TRAINING_OPTIONS}
-          onChange={setSellerTrainingDays}
-          disabled={disabled}
-        />
-
-        {/* Deal Preference */}
-
-        <SingleSelect
-          label="What is your preferred deal structure? — Required for matching"
+          label="Seller transition training"
+          required
           value={
-            dealPreference === "cash"
+            sellerTrainingDays
+          }
+          options={
+            SELLER_TRAINING_OPTIONS
+          }
+          onChange={(value) => {
+            setSellerTrainingDays(value);
+            setValidationError(null);
+          }}
+          disabled={disabled}
+        />
+
+        {/* ------------------------------------------------
+         * Deal Preference
+         * ------------------------------------------------ */}
+
+        <SingleSelect
+          label="Preferred deal structure"
+          required
+          value={
+            dealPreference ===
+            "cash"
               ? "Cash"
-              : dealPreference === "financing"
+              : dealPreference ===
+                  "financing"
                 ? "Financing"
-                : dealPreference === "either"
+                : dealPreference ===
+                    "either"
                   ? "Either"
                   : ""
           }
           options={DEAL_PREFERENCE_OPTIONS.map(
-            (option) => option.label,
+            (option) =>
+              option.label,
           )}
           onChange={(value) => {
             const selectedOption =
               DEAL_PREFERENCE_OPTIONS.find(
                 (option) =>
-                  option.label === value,
+                  option.label ===
+                  value,
               );
 
             setDealPreference(
-              selectedOption?.value ?? "",
+              selectedOption?.value ??
+                "",
             );
+
+            setValidationError(null);
           }}
           disabled={disabled}
         />
 
-        {/* Real Estate Preference */}
+        {/* ------------------------------------------------
+         * Optional Real Estate Preference
+         * ------------------------------------------------ */}
 
         <SingleSelect
-          label="What is your preference for real estate?"
+          label="Real Estate Preference"
           value={
-            realEstatePreference === "included"
+            realEstatePreference ===
+            "included"
               ? "Included"
-              : realEstatePreference === "lease"
+              : realEstatePreference ===
+                  "lease"
                 ? "Lease"
-                : realEstatePreference === "either"
+                : realEstatePreference ===
+                    "either"
                   ? "Either"
                   : ""
           }
-          options={["Included", "Lease", "Either"]}
+          options={[
+            "Included",
+            "Lease",
+            "Either",
+          ]}
           onChange={(value) => {
             const selectedOption =
               value === "Included"
                 ? "included"
                 : value === "Lease"
                   ? "lease"
-                  : value === "Either"
+                  : value ===
+                      "Either"
                     ? "either"
                     : "";
 
-            setRealEstatePreference(selectedOption);
+            setRealEstatePreference(
+              selectedOption,
+            );
           }}
           disabled={disabled}
         />
 
-        {/* Acquisition Timeline */}
+        {/* ------------------------------------------------
+         * Acquisition Timeline
+         * ------------------------------------------------ */}
 
         <fieldset className="acquisition-preferences-section__group acquisition-preferences-section__group--timeline">
           <legend className="acquisition-preferences-section__label">
             Acquisition Timeline
-            <span className="acquisition-preferences-section__required">Required for matching</span>
+
+            <span
+              className="acquisition-preferences-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </legend>
 
           <div className="acquisition-preferences-section__radio-grid">
-            {timelineOptions.map((option) => {
-              const selected =
-                timeline === option.value;
+            {timelineOptions.map(
+              (option) => {
+                const selected =
+                  timeline ===
+                  option.value;
 
-              return (
-                <label
-                  key={option.value}
-                  className="acquisition-preferences-section__radio-option"
-                >
-                  <input
-                    type="radio"
-                    name="acquisition-timeline"
-                    value={option.value}
-                    checked={selected}
-                    onChange={() =>
-                      setTimeline(option.value)
+                return (
+                  <label
+                    key={
+                      option.value
                     }
-                    disabled={disabled}
-                    className="acquisition-preferences-section__radio-input"
-                  />
-
-                  <span
-                    className={`acquisition-preferences-section__radio ${
-                      selected
-                        ? "acquisition-preferences-section__radio--selected"
-                        : ""
-                    }`}
-                    aria-hidden="true"
+                    className="acquisition-preferences-section__radio-option"
                   >
-                    {selected && (
-                      <span className="acquisition-preferences-section__radio-dot" />
-                    )}
-                  </span>
+                    <input
+                      type="radio"
+                      name="acquisition-timeline"
+                      value={
+                        option.value
+                      }
+                      checked={
+                        selected
+                      }
+                      onChange={() => {
+                        setTimeline(
+                          option.value,
+                        );
+                        setValidationError(
+                          null,
+                        );
+                      }}
+                      disabled={
+                        disabled
+                      }
+                      className="acquisition-preferences-section__radio-input"
+                    />
 
-                  <span className="acquisition-preferences-section__radio-label">
-                    {option.label}
-                  </span>
-                </label>
-              );
-            })}
+                    <span
+                      className={`acquisition-preferences-section__radio ${
+                        selected
+                          ? "acquisition-preferences-section__radio--selected"
+                          : ""
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {selected && (
+                        <span className="acquisition-preferences-section__radio-dot" />
+                      )}
+                    </span>
+
+                    <span className="acquisition-preferences-section__radio-label">
+                      {option.label}
+                    </span>
+                  </label>
+                );
+              },
+            )}
           </div>
         </fieldset>
       </div>
 
-      {/* Navigation */}
+      {/* ------------------------------------------------
+       * Navigation
+       * ------------------------------------------------ */}
 
       <div className="acquisition-preferences-section__navigation">
         <button
@@ -1649,18 +2141,30 @@ export default function AcquisitionPreferencesSection({
           />
         </button>
 
-        <button
-          type="button"
-          className="acquisition-preferences-section__navigation-button"
-          onClick={handleContinue}
-          disabled={disabled}
-          aria-label="Continue to finances"
-        >
-          <ChevronRight
-            size={32}
-            strokeWidth={1.5}
-          />
-        </button>
+        {mode ===
+        "onboarding" ? (
+          <button
+            type="button"
+            className="acquisition-preferences-section__navigation-button acquisition-preferences-section__navigation-button--save"
+            onClick={handleContinue}
+            disabled={disabled}
+          >
+            Save &amp; Continue
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="acquisition-preferences-section__navigation-button"
+            onClick={handleContinue}
+            disabled={disabled}
+            aria-label="Continue to finances"
+          >
+            <ChevronRight
+              size={32}
+              strokeWidth={1.5}
+            />
+          </button>
+        )}
       </div>
     </section>
   );

@@ -1,7 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 
 import DashboardSidebar from "@/components/buyer/profile/DashboardSidebar";
 import BuyerProfilePreview from "@/components/buyer/profile/BuyerProfilePreview";
@@ -15,6 +18,8 @@ import {
   getBuyerProfile,
   type BuyerProfile,
 } from "@/lib/api/buyer";
+
+import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
 
 import "./page.css";
 
@@ -122,7 +127,18 @@ const MOCK_PREFERENCES: BuyerPreferences = {
 };
 
 function BuyerProfilePageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
+  const onboardingInProgress =
+    useBuyerOnboardingStore(
+      (state) => state.onboardingInProgress,
+    );
+  useEffect(() => {
+    if (onboardingInProgress) {
+      router.replace("/buyer-onboarding/profile");
+    }
+  }, [onboardingInProgress, router]);
   const tabParam = searchParams.get("tab");
 
   const validPreviewTabs = [
@@ -207,6 +223,11 @@ function BuyerProfilePageContent() {
 
   const memberType =
     profile?.buyer_type || "Member Type";
+
+  if (onboardingInProgress) {
+    return null;
+  }
+
 
   return (
     <div className="buyer-profile-page">

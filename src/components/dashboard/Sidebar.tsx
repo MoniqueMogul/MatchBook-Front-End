@@ -15,6 +15,10 @@ interface NavItem {
   path?: string;
 }
 
+import {
+  getBuyerProfilePath,
+} from "@/lib/navigation/buyerProfile";
+
 interface SidebarProps {
   /** Optional manual override for the active nav item */
   activeItem?: string;
@@ -363,6 +367,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNavigation = (item: NavItem) => {
     onNavigate?.(item.id);
+
+    if (item.id === "profile") {
+      const profilePath =
+        getBuyerProfilePath();
+
+      if (pathname !== profilePath) {
+        router.push(profilePath);
+      }
+
+      return;
+    }
 
     if (item.path && pathname !== item.path) {
       router.push(item.path);

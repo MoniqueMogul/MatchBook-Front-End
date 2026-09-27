@@ -12,6 +12,53 @@
   overflow: visible;
 }
 
+/* ------------------------------------------------
+ * Intro / required note
+ * ------------------------------------------------ */
+
+.acquisition-preferences-section__required-note {
+  width: 320px;
+  margin: 0 0 16px;
+  padding: 0;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  color: #687385;
+}
+
+.acquisition-preferences-section__required {
+  display: inline;
+  margin-left: 3px;
+  color: #c0392b;
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------
+ * Validation
+ * ------------------------------------------------ */
+
+.acquisition-preferences-section__validation-error {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #e5b9b3;
+  border-radius: 6px;
+  background: #fff7f6;
+  color: #c0392b;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+/* ------------------------------------------------
+ * Fields
+ * ------------------------------------------------ */
+
 .acquisition-preferences-section__fields {
   width: 100%;
   display: flex;
@@ -29,9 +76,9 @@
   position: relative;
 }
 
-.acquisition-preferences-section__field--compact {
-  width: 320px;
-}
+/* ------------------------------------------------
+ * Labels
+ * ------------------------------------------------ */
 
 .acquisition-preferences-section__label {
   width: 100%;
@@ -44,6 +91,10 @@
   font-weight: 400;
   color: #333d4d;
 }
+
+/* ------------------------------------------------
+ * Inputs
+ * ------------------------------------------------ */
 
 .acquisition-preferences-section__input,
 .acquisition-preferences-section__textarea {
@@ -91,7 +142,9 @@
   opacity: 0.7;
 }
 
-/* Select fields */
+/* ------------------------------------------------
+ * Select fields
+ * ------------------------------------------------ */
 
 .acquisition-preferences-section__select-wrap {
   position: relative;
@@ -106,6 +159,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 0 10px;
   border: 1px solid #b7bec7;
   border-radius: 6px;
@@ -139,6 +193,13 @@
   opacity: 0.7;
 }
 
+.acquisition-preferences-section__select-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .acquisition-preferences-section__chevron {
   flex: 0 0 14px;
   color: #52677d;
@@ -148,6 +209,10 @@
 .acquisition-preferences-section__chevron--open {
   transform: rotate(180deg);
 }
+
+/* ------------------------------------------------
+ * Standard dropdown
+ * ------------------------------------------------ */
 
 .acquisition-preferences-section__dropdown {
   position: absolute;
@@ -219,6 +284,10 @@
   font-weight: 600;
 }
 
+/* ------------------------------------------------
+ * Pills
+ * ------------------------------------------------ */
+
 .acquisition-preferences-section__pills {
   width: 100%;
   display: flex;
@@ -246,6 +315,12 @@
   font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.acquisition-preferences-section__location-pill {
+  width: auto;
+  min-width: 82px;
+  max-width: 220px;
 }
 
 .acquisition-preferences-section__pill > span {
@@ -280,7 +355,91 @@
   opacity: 0.6;
 }
 
-/* Existing radio groups */
+/* ------------------------------------------------
+ * Preferred Regions
+ * ------------------------------------------------ */
+
+.acquisition-preferences-section__location-field {
+  position: relative;
+}
+
+.acquisition-preferences-section__location-input-wrap {
+  position: relative;
+  width: 320px;
+}
+
+.acquisition-preferences-section__location-dropdown {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  width: 320px;
+  max-height: 245px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 3px 0;
+  border: 1px solid #498441;
+  border-radius: 5px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+}
+
+.acquisition-preferences-section__location-option {
+  width: 100%;
+  min-height: 27px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 5px 9px;
+  border: 0;
+  background: #ffffff;
+  color: #52677d;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+
+.acquisition-preferences-section__location-option:hover,
+.acquisition-preferences-section__location-option--highlighted {
+  background: #f3f7f2;
+}
+
+.acquisition-preferences-section__location-empty {
+  min-height: 27px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 5px 9px;
+  color: #687385;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.acquisition-preferences-section__location-loading {
+  display: block;
+  margin: 0;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  color: #687385;
+}
+
+.acquisition-preferences-section__location-error {
+  width: 320px;
+  margin: 0;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  color: #c0392b;
+}
+
+/* ------------------------------------------------
+ * Timeline
+ * ------------------------------------------------ */
 
 .acquisition-preferences-section__group {
   width: 620px;
@@ -352,54 +511,9 @@
   color: #12161d;
 }
 
-/* Zipcode + search radius */
-
-.acquisition-preferences-section__location-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  width: 620px;
-}
-
-.acquisition-preferences-section__field--zipcode {
-  width: 105px;
-}
-
-.acquisition-preferences-section__field--zipcode .acquisition-preferences-section__input {
-  width: 105px;
-}
-
-.acquisition-preferences-section__radius {
-  width: 310px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.acquisition-preferences-section__radius-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-}
-
-.acquisition-preferences-section__radius-control input[type="range"] {
-  width: 150px;
-  height: 4px;
-  margin: 0;
-  accent-color: #498441;
-  cursor: pointer;
-}
-
-.acquisition-preferences-section__radius-control span {
-  white-space: nowrap;
-  font-size: 12px;
-  line-height: 18px;
-  color: #498441;
-  font-weight: 500;
-}
-
-/* Navigation */
+/* ------------------------------------------------
+ * Navigation
+ * ------------------------------------------------ */
 
 .acquisition-preferences-section__navigation {
   position: absolute;
@@ -443,15 +557,41 @@
   opacity: 0.5;
 }
 
+.acquisition-preferences-section__navigation-button--save {
+  width: auto;
+  min-width: 160px;
+  padding: 0 16px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+/* ------------------------------------------------
+ * Responsive
+ * ------------------------------------------------ */
+
 @media (max-width: 700px) {
   .acquisition-preferences-section {
     min-height: 0;
     padding-bottom: 90px;
   }
 
+  .acquisition-preferences-section__required-note {
+    width: 100%;
+  }
+
+  .acquisition-preferences-section__field,
+  .acquisition-preferences-section__input,
+  .acquisition-preferences-section__textarea,
+  .acquisition-preferences-section__location-input-wrap,
+  .acquisition-preferences-section__location-dropdown,
+  .acquisition-preferences-section__location-error {
+    width: 100%;
+  }
+
   .acquisition-preferences-section__group,
-  .acquisition-preferences-section__radio-grid,
-  .acquisition-preferences-section__location-row {
+  .acquisition-preferences-section__radio-grid {
     width: 100%;
   }
 
@@ -459,78 +599,9 @@
     grid-template-columns: 1fr;
   }
 
-  .acquisition-preferences-section__field,
-  .acquisition-preferences-section__input,
-  .acquisition-preferences-section__textarea {
-    width: 100%;
-  }
-
   .acquisition-preferences-section__select-wrap,
   .acquisition-preferences-section__select-trigger,
   .acquisition-preferences-section__dropdown {
     width: 150px;
   }
-
-  .acquisition-preferences-section__location-row {
-    flex-wrap: wrap;
-  }
-}
-
-.acquisition-preferences-section__location-field {
-  position: relative;
-}
-
-.acquisition-preferences-section__location-input-wrap {
-  position: relative;
-}
-
-.acquisition-preferences-section__location-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  z-index: 20;
-  max-height: 240px;
-  overflow-y: auto;
-  background: #ffffff;
-  border: 1px solid #d9dee7;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-.acquisition-preferences-section__location-option {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 12px 14px;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14px;
-  line-height: 20px;
-  color: #303943;
-}
-
-.acquisition-preferences-section__location-option:hover,
-.acquisition-preferences-section__location-option--highlighted {
-  background: #f5f7fa;
-}
-
-.acquisition-preferences-section__location-empty {
-  padding: 12px 14px;
-  font-size: 14px;
-  color: #687385;
-}
-
-.acquisition-preferences-section__location-loading {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: #687385;
-}
-
-.acquisition-preferences-section__location-error {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: #c0392b;
 }

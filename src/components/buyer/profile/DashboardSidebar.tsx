@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 
 import "./DashboardSidebar.css";
-
+import {
+  getBuyerProfilePath,
+} from "@/lib/navigation/buyerProfile";
 type NavigationItem = {
   label: string;
   icon: typeof LayoutDashboard;
@@ -39,7 +41,6 @@ const mainNavigation: NavigationItem[] = [
   {
     label: "Profile",
     icon: CreditCard,
-    href: "/buyer/profile",
   },
   {
     label: "Deals",
@@ -72,6 +73,11 @@ function NavigationItem({
   const router = useRouter();
 
   const handleClick = () => {
+    if (label === "Profile") {
+      router.push(getBuyerProfilePath());
+      return;
+    }
+
     if (href) {
       router.push(href);
     }
@@ -194,9 +200,12 @@ export default function DashboardSidebar() {
         aria-label="Main navigation"
       >
         {mainNavigation.map((item) => {
-          const isActive =
-            item.href !== undefined &&
-            pathname.startsWith(item.href);
+           const isActive =
+            item.label === "Profile"
+              ? pathname.startsWith("/buyer/profile") ||
+                pathname.startsWith("/buyer-onboarding/profile")
+              : item.href !== undefined &&
+                pathname.startsWith(item.href);
 
           return (
             <NavigationItem

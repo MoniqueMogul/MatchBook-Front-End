@@ -7,6 +7,7 @@ interface ProfileEditHeaderProps {
   name: string;
   location: string;
   imageSrc?: string;
+  mode?: "edit" | "onboarding";
   onImageChange?: () => void;
   onLocationChange?: (value: string) => void;
 }
@@ -15,6 +16,7 @@ export default function ProfileEditHeader({
   name,
   location,
   imageSrc,
+  mode = "edit",
   onImageChange,
   onLocationChange,
 }: ProfileEditHeaderProps) {
@@ -87,7 +89,9 @@ export default function ProfileEditHeader({
 
       <div className="profile-edit-header__controls">
         <div className="profile-edit-header__editing">
-          Editing Profile
+          {mode === "onboarding"
+            ? "Onboarding"
+            : "Editing Profile"}
         </div>
       </div>
     </header>

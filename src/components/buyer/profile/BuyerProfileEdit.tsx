@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
 import EditOverviewSection from "./EditOverviewSection";
 import ExperienceCredentialsEdit, {
   type ExperienceCredentialsData,
@@ -16,7 +15,9 @@ import ProfileTabs, {
   type ProfileTab,
 } from "./ProfileTabs";
 import ProfileFormActions from "./ProfileFormActions";
-
+import {
+  useBuyerOnboardingStore,
+} from "@/store/useBuyerOnboardingStore";
 import {
   getBuyerPreferences,
   saveBuyerPreferences,
@@ -51,6 +52,10 @@ export default function BuyerProfileEdit({
   const markSectionCompleted =
     useBuyerOnboardingStore(
       (state) => state.markSectionCompleted,
+    );
+  const completeOnboarding =
+    useBuyerOnboardingStore(
+      (state) => state.completeOnboarding,
     );
 
   const [activeTab, setActiveTab] =
@@ -188,6 +193,36 @@ export default function BuyerProfileEdit({
     return () => {
       cancelled = true;
     };
+  }, [isOnboarding]);
+
+  useEffect(() => {
+    if (!isOnboarding) {
+      return;
+    }
+
+    const completedSections =
+      useBuyerOnboardingStore.getState()
+        .completedSections;
+
+    if (!completedSections.overview) {
+      setActiveTab("overview");
+      return;
+    }
+
+    if (!completedSections.experience) {
+      setActiveTab("industry-experience");
+      return;
+    }
+
+    if (!completedSections.acquisition) {
+      setActiveTab("acquisition-preferences");
+      return;
+    }
+
+    if (!completedSections.finances) {
+      setActiveTab("finances");
+      return;
+    }
   }, [isOnboarding]);
 
   useEffect(() => {
@@ -673,6 +708,7 @@ export default function BuyerProfileEdit({
 
         setPreferences(savedPreferences);
         markSectionCompleted("finances");
+        completeOnboarding();
         router.push("/buyer-dashboard");
       } catch (err) {
         setError(
@@ -838,6 +874,7 @@ export default function BuyerProfileEdit({
           name={userName}
           location={location}
           imageSrc={profileImage}
+          mode={isOnboarding ? "onboarding" : "edit"}
           onLocationChange={setLocation}
           onImageChange={() =>
             setIsImageModalOpen(true)
@@ -931,6 +968,7 @@ export default function BuyerProfileEdit({
         {activeTab ===
           "acquisition-preferences" && (
           <AcquisitionPreferencesSection
+            mode={mode}
             initialTargetIndustryPreferences={
               preferences?.target_industry_preferences ?? []
             }

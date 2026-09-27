@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export type BuyerProfileSection =
   | "overview"
@@ -15,6 +16,12 @@ export interface BuyerAboutYouData {
 export interface BuyerOnboardingState {
   currentStep: number;
   totalSteps: number;
+
+  /**
+   * true  = user has not finished buyer onboarding
+   * false = onboarding is complete
+   */
+  onboardingInProgress: boolean;
 
   aboutYou: BuyerAboutYouData;
 
@@ -33,6 +40,8 @@ export interface BuyerOnboardingState {
   markSectionCompleted: (
     section: BuyerProfileSection
   ) => void;
+
+  completeOnboarding: () => void;
 
   resetOnboarding: () => void;
 }
@@ -54,54 +63,14 @@ const DEFAULT_COMPLETED_SECTIONS: Record<
 };
 
 export const useBuyerOnboardingStore =
-  create<BuyerOnboardingState>((set) => ({
-    currentStep: 1,
-    totalSteps: 10,
-
-    aboutYou: {
-      ...DEFAULT_ABOUT_YOU,
-    },
-
-    completedSections: {
-      ...DEFAULT_COMPLETED_SECTIONS,
-    },
-
-    setAboutYou: (data) =>
-      set((state) => ({
-        aboutYou: {
-          ...state.aboutYou,
-          ...data,
-        },
-      })),
-
-    nextStep: () =>
-      set((state) => ({
-        currentStep: Math.min(
-          state.currentStep + 1,
-          state.totalSteps
-        ),
-      })),
-
-    prevStep: () =>
-      set((state) => ({
-        currentStep: Math.max(
-          state.currentStep - 1,
-          1
-        ),
-      })),
-
-    markSectionCompleted: (section) =>
-      set((state) => ({
-        completedSections: {
-          ...state.completedSections,
-          [section]: true,
-        },
-      })),
-
-    resetOnboarding: () =>
-      set({
+  create<BuyerOnboardingState>()(
+    persist(
+      (set) => ({
         currentStep: 1,
+
         totalSteps: 10,
+
+        onboardingInProgress: true,
 
         aboutYou: {
           ...DEFAULT_ABOUT_YOU,
@@ -110,5 +79,63 @@ export const useBuyerOnboardingStore =
         completedSections: {
           ...DEFAULT_COMPLETED_SECTIONS,
         },
+
+        setAboutYou: (data) =>
+          set((state) => ({
+            aboutYou: {
+              ...state.aboutYou,
+              ...data,
+            },
+          })),
+
+        nextStep: () =>
+          set((state) => ({
+            currentStep: Math.min(
+              state.currentStep + 1,
+              state.totalSteps
+            ),
+          })),
+
+        prevStep: () =>
+          set((state) => ({
+            currentStep: Math.max(
+              state.currentStep - 1,
+              1
+            ),
+          })),
+
+        markSectionCompleted: (section) =>
+          set((state) => ({
+            completedSections: {
+              ...state.completedSections,
+              [section]: true,
+            },
+          })),
+
+        completeOnboarding: () =>
+          set({
+            onboardingInProgress: false,
+          }),
+
+        resetOnboarding: () =>
+          set({
+            currentStep: 1,
+
+            totalSteps: 10,
+
+            onboardingInProgress: true,
+
+            aboutYou: {
+              ...DEFAULT_ABOUT_YOU,
+            },
+
+            completedSections: {
+              ...DEFAULT_COMPLETED_SECTIONS,
+            },
+          }),
       }),
-  }));
+      {
+        name: "matchbook:buyer-onboarding",
+      }
+    )
+  );
