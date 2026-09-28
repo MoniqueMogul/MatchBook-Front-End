@@ -105,3 +105,48 @@ export interface BuyerMatchViewData {
   ndaRequired: boolean;
   ndaSigned: boolean;
 }
+export type ApiMatchStatus =
+  | "matched"
+  | "interested"
+  | "verification"
+  | "nda"
+  | "due_diligence"
+  | "offer"
+  | "loi"
+  | "financing"
+  | "closing"
+  | "completed"
+  | "rejected"
+  | "expired";
+
+export interface ApiBusinessMatchSummary {
+  id: string;
+  legal_name: string | null;
+  dba: string | null;
+  industry: string;
+  city: string;
+  state: string;
+  asking_price: string | null;
+  sde: string | null;
+  arr: string | null;
+  years_in_operation: number | null;
+}
+
+export interface ApiMatchDimensionResponse {
+  dimension: string;
+  alignment_score: number;
+  weight: number;
+  contribution: number;
+}
+
+export interface ApiMatchDetailResponse {
+  id: string;
+  buyer_id: string;
+  score: string;
+  status: ApiMatchStatus;
+  matching_version: string;
+  business: ApiBusinessMatchSummary;
+  dimensions: ApiMatchDimensionResponse[];
+  created_at: string;
+  updated_at: string;
+}

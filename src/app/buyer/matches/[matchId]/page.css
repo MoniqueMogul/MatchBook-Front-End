@@ -22,3 +22,24 @@
     width: 100%;
   }
 }
+
+.buyer-match-page__state {
+  max-width: 720px;
+  margin: 72px auto;
+  padding: 32px;
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.buyer-match-page__state h1 {
+  margin: 0 0 10px;
+  color: #101828;
+  font-size: 28px;
+}
+
+.buyer-match-page__state p {
+  margin: 0;
+  color: #667085;
+  line-height: 1.6;
+}
