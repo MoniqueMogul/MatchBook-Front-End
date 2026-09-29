@@ -20,6 +20,7 @@ import {
 } from "@/lib/api/buyer";
 
 import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
+import { supabase } from "@/lib/supabase";
 
 import "./page.css";
 
@@ -32,7 +33,7 @@ import "./page.css";
  * Change to false when we are ready to reconnect
  * the real backend/Supabase data.
  */
-const USE_MOCK_PROFILE = true;
+const USE_MOCK_PROFILE = false;
 
 const MOCK_PROFILE: BuyerProfile = {
   id: "mock-buyer-profile-id",
@@ -129,6 +130,53 @@ const MOCK_PREFERENCES: BuyerPreferences = {
 function BuyerProfilePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [profileName, setProfileName] =
+    useState("Profile");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadProfileName = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || cancelled) {
+        return;
+      }
+
+      const metadata = user.user_metadata ?? {};
+
+      const firstName =
+        typeof metadata.first_name === "string"
+          ? metadata.first_name.trim()
+          : "";
+
+      const lastName =
+        typeof metadata.last_name === "string"
+          ? metadata.last_name.trim()
+          : "";
+
+      const fullName =
+        typeof metadata.full_name === "string"
+          ? metadata.full_name.trim()
+          : "";
+
+      setProfileName(
+        [firstName, lastName].filter(Boolean).join(" ") ||
+          fullName ||
+          user.email?.split("@")[0] ||
+          "Profile",
+      );
+    };
+
+    loadProfileName();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onboardingInProgress =
     useBuyerOnboardingStore(
@@ -247,6 +295,7 @@ function BuyerProfilePageContent() {
           </div>
         ) : (
           <BuyerProfilePreview
+            name={profileName}
             profile={profile}
             location={location}
             memberType={memberType}
