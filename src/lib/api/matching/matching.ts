@@ -1,8 +1,13 @@
-﻿import api from "@/lib/api/client";
+import axios from "axios";
+
+import api from "@/lib/api/client";
 
 import type {
+  ApiMatchDetailResponse,
   BuyerMatchViewData,
+  DimensionScore,
   MatchBusinessDetails,
+  MatchHighlight,
   RankedMatch,
 } from "./matching.types";
 
@@ -11,9 +16,6 @@ import type {
  *
  * Backend:
  * POST /api/matches/recalculate/{buyer_id}
- *
- * The Matching Engine remains the source of truth for all
- * deterministic FIT scores and percentages.
  */
 export async function recalculateBuyerMatches(
   buyerId: string,
@@ -26,128 +28,157 @@ export async function recalculateBuyerMatches(
 }
 
 /**
- * Temporary presentation data for building the Match View while
- * the frontend retrieval contract for persisted matches/business
- * details is being finalized.
+ * Load one persisted match owned by the authenticated buyer.
  *
- * IMPORTANT:
- * - This is demo/UI data only.
- * - It must not be treated as persisted backend data.
- * - Match percentages are kept inside the RankedMatch shape so the
- *   component can later consume the real Matching Engine response
- *   without changing its presentation contract.
+ * The route parameter must be the backend Match UUID, not a
+ * business ID. The backend enforces buyer ownership.
  */
-export function getMatchViewDemoData(
-  businessId: string,
+export async function getBuyerMatchViewData(
+  matchId: string,
+): Promise<BuyerMatchViewData> {
+  try {
+    const response = await api.get<ApiMatchDetailResponse>(
+      `/api/matches/${matchId}`,
+    );
+
+    return mapMatchDetail(response.data);
+  } catch (error) {
+    if (axios.isAxiosError<{ detail?: string }>(error)) {
+      const detail = error.response?.data?.detail;
+
+      if (detail) {
+        throw new Error(detail);
+      }
+
+      if (error.response?.status === 401) {
+        throw new Error(
+          "Your session has expired. Please sign in again.",
+        );
+      }
+
+      if (error.response?.status === 404) {
+        throw new Error(
+          "This match could not be found for your buyer account.",
+        );
+      }
+    }
+
+    throw new Error("Unable to load this match.");
+  }
+}
+
+function mapMatchDetail(
+  response: ApiMatchDetailResponse,
 ): BuyerMatchViewData {
+  const score = parseDecimal(response.score) ?? 0;
+  const askingPrice = parseDecimal(
+    response.business.asking_price,
+  );
+  const annualRevenue = parseDecimal(response.business.arr);
+  const annualProfit = parseDecimal(response.business.sde);
+
+  const dimensions = response.dimensions.reduce<
+    Record<string, DimensionScore>
+  >((result, dimension) => {
+    result[dimension.dimension] = {
+      score: dimension.alignment_score,
+      weight: dimension.weight,
+      contribution: dimension.contribution,
+    };
+
+    return result;
+  }, {});
+
+  const highlights: MatchHighlight[] =
+    response.dimensions.map((dimension) => ({
+      label: formatDimensionLabel(dimension.dimension),
+      type:
+        dimension.alignment_score >= 0.8
+          ? "positive"
+          : "warning",
+    }));
+
   const business: MatchBusinessDetails = {
-    id: businessId,
-
-    name: "Specialty Coffee Roastery",
-    city: "Portland",
-    state: "OR",
-
+    id: response.business.id,
+    name:
+      response.business.dba ??
+      response.business.legal_name ??
+      "Confidential business",
+    city: response.business.city,
+    state: response.business.state,
     description:
-      "Established specialty food and beverage business with a strong local customer base, recurring revenue, and an experienced operating team.",
-
-    industry: "Specialty Food & Beverage",
-    acquisitionType: "Full Sale",
-    yearsInOperation: 12,
-    employees: 3,
-
-    askingPrice: 750000,
-    annualRevenueMin: 800000,
-    annualRevenueMax: 900000,
-    annualProfit: 200000,
-
-    ownerHoursPerWeek: 35,
-
-    reasonForSelling: "Pursuing other opportunities",
-    desiredTimeline: "Within 3-6 months",
-    transitionSupport: "3-6 month handover",
-
-    propertyType: "Leased",
-    leaseTermRemaining: "3-5 years",
-
-    includedAssets: [
-      "Roasting equipment",
-      "Delivery van",
-      "POS system",
-    ],
-
-    estimatedProfitMargin: 24,
+      "Additional business details are available after the NDA is completed.",
+    industry: response.business.industry,
+    acquisitionType: "Not provided",
+    yearsInOperation:
+      response.business.years_in_operation,
+    employees: null,
+    askingPrice,
+    annualRevenueMin: annualRevenue,
+    annualRevenueMax: annualRevenue,
+    annualProfit,
+    ownerHoursPerWeek: null,
+    reasonForSelling: "Not provided",
+    desiredTimeline: "Not provided",
+    transitionSupport: "Not provided",
+    propertyType: "Not provided",
+    leaseTermRemaining: "Not provided",
+    includedAssets: [],
+    estimatedProfitMargin:
+      annualRevenue !== null &&
+      annualRevenue > 0 &&
+      annualProfit !== null
+        ? Math.round((annualProfit / annualRevenue) * 100)
+        : null,
   };
 
   return {
+    matchId: response.id,
     business,
-
     match: {
       rank: 1,
-
       evaluation: {
-        buyer_id: "demo-buyer",
-        business_id: businessId,
-
+        buyer_id: response.buyer_id,
+        business_id: response.business.id,
         eligible: true,
         failed_constraints: [],
-
-        score: 0.92,
-        percentage: 92,
-
+        score,
+        percentage: Math.round(score * 100),
+        dimensions,
         meets_threshold: true,
-
-        dimensions: {
-          purchase_price: {
-            score: 0.94,
-            weight: 0.3,
-            contribution: 0.282,
-          },
-
-          geography: {
-            score: 0.94,
-            weight: 0,
-            contribution: 0,
-          },
-
-          industry: {
-            score: 1,
-            weight: 0,
-            contribution: 0,
-          },
-
-          sde: {
-            score: 0.98,
-            weight: 0.3,
-            contribution: 0.294,
-          },
-        },
       },
     },
-
-    highlights: [
-      {
-        label: "Transition Offered",
-        type: "positive",
-      },
-      {
-        label: "Asking Price in Range",
-        type: "positive",
-      },
-      {
-        label: "Cash Financing",
-        type: "positive",
-      },
-      {
-        label: "Geographical Region",
-        type: "positive",
-      },
-      {
-        label: "Owner 35 hrs/wk (Above Preferred <20 hrs)",
-        type: "warning",
-      },
-    ],
-
+    highlights,
+    financialVerification: {
+      status: "unverified",
+      periods: [],
+    },
     ndaRequired: true,
     ndaSigned: false,
   };
+}
+
+function parseDecimal(
+  value: string | null,
+): number | null {
+  if (value === null) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatDimensionLabel(
+  dimension: string,
+): string {
+  return dimension
+    .split("_")
+    .map((word) =>
+      word.toLowerCase() === "sde"
+        ? "SDE"
+        : `${word.charAt(0).toUpperCase()}${word.slice(1)}`,
+    )
+    .join(" ");
 }

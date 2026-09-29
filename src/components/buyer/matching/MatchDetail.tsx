@@ -1,20 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
   Check,
   ChevronLeft,
-  DollarSign,
-  FileText,
   LockKeyhole,
   MapPin,
   ShieldCheck,
   TrendingUp,
-  X,
 } from "lucide-react";
 
 import WarmIntroductionTrigger from "@/components/buyer/introduction/WarmIntroductionTrigger";
+import {
+  createNdaSigningSession,
+  getNdaForMatch,
+} from "@/lib/api/nda/nda";
+import type { NdaAccessResponse } from "@/lib/api/nda/nda.types";
 
 import type {
   BuyerMatchViewData,
@@ -36,6 +38,15 @@ function formatCurrency(value: number | null): string {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatCompactCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
   }).format(value);
 }
 
@@ -73,19 +84,20 @@ export default function MatchDetail({
   data,
 }: MatchDetailProps) {
   const {
+    matchId,
     business,
     match,
     highlights,
+    financialVerification,
     ndaRequired,
-    ndaSigned,
   } = data;
 
-  const [isNdaOpen, setIsNdaOpen] = useState(false);
-  const [isNdaSigned, setIsNdaSigned] =
-    useState(ndaSigned);
-  const [hasAcceptedNda, setHasAcceptedNda] =
+  const [ndaAccess, setNdaAccess] =
+    useState<NdaAccessResponse | null>(null);
+  const [isNdaLoading, setIsNdaLoading] =
+    useState(true);
+  const [isSigningSessionLoading, setIsSigningSessionLoading] =
     useState(false);
-  const [legalName, setLegalName] = useState("");
   const [ndaError, setNdaError] = useState("");
 
   const percentage =
@@ -148,29 +160,136 @@ export default function MatchDetail({
     },
   ];
 
-  const locked = ndaRequired && !isNdaSigned;
+  const isNdaCompleted = ndaAccess?.completed ?? false;
+  const currentUserHasSigned =
+    ndaAccess?.current_user_has_signed ?? false;
+  const locked = ndaRequired && !isNdaCompleted;
 
-  function openNda() {
+  const refreshNda = useCallback(
+    async (): Promise<NdaAccessResponse | null> => {
+      try {
+        const access = await getNdaForMatch(matchId);
+        setNdaAccess(access);
+        setNdaError("");
+        return access;
+      } catch (error) {
+        setNdaAccess(null);
+        setNdaError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load the NDA.",
+        );
+        return null;
+      } finally {
+        setIsNdaLoading(false);
+      }
+    },
+    [matchId],
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    getNdaForMatch(matchId)
+      .then((access) => {
+        if (!isActive) {
+          return;
+        }
+
+        setNdaAccess(access);
+        setNdaError("");
+      })
+      .catch((error: unknown) => {
+        if (!isActive) {
+          return;
+        }
+
+        setNdaAccess(null);
+        setNdaError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load the NDA.",
+        );
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsNdaLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [matchId]);
+
+  useEffect(() => {
+    function refreshAfterSigning() {
+      void refreshNda();
+    }
+
+    window.addEventListener("focus", refreshAfterSigning);
+
+    return () => {
+      window.removeEventListener(
+        "focus",
+        refreshAfterSigning,
+      );
+    };
+  }, [refreshNda]);
+
+  async function openNda() {
+    if (isSigningSessionLoading) {
+      return;
+    }
+
     setNdaError("");
-    setIsNdaOpen(true);
-  }
 
-  function closeNda() {
-    setIsNdaOpen(false);
-    setNdaError("");
-  }
+    const access = ndaAccess ?? (await refreshNda());
 
-  function signNda() {
-    if (!hasAcceptedNda || !legalName.trim()) {
+    if (!access) {
+      return;
+    }
+
+    if (access.completed) {
+      return;
+    }
+
+    if (access.current_user_has_signed) {
       setNdaError(
-        "Confirm the agreement and enter your full legal name before signing.",
+        "Your NDA signature has been received. Waiting for the other party to sign.",
       );
       return;
     }
 
-    setIsNdaSigned(true);
-    setIsNdaOpen(false);
-    setNdaError("");
+    const signingWindow = window.open("", "_blank");
+
+    if (!signingWindow) {
+      setNdaError(
+        "Please allow pop-ups to open the secure signing session.",
+      );
+      return;
+    }
+
+    signingWindow.opener = null;
+    setIsSigningSessionLoading(true);
+
+    try {
+      const session = await createNdaSigningSession(
+        access.nda.id,
+      );
+
+      signingWindow.location.href = session.signing_url;
+    } catch (error) {
+      signingWindow.close();
+
+      setNdaError(
+        error instanceof Error
+          ? error.message
+          : "Unable to start the secure signing session.",
+      );
+    } finally {
+      setIsSigningSessionLoading(false);
+    }
   }
 
   return (
@@ -185,7 +304,7 @@ export default function MatchDetail({
           Back to matches
         </button>
 
-        {isNdaSigned && (
+        {isNdaCompleted && (
           <section
             className="match-detail__nda-success"
             role="status"
@@ -193,7 +312,7 @@ export default function MatchDetail({
             <ShieldCheck size={25} />
 
             <div>
-              <h2>NDA signed successfully</h2>
+              <h2>NDA completed successfully</h2>
               <p>
                 Business details are now available to view.
                 You can continue reviewing the match and
@@ -201,6 +320,32 @@ export default function MatchDetail({
               </p>
             </div>
           </section>
+        )}
+
+        {currentUserHasSigned && !isNdaCompleted && (
+          <section
+            className="match-detail__nda-success"
+            role="status"
+          >
+            <ShieldCheck size={25} />
+
+            <div>
+              <h2>Your NDA signature was received</h2>
+              <p>
+                The confidential profile will unlock after
+                the other party completes their signature.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {ndaError && (
+          <p
+            className="match-detail__nda-error"
+            role="alert"
+          >
+            {ndaError}
+          </p>
         )}
 
         <section className="match-detail__hero">
@@ -238,9 +383,8 @@ export default function MatchDetail({
                 business={business}
                 matchPercentage={percentage}
                 requiresNda={locked}
-                onNdaSigned={() => {
-                  setIsNdaSigned(true);
-                  setNdaError("");
+                onNdaRequired={() => {
+                  void openNda();
                 }}
               />
             </div>
@@ -389,8 +533,24 @@ export default function MatchDetail({
               ))}
             </div>
 
-            <button type="button" onClick={openNda}>
-              Sign NDA to Unblock
+            <button
+              type="button"
+              disabled={
+                isNdaLoading ||
+                isSigningSessionLoading ||
+                currentUserHasSigned
+              }
+              onClick={() => {
+                void openNda();
+              }}
+            >
+              {isNdaLoading
+                ? "Loading NDA..."
+                : isSigningSessionLoading
+                  ? "Opening secure signing..."
+                  : currentUserHasSigned
+                    ? "Waiting for Seller Signature"
+                    : "Sign NDA to Unblock"}
             </button>
           </section>
         ) : (
@@ -498,261 +658,219 @@ export default function MatchDetail({
               </div>
             </section>
 
-            <section className="match-detail__section">
+            <section className="match-detail__financial-section">
               <h2>Finances</h2>
 
-              <div className="match-detail__finance-grid">
-                <div>
-                  <DollarSign size={20} />
-                  <span>Asking Price</span>
-                  <strong>
-                    {formatCurrency(
-                      business.askingPrice,
-                    )}
-                  </strong>
-                </div>
+              <div className="match-detail__finance-card">
+                <dl className="match-detail__finance-list">
+                  <div>
+                    <dt>Annual Revenue</dt>
+                    <dd>
+                      {formatRevenueRange(
+                        business.annualRevenueMin,
+                        business.annualRevenueMax,
+                      )}
+                    </dd>
+                  </div>
 
-                <div>
-                  <TrendingUp size={20} />
-                  <span>Annual Revenue</span>
-                  <strong>
-                    {formatRevenueRange(
-                      business.annualRevenueMin,
-                      business.annualRevenueMax,
-                    )}
-                  </strong>
-                </div>
+                  <div>
+                    <dt>Annual Profit (SDE)</dt>
+                    <dd>
+                      {formatCurrency(
+                        business.annualProfit,
+                      )}
+                    </dd>
+                  </div>
 
-                <div>
-                  <DollarSign size={20} />
-                  <span>Annual Profit</span>
-                  <strong>
-                    {formatCurrency(
-                      business.annualProfit,
-                    )}
-                  </strong>
-                </div>
+                  <div>
+                    <dt>Asking Price</dt>
+                    <dd>
+                      {formatCurrency(
+                        business.askingPrice,
+                      )}
+                    </dd>
+                  </div>
 
-                <div>
-                  <TrendingUp size={20} />
-                  <span>Profit Margin</span>
-                  <strong>
-                    {business.estimatedProfitMargin !== null
-                      ? `${business.estimatedProfitMargin}%`
-                      : "N/A"}
-                  </strong>
+                  <div>
+                    <dt>Years in Operation</dt>
+                    <dd>
+                      {business.yearsInOperation !== null
+                        ? `${business.yearsInOperation} years`
+                        : "N/A"}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="match-detail__profit-margin">
+                  <div>
+                    <span>Est. profit margin</span>
+                    <strong>
+                      {business.estimatedProfitMargin !== null
+                        ? `~${business.estimatedProfitMargin}%`
+                        : "N/A"}
+                    </strong>
+                  </div>
+
+                  <div
+                    className="match-detail__profit-margin-track"
+                    aria-hidden="true"
+                  >
+                    <span
+                      style={{
+                        width:
+                          business.estimatedProfitMargin !==
+                          null
+                            ? `${Math.min(
+                                business.estimatedProfitMargin,
+                                100,
+                              )}%`
+                            : "0%",
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </section>
 
-            <section className="match-detail__section">
-              <h2>Financial Documents</h2>
+            <section className="match-detail__financial-metrics">
+              <div className="match-detail__financial-metrics-heading">
+                <h2>Financial Document Metrics</h2>
 
-              <div className="match-detail__document-card">
-                <FileText size={22} />
-
-                <div>
-                  <strong>
-                    Confidential financial documents
-                  </strong>
-                  <span>
-                    Documents will appear here when
-                    available.
+                {financialVerification.status ===
+                  "verified" && (
+                  <span className="match-detail__verified-badge">
+                    <ShieldCheck size={14} />
+                    Verified Financials
                   </span>
-                </div>
+                )}
               </div>
+
+              {financialVerification.status ===
+              "verified" ? (
+                <div className="match-detail__metrics-table-wrapper">
+                  <table className="match-detail__metrics-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">
+                          Financial Metrics
+                        </th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <th
+                              key={period.fiscalYear}
+                              scope="col"
+                            >
+                              {period.fiscalYear}
+                            </th>
+                          ),
+                        )}
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr>
+                        <th scope="row">Revenue</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {formatCompactCurrency(
+                                period.revenue,
+                              )}
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">SDE</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {formatCompactCurrency(
+                                period.sde,
+                              )}
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">SDE Margin</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {period.sdeMargin.toFixed(1)}%
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">EBITDA Margin</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {period.ebitdaMargin.toFixed(
+                                1,
+                              )}
+                              %
+                            </td>
+                          ),
+                        )}
+                      </tr>
+
+                      <tr>
+                        <th scope="row">Working Capital</th>
+
+                        {financialVerification.periods.map(
+                          (period) => (
+                            <td key={period.fiscalYear}>
+                              {formatCompactCurrency(
+                                period.workingCapital,
+                              )}
+                            </td>
+                          ),
+                        )}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="match-detail__verification-lock">
+                  <div className="match-detail__verification-lock-copy">
+                    <span className="match-detail__verification-lock-icon">
+                      <LockKeyhole size={20} />
+                    </span>
+
+                    <div>
+                      <strong>
+                        Unlock P&amp;L statements and tax
+                        return details
+                      </strong>
+
+                      <span>
+                        Complete your identity and financial
+                        capacity verification to access
+                        two-year financials.
+                      </span>
+                    </div>
+                  </div>
+
+                  <button type="button">
+                    Finish Verification
+                  </button>
+                </div>
+              )}
             </section>
           </>
         )}
       </div>
 
-      {isNdaOpen && (
-        <div className="match-detail__modal-backdrop">
-          <section
-            className="match-detail__nda-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="nda-modal-title"
-          >
-            <header className="match-detail__nda-modal-header">
-              <div>
-                <div className="match-detail__nda-title-row">
-                  <h2 id="nda-modal-title">
-                    MatchBook Platform Agreement
-                  </h2>
-                  <span>Legally Binding</span>
-                </div>
-
-                <p>
-                  {business.name} • {business.city},{" "}
-                  {business.state}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                aria-label="Close NDA agreement"
-                onClick={closeNda}
-              >
-                <X size={20} />
-              </button>
-            </header>
-
-            <div className="match-detail__nda-scroll">
-              <div className="match-detail__nda-notice">
-                <strong>Agreement Summary</strong>
-                <p>
-                  Please review the agreement details below
-                  before signing.
-                </p>
-              </div>
-
-              <p>
-                This agreement applies to the buyer and the
-                selected target business. It includes the
-                MatchBook platform terms and confidentiality
-                requirements.
-              </p>
-
-              <div className="match-detail__nda-party-grid">
-                <div>
-                  <span>Buyer Name</span>
-                  <strong>
-                    {legalName.trim() ||
-                      "Enter your legal name below"}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Target Business</span>
-                  <strong>{business.name}</strong>
-                </div>
-
-                <div>
-                  <span>Reference Number</span>
-                  <strong>{business.id}</strong>
-                </div>
-
-                <div>
-                  <span>Business Category</span>
-                  <strong>{business.industry}</strong>
-                </div>
-              </div>
-
-              <h3>
-                Part I — Assistance Fee Acknowledgment
-              </h3>
-
-              <ol>
-                <li>
-                  The approved agreement will define any
-                  applicable platform or success-fee terms.
-                </li>
-                <li>
-                  The approved agreement will define a
-                  qualifying transaction and transaction
-                  value.
-                </li>
-                <li>
-                  The approved agreement will specify when
-                  any obligation becomes due.
-                </li>
-              </ol>
-
-              <h3>
-                Part II — Non-Disclosure and
-                Non-Circumvention Agreement
-              </h3>
-
-              <ol>
-                <li>
-                  Confidential business information must be
-                  used only to evaluate the potential
-                  acquisition.
-                </li>
-                <li>
-                  Confidential information must not be
-                  disclosed except as permitted by the
-                  approved agreement.
-                </li>
-                <li>
-                  Approved terms will define duration,
-                  exclusions, remedies, governing law, and
-                  electronic-signature requirements.
-                </li>
-              </ol>
-            </div>
-
-            <footer className="match-detail__nda-signature">
-              <label className="match-detail__nda-checkbox">
-                <input
-                  type="checkbox"
-                  checked={hasAcceptedNda}
-                  onChange={(event) =>
-                    setHasAcceptedNda(
-                      event.target.checked,
-                    )
-                  }
-                />
-
-                <span>
-                  I confirm that I have reviewed, understood,
-                  and agree to the terms of this agreement.
-                </span>
-              </label>
-
-              <div className="match-detail__nda-signing-row">
-                <label>
-                  Full Legal Name
-                  <input
-                    type="text"
-                    value={legalName}
-                    placeholder="Enter your full legal name"
-                    onChange={(event) =>
-                      setLegalName(event.target.value)
-                    }
-                  />
-                </label>
-
-                <div className="match-detail__signature-preview">
-                  <span>Signature Preview</span>
-                  <strong>
-                    {legalName.trim() || "Your signature"}
-                  </strong>
-                </div>
-
-                <div className="match-detail__security-log">
-                  <ShieldCheck size={20} />
-                  <div>
-                    <strong>Electronic Signature</strong>
-                    <span>
-                      Your typed legal name confirms your
-                      acceptance of this agreement.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {ndaError && (
-                <p
-                  className="match-detail__nda-error"
-                  role="alert"
-                >
-                  {ndaError}
-                </p>
-              )}
-
-              <button
-                type="button"
-                className="match-detail__nda-submit"
-                onClick={signNda}
-              >
-                Sign NDA
-              </button>
-            </footer>
-          </section>
-        </div>
-      )}
     </main>
   );
 }
