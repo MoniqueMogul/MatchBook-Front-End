@@ -3,6 +3,7 @@ import axios from "axios";
 import api from "@/lib/api/client";
 
 import type {
+  ApiBuyerMatchesResponse,
   ApiMatchDetailResponse,
   BuyerMatchViewData,
   DimensionScore,
@@ -25,6 +26,47 @@ export async function recalculateBuyerMatches(
   );
 
   return response.data;
+}
+
+/**
+ * Load one page of persisted matches owned by the authenticated buyer.
+ *
+ * Backend:
+ * GET /api/matches
+ */
+export async function getBuyerMatches(
+  limit = 20,
+  offset = 0,
+): Promise<ApiBuyerMatchesResponse> {
+  try {
+    const response = await api.get<ApiBuyerMatchesResponse>(
+      "/api/matches",
+      {
+        params: {
+          limit,
+          offset,
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError<{ detail?: string }>(error)) {
+      const detail = error.response?.data?.detail;
+
+      if (detail) {
+        throw new Error(detail);
+      }
+
+      if (error.response?.status === 401) {
+        throw new Error(
+          "Your session has expired. Please sign in again.",
+        );
+      }
+    }
+
+    throw new Error("Unable to load your matches.");
+  }
 }
 
 /**

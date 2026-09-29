@@ -150,3 +150,20 @@ export interface ApiMatchDetailResponse {
   created_at: string;
   updated_at: string;
 }
+
+export interface ApiMatchResponse {
+  id: string;
+  score: string;
+  status: ApiMatchStatus;
+  business: ApiBusinessMatchSummary;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiBuyerMatchesResponse {
+  buyer_id: string;
+  matches: ApiMatchResponse[];
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}

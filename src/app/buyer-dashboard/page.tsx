@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import StepTrackerCard from '@/components/dashboard/StepTrackerCard';
 import EmptyMatchesState from '@/components/dashboard/EmptyMatchesState';
+import TopMatchCard from '@/components/dashboard/TopMatchCard';
+import type { MatchListing } from '@/components/dashboard/TopMatchCard';
+import { getBuyerMatches } from '@/lib/api/matching/matching';
+import type { ApiMatchResponse } from '@/lib/api/matching/matching.types';
 import { useBuyerOnboardingStore } from '@/store/useBuyerOnboardingStore';
 import type { StepData } from '@/components/dashboard/StepTrackerCard';
 import { supabase } from '@/lib/supabase';
@@ -41,6 +45,84 @@ const DEFAULT_STEPS: StepData[] = [
   },
 ];
 
+const MATCH_IMAGE_PATHS = [
+  '/images/listings/coffee-roastery.jpg',
+  '/images/listings/coffee-cart.jpg',
+  '/images/listings/coffee-subscription.jpg',
+] as const;
+
+function formatCurrency(value: string | null): string {
+  if (value === null) {
+    return 'Not provided';
+  }
+
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return 'Not provided';
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(numericValue);
+}
+
+function formatIndustry(value: string): string {
+  return value
+    .split('_')
+    .map(
+      (word) =>
+        word.charAt(0).toUpperCase() +
+        word.slice(1).toLowerCase()
+    )
+    .join(' ');
+}
+
+function mapMatchToListing(
+  match: ApiMatchResponse,
+  index: number
+): MatchListing {
+  const numericScore = Number(match.score);
+
+  const matchScore = Number.isFinite(numericScore)
+    ? Math.max(
+        0,
+        Math.min(100, Math.round(numericScore * 100))
+      )
+    : 0;
+
+  const title =
+    match.business.dba ??
+    match.business.legal_name ??
+    'Confidential business';
+
+  const industry = formatIndustry(
+    match.business.industry
+  );
+
+  return {
+    id: match.id,
+    title,
+    description:
+      `${industry} opportunity matched to your acquisition preferences.`,
+    location: [match.business.city, match.business.state]
+      .filter(Boolean)
+      .join(', '),
+    matchScore,
+    askingPrice: formatCurrency(
+      match.business.asking_price
+    ),
+    revenue: formatCurrency(match.business.arr),
+    profitSde: formatCurrency(match.business.sde),
+    imageUrl:
+      MATCH_IMAGE_PATHS[
+        index % MATCH_IMAGE_PATHS.length
+      ],
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Page Component                                                     */
 /* ------------------------------------------------------------------ */
@@ -62,6 +144,13 @@ export default function BuyerDashboardNewUser() {
     );
 
   const [firstName, setFirstName] = React.useState('');
+  const [matches, setMatches] = React.useState<
+    MatchListing[]
+  >([]);
+  const [isLoadingMatches, setIsLoadingMatches] =
+    React.useState(true);
+  const [matchesError, setMatchesError] =
+    React.useState('');
 
   /* ---------------------------------------------------------------- */
   /*  Get authenticated user's real name                              */
@@ -84,10 +173,6 @@ export default function BuyerDashboardNewUser() {
           ? metadata.first_name.trim()
           : '';
 
-      const lastNameFromMetadata =
-        typeof metadata.last_name === 'string'
-          ? metadata.last_name.trim()
-          : '';
 
       if (firstNameFromMetadata) {
         setFirstName(firstNameFromMetadata);
@@ -121,11 +206,65 @@ export default function BuyerDashboardNewUser() {
   }, []);
 
   /* ---------------------------------------------------------------- */
+  /*  Load authenticated buyer matches                                */
+  /* ---------------------------------------------------------------- */
+
+  React.useEffect(() => {
+    let isActive = true;
+
+    const loadMatches = async () => {
+      try {
+        const response = await getBuyerMatches();
+
+        if (!isActive) {
+          return;
+        }
+
+        setMatches(
+          response.matches.map(mapMatchToListing)
+        );
+        setMatchesError('');
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setMatches([]);
+        setMatchesError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to load your matches.'
+        );
+      } finally {
+        if (isActive) {
+          setIsLoadingMatches(false);
+        }
+      }
+    };
+
+    loadMatches();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  /* ---------------------------------------------------------------- */
   /*  Continue Profile                                                */
   /* ---------------------------------------------------------------- */
 
   const handleContinueProfile = () => {
     router.push('/buyer-onboarding/profile');
+  };
+
+  const handleViewMatch = (matchId: string) => {
+    router.push(`/buyer/matches/${matchId}`);
+  };
+
+  const handleRequestIntroduction = (
+    matchId: string
+  ) => {
+    router.push(`/buyer/matches/${matchId}`);
   };
 
   /* ---------------------------------------------------------------- */
@@ -172,11 +311,33 @@ export default function BuyerDashboardNewUser() {
             Your matches
           </h2>
 
-          {/* Empty Matches State */}
-          <EmptyMatchesState
-            buttonLabel="Finish your profile"
-            onButtonClick={handleContinueProfile}
-          />
+          {isLoadingMatches ? (
+            <p role="status">
+              Loading your matches...
+            </p>
+          ) : matchesError ? (
+            <p role="alert">
+              {matchesError}
+            </p>
+          ) : matches.length > 0 ? (
+            <div className="top-matches__container">
+              {matches.map((match) => (
+                <TopMatchCard
+                  key={match.id}
+                  match={match}
+                  onViewDetails={handleViewMatch}
+                  onRequestIntro={
+                    handleRequestIntroduction
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyMatchesState
+              buttonLabel="Finish your profile"
+              onButtonClick={handleContinueProfile}
+            />
+          )}
         </div>
       </main>
     </div>
