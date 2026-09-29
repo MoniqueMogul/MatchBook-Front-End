@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import AuthLayout from "@/components/common/AuthLayout";
-import { OtpInput } from "@/components/common/otpInput";
+import { OtpInput } from "@/components/common/OtpInput";
 import { Button } from "@/components/common/Button";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";

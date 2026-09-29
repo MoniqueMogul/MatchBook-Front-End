@@ -37,6 +37,7 @@ const mainNavigation: NavigationItem[] = [
   {
     label: "Messages",
     icon: MessageCircle,
+    href: "/buyer/messages",
   },
   {
     label: "Profile",
@@ -49,6 +50,7 @@ const mainNavigation: NavigationItem[] = [
   {
     label: "Documents",
     icon: FileText,
+    href: "/buyer/documents",
   },
 ];
 

@@ -1,0 +1,10 @@
+.buyer-documents-page {
+  min-height: 100vh;
+  display: flex;
+  background: #ffffff;
+}
+
+.buyer-documents-page__main {
+  min-width: 0;
+  flex: 1;
+}
