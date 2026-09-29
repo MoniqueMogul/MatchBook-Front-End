@@ -1,10 +1,36 @@
 import type { MatchBusinessDetails } from "@/lib/api/matching/matching.types";
 
-/* Backend Chat API contracts currently available on main. */
+/* Backend Chat API contracts. */
+
+export interface ApiConversationParticipant {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface ApiConversationBusiness {
+  id: string;
+  legal_name: string | null;
+  dba: string | null;
+  industry: string;
+  city: string;
+  state: string;
+}
+
+export interface ApiLatestMessage {
+  id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+}
 
 export interface ApiConversation {
   id: string;
   match_id: string;
+  participant: ApiConversationParticipant;
+  business: ApiConversationBusiness;
+  latest_message: ApiLatestMessage | null;
+  unread_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -30,7 +56,7 @@ export interface ApiAiSuggestionResponse {
   suggestion: string;
 }
 
-/* Frontend view models required by the finalized Messages Figma. */
+/* Frontend view models required by the Messages UI. */
 
 export type MessageCategory =
   | "new"
