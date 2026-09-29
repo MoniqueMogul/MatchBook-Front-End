@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { CheckCircle2, X } from "lucide-react";
 
 import type { MatchBusinessDetails } from "@/lib/api/matching/matching.types";
-import { saveWarmIntroduction } from "@/lib/api/messages/messages.demo-storage";
 
 import WarmIntroductionModal from "./WarmIntroductionModal";
 
@@ -39,13 +38,7 @@ export default function WarmIntroductionTrigger({
     setIsOpen(true);
   }
 
-  function handleSent(message: string) {
-    saveWarmIntroduction({
-      business,
-      content: message,
-      createdAt: new Date().toISOString(),
-    });
-
+  function handleSent(_message: string) {
     setIsOpen(false);
     setShowSuccess(true);
   }
@@ -71,13 +64,15 @@ export default function WarmIntroductionTrigger({
                 <CheckCircle2 size={21} />
 
                 <span>
-                  Your introduction was added to Messages!
+                  Your introduction was sent successfully!
                 </span>
 
                 <button
                   type="button"
                   aria-label="Dismiss notification"
-                  onClick={() => setShowSuccess(false)}
+                  onClick={() =>
+                    setShowSuccess(false)
+                  }
                 >
                   <X size={18} />
                 </button>

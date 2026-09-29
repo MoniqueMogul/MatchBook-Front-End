@@ -9,6 +9,11 @@ import {
   X,
 } from "lucide-react";
 
+import {
+  generateConversationAiSuggestion,
+  getConversations,
+  sendConversationMessage,
+} from "@/lib/api/messages/messages";
 import type { MatchBusinessDetails } from "@/lib/api/matching/matching.types";
 
 import "./WarmIntroductionModal.css";
@@ -20,22 +25,70 @@ interface WarmIntroductionModalProps {
   onSent: (message: string) => void;
 }
 
-function createDemoIntroduction(
-  business: MatchBusinessDetails,
-): string {
-  const location = [business.city, business.state]
-    .filter(Boolean)
-    .join(", ");
+type RequestAction = "generate" | "send";
 
-  return [
-    `Hi, I'm interested in learning more about ${business.name}.`,
-    "",
-    `The ${business.industry} opportunity${location ? ` in ${location}` : ""} aligns with the type of business I am exploring.`,
-    "",
-    "I would appreciate the opportunity to learn more about the company, its operations, and the seller's transition plans. Please let me know if you would be available for an introductory conversation.",
-    "",
-    "Thank you, and I look forward to connecting.",
-  ].join("\n");
+interface RequestErrorResponse {
+  response?: {
+    status?: number;
+    data?: {
+      detail?: unknown;
+    };
+  };
+}
+
+const CONVERSATION_NOT_READY =
+  "CONVERSATION_NOT_READY";
+
+function getRequestErrorMessage(
+  requestError: unknown,
+  action: RequestAction,
+): string {
+  if (
+    requestError instanceof Error &&
+    requestError.message === CONVERSATION_NOT_READY
+  ) {
+    return "A conversation is not available yet. Both parties must complete the NDA before an introduction can be generated or sent.";
+  }
+
+  const response =
+    typeof requestError === "object" &&
+    requestError !== null &&
+    "response" in requestError
+      ? (requestError as RequestErrorResponse).response
+      : undefined;
+
+  const detail =
+    typeof response?.data?.detail === "string"
+      ? response.data.detail
+      : undefined;
+
+  switch (response?.status) {
+    case 401:
+      return "Your session has expired. Please sign in again.";
+
+    case 403:
+      return "You do not have access to this conversation.";
+
+    case 404:
+      return "The conversation was not found. Complete the NDA flow and try again.";
+
+    case 409:
+      return "An AI introduction is already being generated for this conversation.";
+
+    case 429:
+      return (
+        detail ??
+        "The AI generation limit has been reached. Please try again later."
+      );
+
+    case 503:
+      return "The AI introduction service is temporarily unavailable. Please try again later.";
+
+    default:
+      return action === "generate"
+        ? "Unable to generate an introduction right now. Please try again."
+        : "Unable to send the introduction right now. Please try again.";
+  }
 }
 
 export default function WarmIntroductionModal({
@@ -48,9 +101,16 @@ export default function WarmIntroductionModal({
   const [previousMessage, setPreviousMessage] =
     useState("");
   const [redoMessage, setRedoMessage] = useState("");
+  const [conversationId, setConversationId] =
+    useState<string | null>(null);
   const [isGenerated, setIsGenerated] =
     useState(false);
+  const [isGenerating, setIsGenerating] =
+    useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
+
+  const isBusy = isGenerating || isSending;
 
   function updateMessage(nextMessage: string) {
     setPreviousMessage(message);
@@ -59,13 +119,61 @@ export default function WarmIntroductionModal({
     setError("");
   }
 
-  function generateIntroduction() {
-    updateMessage(createDemoIntroduction(business));
-    setIsGenerated(true);
+  async function resolveConversation(): Promise<string> {
+    if (conversationId) {
+      return conversationId;
+    }
+
+    const conversations = await getConversations();
+
+    const conversation = conversations.find(
+      (item) =>
+        String(item.business.id) === String(business.id),
+    );
+
+    if (!conversation) {
+      throw new Error(CONVERSATION_NOT_READY);
+    }
+
+    setConversationId(conversation.id);
+
+    return conversation.id;
+  }
+
+  async function generateIntroduction() {
+    if (isBusy) {
+      return;
+    }
+
+    setIsGenerating(true);
+    setError("");
+
+    try {
+      const resolvedConversationId =
+        await resolveConversation();
+
+      const response =
+        await generateConversationAiSuggestion(
+          resolvedConversationId,
+          {},
+        );
+
+      updateMessage(response.suggestion);
+      setIsGenerated(true);
+    } catch (requestError) {
+      setError(
+        getRequestErrorMessage(
+          requestError,
+          "generate",
+        ),
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   function undoMessage() {
-    if (!previousMessage && !message) {
+    if (isBusy || (!previousMessage && !message)) {
       return;
     }
 
@@ -76,17 +184,18 @@ export default function WarmIntroductionModal({
   }
 
   function redoIntroduction() {
-    if (!redoMessage) {
+    if (isBusy || !redoMessage) {
       return;
     }
 
     setPreviousMessage(message);
     setMessage(redoMessage);
     setRedoMessage("");
+    setIsGenerated(true);
     setError("");
   }
 
-  function sendIntroduction() {
+  async function sendIntroduction() {
     const trimmedMessage = message.trim();
 
     if (!trimmedMessage) {
@@ -96,7 +205,32 @@ export default function WarmIntroductionModal({
       return;
     }
 
-    onSent(trimmedMessage);
+    if (isBusy) {
+      return;
+    }
+
+    setIsSending(true);
+    setError("");
+
+    try {
+      const resolvedConversationId =
+        await resolveConversation();
+
+      await sendConversationMessage(
+        resolvedConversationId,
+        {
+          content: trimmedMessage,
+        },
+      );
+
+      onSent(trimmedMessage);
+    } catch (requestError) {
+      setError(
+        getRequestErrorMessage(requestError, "send"),
+      );
+    } finally {
+      setIsSending(false);
+    }
   }
 
   return (
@@ -114,6 +248,7 @@ export default function WarmIntroductionModal({
           type="button"
           className="warm-intro__close"
           aria-label="Close introduction dialog"
+          disabled={isBusy}
           onClick={onClose}
         >
           <X size={22} />
@@ -158,6 +293,7 @@ export default function WarmIntroductionModal({
             Type your introduction message below or
             generate an introduction.
           </p>
+
           <span>
             Sending an introduction does not reveal
             confidential information before the required
@@ -178,6 +314,7 @@ export default function WarmIntroductionModal({
               aria-label="Introduction message"
               placeholder="Write your introduction message..."
               maxLength={5000}
+              disabled={isBusy}
               onChange={(event) => {
                 setMessage(event.target.value);
                 setError("");
@@ -198,7 +335,7 @@ export default function WarmIntroductionModal({
                   References the selected business directly
                 </li>
                 <li>
-                  Uses the confirmed industry and location
+                  Uses confirmed MatchBook context
                 </li>
                 <li>
                   Keeps the request professional and concise
@@ -207,6 +344,7 @@ export default function WarmIntroductionModal({
 
               <div>
                 <strong>Worth asking about</strong>
+
                 <span>
                   Seller transition plans and current
                   operations
@@ -214,9 +352,8 @@ export default function WarmIntroductionModal({
               </div>
 
               <small>
-                Preview only—replace with the approved AI
-                generation service when its API is
-                available.
+                Review and edit the AI-generated draft before
+                sending.
               </small>
             </aside>
           )}
@@ -228,7 +365,10 @@ export default function WarmIntroductionModal({
               type="button"
               className="warm-intro__icon-button"
               aria-label="Undo"
-              disabled={!previousMessage && !message}
+              disabled={
+                isBusy ||
+                (!previousMessage && !message)
+              }
               onClick={undoMessage}
             >
               <RotateCcw size={17} />
@@ -238,7 +378,7 @@ export default function WarmIntroductionModal({
               type="button"
               className="warm-intro__icon-button"
               aria-label="Redo"
-              disabled={!redoMessage}
+              disabled={isBusy || !redoMessage}
               onClick={redoIntroduction}
             >
               <Redo2 size={17} />
@@ -247,22 +387,30 @@ export default function WarmIntroductionModal({
             <button
               type="button"
               className="warm-intro__generate-button"
-              onClick={generateIntroduction}
+              disabled={isBusy}
+              onClick={() =>
+                void generateIntroduction()
+              }
             >
               <Sparkles size={16} />
-              {isGenerated
-                ? "Re-Generate Introduction"
-                : "Generate Introduction"}
+
+              {isGenerating
+                ? "Generating..."
+                : isGenerated
+                  ? "Re-Generate Introduction"
+                  : "Generate Introduction"}
             </button>
           </div>
 
           <button
             type="button"
             className="warm-intro__send-button"
-            onClick={sendIntroduction}
+            disabled={isBusy}
+            onClick={() => void sendIntroduction()}
           >
             <Send size={17} />
-            Send Message
+
+            {isSending ? "Sending..." : "Send Message"}
           </button>
         </div>
 
