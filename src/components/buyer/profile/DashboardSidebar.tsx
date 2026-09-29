@@ -29,6 +29,7 @@ const mainNavigation: NavigationItem[] = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
+    href: "/buyer-dashboard",
   },
   {
     label: "Browse",
