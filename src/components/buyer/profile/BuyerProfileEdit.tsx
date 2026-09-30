@@ -59,6 +59,10 @@ export default function BuyerProfileEdit({
     useBuyerOnboardingStore(
       (state) => state.markSectionCompleted,
     );
+  const initializeForUser =
+    useBuyerOnboardingStore(
+      (state) => state.initializeForUser,
+    );
   const completeOnboarding =
     useBuyerOnboardingStore(
       (state) => state.completeOnboarding,
@@ -169,6 +173,33 @@ export default function BuyerProfileEdit({
         * another GET just because the user goes back.
         */
         if (isOnboarding) {
+          /*
+          * First identify the authenticated Supabase user.
+          *
+          * user.id is the stable UUID that we use to
+          * scope Zustand persistence.
+          */
+          const {
+            data: { user },
+            error: authError,
+          } = await supabase.auth.getUser();
+
+          if (authError) {
+            throw authError;
+          }
+
+          if (!user) {
+            throw new Error(
+              "You are not authenticated.",
+            );
+          }
+
+          /*
+          * Load this user's own persisted onboarding
+          * progress before rendering the onboarding UI.
+          */
+          await initializeForUser(user.id);
+
           const [
             userResult,
             profileResult,
@@ -178,6 +209,8 @@ export default function BuyerProfileEdit({
             getBuyerProfile(),
             getBuyerPreferences(),
           ]);
+
+  // KEEP THE REST OF YOUR EXISTING CODE BELOW THIS.
 
           if (cancelled) {
             return;
@@ -295,7 +328,7 @@ export default function BuyerProfileEdit({
     return () => {
       cancelled = true;
     };
-  }, [isOnboarding]);
+  }, [isOnboarding, initializeForUser]);
 
   const completedSections = useBuyerOnboardingStore(
       (state) => state.completedSections,

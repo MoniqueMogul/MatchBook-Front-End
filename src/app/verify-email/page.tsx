@@ -105,7 +105,7 @@ export default function VerifyEmailPage() {
      ------------------------------ */
   if (!email) {
     return (
-      <AuthLayout progress={10}>
+      <AuthLayout>
         <h1 className="page-title">Email missing</h1>
 
         <p className="page-subtitle">
@@ -120,7 +120,7 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <AuthLayout progress={10}>
+    <AuthLayout>
       <h1 className="page-title">Verify Your Email</h1>
 
       <p className="page-subtitle">

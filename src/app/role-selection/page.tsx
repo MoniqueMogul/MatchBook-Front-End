@@ -35,7 +35,7 @@ export default function RoleSelectionPage() {
   };
 
   return (
-    <AuthLayout progress={20}>
+    <AuthLayout>
       <h1 className="page-title">How are you using MatchBook?</h1>
       
       <div className="role-cards">

@@ -26,6 +26,11 @@ export default function BuyerDashboardNewUser() {
       (state) => state.completedSections
     );
 
+  const initializeForUser =
+    useBuyerOnboardingStore(
+      (state) => state.initializeForUser
+    );
+
   const totalSections = 5;
 
   const completedCount =
@@ -34,6 +39,48 @@ export default function BuyerDashboardNewUser() {
   const percentage = Math.round(
     (completedCount / totalSections) * 100
   );
+
+  /* ---------------------------------------------------------------- */
+  /*  Initialize user-specific onboarding state                       */
+  /* ---------------------------------------------------------------- */
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const initializeOnboarding = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error) {
+        console.error(
+          'Failed to get authenticated user:',
+          error
+        );
+        return;
+      }
+
+      if (!user || cancelled) {
+        return;
+      }
+
+      try {
+        await initializeForUser(user.id);
+      } catch (error) {
+        console.error(
+          'Failed to initialize buyer onboarding:',
+          error
+        );
+      }
+    };
+
+    initializeOnboarding();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initializeForUser]);
 
   /* ---------------------------------------------------------------- */
   /*  Build dynamic onboarding steps                                  */
@@ -248,4 +295,3 @@ export default function BuyerDashboardNewUser() {
     </div>
   );
 }
-
