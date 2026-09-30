@@ -79,7 +79,7 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthLayout progress={5}>
+    <AuthLayout>
       <h1 className="page-title">Create your account</h1>
 
       <p className="page-subtitle">

@@ -30,6 +30,7 @@ interface ExperienceCredentialsEditProps {
   initialData?: Partial<ExperienceCredentialsData>;
   onBack: () => void;
   onContinue: (data: ExperienceCredentialsData) => void;
+  onDataChange?: (data: ExperienceCredentialsData) => void;
   disabled?: boolean;
 }
 
@@ -83,6 +84,7 @@ export default function ExperienceCredentialsEdit({
   initialData,
   onBack,
   onContinue,
+  onDataChange,
   disabled = false,
 }: ExperienceCredentialsEditProps) {
   const [data, setData] =
@@ -105,7 +107,22 @@ export default function ExperienceCredentialsEdit({
     });
 
     setErrors({});
-  }, [initialData]);
+  }, [
+    initialData?.buyerType,
+    initialData?.currentIndustry,
+    initialData?.currentPosition,
+    initialData?.businessExperienceYears,
+    initialData?.relevantExperience,
+    initialData?.availableHoursPerWeek,
+    initialData?.city,
+    initialData?.county,
+    initialData?.state,
+    initialData?.zipCode,
+  ]);
+
+  useEffect(() => {
+    onDataChange?.(data);
+    }, [data, onDataChange]);
 
   const updateField = <
     K extends keyof ExperienceCredentialsData
@@ -311,6 +328,16 @@ export default function ExperienceCredentialsEdit({
 
   return (
     <section className="experience-credentials-section">
+      <p className="experience-credentials-section__required-note">
+        Fields marked{" "}
+        <span
+          className="experience-credentials-section__required"
+          aria-hidden="true"
+        >
+          *
+        </span>{" "}
+        are required for matching.
+      </p>
       <div className="experience-credentials-section__fields">
 
         {/* =================================================
@@ -320,6 +347,12 @@ export default function ExperienceCredentialsEdit({
         <fieldset className="experience-credentials-section__group">
           <legend className="experience-credentials-section__label">
             What best describes your buyer type? (Select one)
+            <span
+              className="experience-credentials-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </legend>
 
           <div className="experience-credentials-section__radio-grid">

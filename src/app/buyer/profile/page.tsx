@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
@@ -19,113 +20,16 @@ import {
   type BuyerProfile,
 } from "@/lib/api/buyer";
 
+import {
+  getCurrentUser,
+  getProfileImage,
+  type UserPersonal,
+} from "@/lib/api/user";
+
 import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
 import { supabase } from "@/lib/supabase";
 
 import "./page.css";
-
-/*
- * TEMPORARY UI DEVELOPMENT MODE
- *
- * Keep this true while we are building/testing
- * the profile UI visually.
- *
- * Change to false when we are ready to reconnect
- * the real backend/Supabase data.
- */
-const USE_MOCK_PROFILE = false;
-
-const MOCK_PROFILE: BuyerProfile = {
-  id: "mock-buyer-profile-id",
-  user_id: "mock-user-id",
-  about_me: "",
-  buyer_type: "first_time_owner",
-
-  current_industry: "Technology",
-  current_position: "Founder",
-  business_experience_years: 5,
-  relevant_experience:
-    "Experience in technology, product development, and business operations.",
-  available_hours_per_week: 40,
-
-  city: "Hyderabad",
-  county: null,
-  state: "Telangana",
-  zip_code: "500039",
-
-  verification_status: "verified",
-
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-const MOCK_PREFERENCES: BuyerPreferences = {
-  target_industry_preferences: [
-    {
-      industry: "Technology",
-      sub_industries: [],
-    },
-    {
-      industry: "Health & Wellness",
-      sub_industries: [],
-    },
-    {
-      industry: "Home & Professional Services",
-      sub_industries: [],
-    },
-  ],
-
-  target_business_models: [],
-  target_business_types: [],
-
-  target_locations: [
-    {
-      provider: "locationiq",
-      place_id: "mock-hyderabad",
-      latitude: 17.4065,
-      longitude: 78.4772,
-      display_name: "Hyderabad, Telangana",
-    },
-    {
-      provider: "locationiq",
-      place_id: "mock-austin",
-      latitude: 30.2672,
-      longitude: -97.7431,
-      display_name: "Austin, Texas",
-    },
-    {
-      provider: "locationiq",
-      place_id: "mock-dallas",
-      latitude: 32.7767,
-      longitude: -96.797,
-      display_name: "Dallas, Texas",
-    },
-  ],
-
-  minimum_years_in_operation: 5,
-
-  minimum_required_arr: 500000,
-
-  minimum_required_sde: 150000,
-
-  maximum_purchase_price: 2000000,
-
-  preferred_arr: 750000,
-
-  preferred_sde: 200000,
-
-  preferred_owner_hours_per_week: 40,
-
-  required_transition_training_days: 14,
-
-  deal_preference: "either",
-
-  real_estate_preference: "included",
-
-  accepts_customer_concentration_above_25_percent: false,
-
-  preferred_acquisition_timeline: "within-1-12",
-};
 
 function BuyerProfilePageContent() {
   const router = useRouter();
@@ -182,11 +86,13 @@ function BuyerProfilePageContent() {
     useBuyerOnboardingStore(
       (state) => state.onboardingInProgress,
     );
+
   useEffect(() => {
     if (onboardingInProgress) {
       router.replace("/buyer-onboarding/profile");
     }
   }, [onboardingInProgress, router]);
+
   const tabParam = searchParams.get("tab");
 
   const validPreviewTabs = [
@@ -203,26 +109,27 @@ function BuyerProfilePageContent() {
     : "overview";
 
   const [profile, setProfile] =
-    useState<BuyerProfile | null>(
-      USE_MOCK_PROFILE ? MOCK_PROFILE : null,
-    );
+    useState<BuyerProfile | null>(null);
 
   const [preferences, setPreferences] =
-    useState<BuyerPreferences | null>(
-      USE_MOCK_PROFILE ? MOCK_PREFERENCES : null,
-    );
+    useState<BuyerPreferences | null>(null);
+
+  const [user, setUser] =
+    useState<UserPersonal | null>(null);
+
+  const [profileImage, setProfileImage] =
+    useState<string | undefined>(undefined);
+
+  const [userName, setUserName] =
+    useState("");
 
   const [loading, setLoading] =
-    useState(!USE_MOCK_PROFILE);
+    useState(true);
 
   const [error, setError] =
     useState<string | null>(null);
 
   useEffect(() => {
-    if (USE_MOCK_PROFILE) {
-      return;
-    }
-
     let cancelled = false;
 
     const loadProfile = async () => {
@@ -233,21 +140,54 @@ function BuyerProfilePageContent() {
         const [
           profileData,
           preferencesData,
+          userData,
+          profileImageData,
+          supabaseUserResult,
         ] = await Promise.all([
           getBuyerProfile(),
           getBuyerPreferences(),
+          getCurrentUser(),
+          getProfileImage(),
+          supabase.auth.getUser(),
         ]);
+
+        const {
+          data: { user: authUser },
+          error: authError,
+        } = supabaseUserResult;
+
+        if (authError) {
+          throw authError;
+        }
 
         if (!cancelled) {
           setProfile(profileData);
           setPreferences(preferencesData);
+          setUser(userData);
+          setProfileImage(profileImageData.url);
+
+          const firstName =
+            authUser?.user_metadata?.first_name;
+
+          const lastName =
+            authUser?.user_metadata?.last_name;
+
+          const fullName =
+            [firstName, lastName]
+              .filter(Boolean)
+              .join(" ") ||
+            authUser?.user_metadata?.full_name ||
+            authUser?.email?.split("@")[0] ||
+            "";
+
+          setUserName(fullName);
         }
       } catch (err) {
         if (!cancelled) {
           setError(
             err instanceof Error
               ? err.message
-              : "Failed to load buyer profile.",
+              : "Failed to load buyer profile and preferences.",
           );
         }
       } finally {
@@ -276,7 +216,6 @@ function BuyerProfilePageContent() {
     return null;
   }
 
-
   return (
     <div className="buyer-profile-page">
       <DashboardSidebar />
@@ -295,11 +234,13 @@ function BuyerProfilePageContent() {
           </div>
         ) : (
           <BuyerProfilePreview
-            name={profileName}
+            name={userName || profileName}
             profile={profile}
             location={location}
             memberType={memberType}
+            imageSrc={profileImage}
             preferences={preferences}
+            phone={user?.phone}
             initialTab={initialTab}
           />
         )}

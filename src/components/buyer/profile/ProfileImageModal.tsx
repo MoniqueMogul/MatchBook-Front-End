@@ -23,7 +23,7 @@ interface ProfileImageModalProps {
   isOpen: boolean;
   imageSrc?: string;
   onClose: () => void;
-  onDone: (imageSrc: string) => void;
+  onDone: (imageBlob: Blob) => void;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -568,7 +568,7 @@ async function createCroppedImage({
   naturalHeight: number;
   zoom: number;
   offset: Point;
-}): Promise<string> {
+}): Promise<Blob> {
   if (!naturalWidth || !naturalHeight) {
     throw new Error("Image dimensions are unavailable.");
   }
@@ -627,7 +627,24 @@ async function createCroppedImage({
     OUTPUT_SIZE,
   );
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(
+            new Error(
+              "Unable to create cropped image.",
+            ),
+          );
+          return;
+        }
+
+        resolve(blob);
+      },
+      "image/webp",
+      0.92,
+    );
+  });
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {

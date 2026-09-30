@@ -24,7 +24,7 @@ export default function RoleSelectionPage() {
     setStep(3);
 
     if (selected === 'buyer') {
-      router.push('/buyer-onboarding/about-you');
+      router.push('/buyer-onboarding/profile');
       return;
     }
 
@@ -35,7 +35,7 @@ export default function RoleSelectionPage() {
   };
 
   return (
-    <AuthLayout progress={20}>
+    <AuthLayout>
       <h1 className="page-title">How are you using MatchBook?</h1>
       
       <div className="role-cards">

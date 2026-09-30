@@ -7,7 +7,9 @@ import EditOverviewSection from "./EditOverviewSection";
 import ExperienceCredentialsEdit, {
   type ExperienceCredentialsData,
 } from "./ExperienceCredentialsEdit";
-import AcquisitionPreferencesSection from "./AcquisitionPreferencesSection";
+import AcquisitionPreferencesSection, {
+  type AcquisitionPreferenceData,
+} from "./AcquisitionPreferencesSection";
 import FinanceEdit from "./FinanceEdit";
 import ProfileEditHeader from "./ProfileEditHeader";
 import ProfileImageModal from "./ProfileImageModal";
@@ -37,6 +39,16 @@ import {
   type BuyerProfilePayload,
 } from "@/lib/api/buyer";
 
+import {
+  getCurrentUser,
+  updateUserPhone,
+  getProfileImage,
+  getProfileImageUploadUrl,
+  uploadProfileImage,
+  confirmProfileImage,
+  type UserPersonal,
+} from "@/lib/api/user";
+
 import "./BuyerProfileEdit.css";
 
 interface BuyerProfileEditProps {
@@ -52,6 +64,10 @@ export default function BuyerProfileEdit({
   const markSectionCompleted =
     useBuyerOnboardingStore(
       (state) => state.markSectionCompleted,
+    );
+  const initializeForUser =
+    useBuyerOnboardingStore(
+      (state) => state.initializeForUser,
     );
   const completeOnboarding =
     useBuyerOnboardingStore(
@@ -71,8 +87,21 @@ export default function BuyerProfileEdit({
       isOnboarding ? ({} as BuyerProfile) : null,
     );
 
+  const [overviewDraft, setOverviewDraft] =
+    useState<{
+      about: string;
+      phoneCountryCode: string;
+      phone: string;
+    } | null>(null);
+
+  const [experienceDraft, setExperienceDraft] =
+    useState<ExperienceCredentialsData | null>(null);
+
+  const [acquisitionDraft, setAcquisitionDraft] =
+    useState<AcquisitionPreferenceData | null>(null);
+
   const [loading, setLoading] =
-    useState(!isOnboarding);
+    useState(true);
 
   const [saving, setSaving] =
     useState(false);
@@ -87,6 +116,11 @@ export default function BuyerProfileEdit({
 
   const [userName, setUserName] =
     useState("");
+
+  const [userPhone, setUserPhone] =
+    useState<UserPersonal | null>(null);
+
+  const [phoneDraft, setPhoneDraft] = useState("");
 
   const [profileImage, setProfileImage] =
     useState<string | undefined>(undefined);
@@ -111,67 +145,223 @@ export default function BuyerProfileEdit({
   useEffect(() => {
     let cancelled = false;
 
+    const getResponseStatus = (err: unknown) => {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err
+      ) {
+        return (
+          err as {
+            response?: {
+              status?: number;
+            };
+          }
+        ).response?.status;
+      }
+
+      return undefined;
+    };
+
     const loadProfile = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // During onboarding, check whether a buyer profile
-        // already exists for the authenticated user.
+        /*
+        * ------------------------------------------------
+        * ONBOARDING MODE
+        * ------------------------------------------------
+        *
+        * The parent state is empty when this component
+        * is mounted for a fresh browser/session.
+        *
+        * Therefore load the durable data from the backend.
+        *
+        * Once loaded:
+        *
+        * backend
+        *    ↓
+        * parent state
+        *    ↓
+        * child props
+        *
+        * We do this only when BuyerProfileEdit mounts.
+        * Navigating between child sections does NOT
+        * remount BuyerProfileEdit, so we do not issue
+        * another GET just because the user goes back.
+        */
         if (isOnboarding) {
-          try {
-            const profileData = await getBuyerProfile();
+          /*
+          * First identify the authenticated Supabase user.
+          *
+          * user.id is the stable UUID that we use to
+          * scope Zustand persistence.
+          */
+          const {
+            data: { user },
+            error: authError,
+          } = await supabase.auth.getUser();
 
-            if (!cancelled) {
-              setProfile(profileData);
-            }
-          } catch (err) {
-            const status =
-              typeof err === "object" &&
-              err !== null &&
-              "response" in err
-                ? (
-                    err as {
-                      response?: {
-                        status?: number;
-                      };
-                    }
-                  ).response?.status
-                : undefined;
+          if (authError) {
+            throw authError;
+          }
 
-            // 404 means this is a new buyer profile.
-            if (status !== 404) {
-              throw err;
-            }
+          if (!user) {
+            throw new Error(
+              "You are not authenticated.",
+            );
+          }
 
-            if (!cancelled) {
+          /*
+          * Load this user's own persisted onboarding
+          * progress before rendering the onboarding UI.
+          */
+          await initializeForUser(user.id);
+
+          const [
+            userResult,
+            profileResult,
+            preferencesResult,
+            profileImageResult,
+          ] = await Promise.allSettled([
+            getCurrentUser(),
+            getBuyerProfile(),
+            getBuyerPreferences(),
+            getProfileImage(),
+          ]);
+
+  // KEEP THE REST OF YOUR EXISTING CODE BELOW THIS.
+
+          if (cancelled) {
+            return;
+          }
+
+          /*
+          * User / Phone
+          */
+          if (userResult.status === "fulfilled") {
+            setUserPhone(userResult.value);
+            setPhoneDraft(userResult.value.phone ?? "");
+          } else {
+            console.error(
+              "Failed to load user data:",
+              userResult.reason,
+            );
+          }
+
+          /*
+          * Buyer Profile
+          *
+          * 404 is expected for a brand-new buyer.
+          */
+          if (profileResult.status === "fulfilled") {
+            setProfile(profileResult.value);
+          } else {
+            const status = getResponseStatus(
+              profileResult.reason,
+            );
+
+            if (status === 404) {
               setProfile({} as BuyerProfile);
+            } else {
+              throw profileResult.reason;
             }
+          }
+
+          /*
+          * Buyer Preferences
+          *
+          * 404 is also treated as an empty/new
+          * preferences record.
+          */
+          if (
+            preferencesResult.status ===
+            "fulfilled"
+          ) {
+            setPreferences(
+              preferencesResult.value,
+            );
+          } else {
+            const status = getResponseStatus(
+              preferencesResult.reason,
+            );
+
+            if (status === 404) {
+              setPreferences(
+                {} as BuyerPreferences,
+              );
+            } else {
+              throw preferencesResult.reason;
+            }
+          }
+
+          /*
+          * Profile Image
+          *
+          * A new user may not have an image yet,
+          * so failure here should not block onboarding.
+          */
+          if (
+            profileImageResult.status ===
+            "fulfilled"
+          ) {
+            setProfileImage(
+              profileImageResult.value.url,
+            );
           }
 
           return;
         }
 
-        // Normal edit mode:
-        // load both profile and preferences.
-        const [profileData, preferencesData] =
-          await Promise.all([
-            getBuyerProfile(),
-            getBuyerPreferences(),
-          ]);
+        /*
+        * ------------------------------------------------
+        * NORMAL EDIT MODE
+        * ------------------------------------------------
+        */
+        const [
+          profileData,
+          preferencesData,
+          userData,
+          profileImageResult,
+        ] = await Promise.allSettled([
+          getBuyerProfile(),
+          getBuyerPreferences(),
+          getCurrentUser(),
+          getProfileImage(),
+        ]);
 
         if (!cancelled) {
-          setProfile(profileData);
-          setPreferences(preferencesData);
+          if (profileData.status === "fulfilled") {
+            setProfile(profileData.value);
 
-          const currentLocation = [
-            profileData.city,
-            profileData.state,
-          ]
-            .filter(Boolean)
-            .join(", ");
+            const currentLocation = [
+              profileData.value.city,
+              profileData.value.state,
+            ]
+              .filter(Boolean)
+              .join(", ");
 
-          setLocation(currentLocation);
+            setLocation(currentLocation);
+          }
+
+          if (preferencesData.status === "fulfilled") {
+            setPreferences(preferencesData.value);
+          }
+
+          if (userData.status === "fulfilled") {
+            setUserPhone(userData.value);
+            setPhoneDraft(userData.value.phone ?? "");
+          }
+
+          if (
+            profileImageResult.status ===
+            "fulfilled"
+          ) {
+            setProfileImage(
+              profileImageResult.value.url,
+            );
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -193,7 +383,7 @@ export default function BuyerProfileEdit({
     return () => {
       cancelled = true;
     };
-  }, [isOnboarding]);
+  }, [isOnboarding, initializeForUser]);
 
   const completedSections = useBuyerOnboardingStore(
       (state) => state.completedSections,
@@ -258,11 +448,87 @@ export default function BuyerProfileEdit({
    * ------------------------------------------------
    */
 
-  const handleProfileImageDone = (imageSrc: string) => {
-    setProfileImage(imageSrc);
-    setIsImageModalOpen(false);
+  const handleProfileImageDone = async (
+    imageBlob: Blob,
+  ) => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const uploadData =
+        await getProfileImageUploadUrl(
+          "image/webp",
+        );
+
+      await uploadProfileImage(
+        uploadData.upload_url,
+        imageBlob,
+        uploadData.required_headers,
+      );
+
+      await confirmProfileImage(
+        uploadData.object_key,
+      );
+
+      const profileImageData =
+        await getProfileImage();
+
+      setProfileImage(
+        profileImageData.url,
+      );
+
+      setIsImageModalOpen(false);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update profile image.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
+  const parsePhone = (
+    phone: string | null | undefined,
+  ) => {
+    if (!phone) {
+      return {
+        countryCode: "+91",
+        number: "",
+      };
+    }
+
+    const countryCodes = [
+      "+1",
+      "+44",
+      "+91",
+      "+61",
+      "+49",
+      "+33",
+      "+81",
+      "+86",
+      "+55",
+      "+52",
+    ];
+
+    const matchedCode = countryCodes.find(
+      (code) => phone.startsWith(code),
+    );
+
+    if (!matchedCode) {
+      return {
+        countryCode: "+91",
+        number: phone,
+      };
+    }
+
+    return {
+      countryCode: matchedCode,
+      number: phone.slice(matchedCode.length),
+    };
+  };
+  const parsedPhone = parsePhone(userPhone?.phone);
   /*
    * ------------------------------------------------
    * Overview
@@ -275,11 +541,18 @@ export default function BuyerProfileEdit({
 
   const handleOverviewContinue = async (data: {
     about: string;
+    phoneCountryCode: string;
+    phone: string;
   }) => {
     if (isOnboarding && !data.about.trim()) {
       setError(
         "Please tell sellers a little about yourself.",
       );
+      return;
+    }
+
+    if (isOnboarding && !data.phone.trim()) {
+      setError("Please enter your phone number.");
       return;
     }
 
@@ -290,19 +563,27 @@ export default function BuyerProfileEdit({
     savingRef.current = true;
     setSaving(true);
     setError(null);
-
     try {
-      const savedProfile = await upsertBuyerProfile({
-        about_me: data.about.trim(),
-      });
+      const fullPhone =
+        `${data.phoneCountryCode}${data.phone.replace(/\D/g, "")}`;
+
+      const savedUser =
+        await updateUserPhone(fullPhone);
+
+      setUserPhone(savedUser);
+
+      const savedProfile =
+        await upsertBuyerProfile({
+          about_me: data.about.trim(),
+        });
 
       setProfile(savedProfile);
 
       if (isOnboarding) {
         markSectionCompleted("overview");
-        setActiveTab("industry-experience");
       }
-    } catch (err) {
+      setActiveTab("industry-experience");
+    }catch (err) {
       setError(
         err instanceof Error
           ? err.message
@@ -482,8 +763,6 @@ export default function BuyerProfileEdit({
           data.timeline ?? null,
       };
 
-      setPreferences(nextPreferences);
-
       const savedPreferences =
         await saveBuyerPreferences({
           target_industry_preferences:
@@ -537,7 +816,9 @@ export default function BuyerProfileEdit({
         });
 
       setPreferences(savedPreferences);
-      markSectionCompleted("acquisition");
+      if (isOnboarding) {
+        markSectionCompleted("acquisition");
+      }
       setActiveTab("finances");
     } catch (err) {
       setError(
@@ -562,39 +843,74 @@ export default function BuyerProfileEdit({
         return null;
       }
 
+      const experience = experienceDraft;
+
       return {
         buyer_type:
+          experience?.buyerType ??
           profile.buyer_type,
 
         current_industry:
-          profile.current_industry ?? null,
+          experience?.currentIndustry ??
+          profile.current_industry ??
+          null,
 
         current_position:
-          profile.current_position ?? null,
+          experience?.currentPosition ??
+          profile.current_position ??
+          null,
 
         business_experience_years:
-          profile.business_experience_years ?? null,
+          experience?.businessExperienceYears !==
+          undefined &&
+          experience?.businessExperienceYears !== ""
+            ? Number(
+                experience.businessExperienceYears,
+              )
+            : profile.business_experience_years ??
+              null,
 
         relevant_experience:
-          profile.relevant_experience ?? null,
+          experience?.relevantExperience ??
+          profile.relevant_experience ??
+          null,
 
         available_hours_per_week:
-          profile.available_hours_per_week ?? null,
+          experience?.availableHoursPerWeek !==
+            undefined &&
+          experience?.availableHoursPerWeek !== ""
+            ? Number(
+                experience.availableHoursPerWeek,
+              )
+            : profile.available_hours_per_week ??
+              null,
 
         city:
-          profile.city ?? null,
+          experience?.city ??
+          profile.city ??
+          null,
 
         county:
-          profile.county ?? null,
+          experience?.county ??
+          profile.county ??
+          null,
 
         state:
-          profile.state ?? null,
+          experience?.state ??
+          profile.state ??
+          null,
 
         zip_code:
-          profile.zip_code ?? null,
+          experience?.zipCode ??
+          profile.zip_code ??
+          null,
+
+        about_me:
+          overviewDraft?.about ??
+          profile.about_me ??
+          null,
       };
     };
-
   /*
    * ------------------------------------------------
    * Build Buyer Preferences PUT payload
@@ -602,61 +918,91 @@ export default function BuyerProfileEdit({
    */
 
   const buildBuyerPreferencesPayload =
-  (): BuyerPreferencesPayload => {
-    if (!preferences) {
-      return {};
-    }
+    (): BuyerPreferencesPayload => {
+      const draft = acquisitionDraft;
 
-    return {
-      target_industry_preferences:
-        preferences.target_industry_preferences,
+      return {
+        target_industry_preferences:
+          draft?.targetIndustryPreferences ??
+          preferences?.target_industry_preferences ??
+          null,
 
-      target_business_models:
-        preferences.target_business_models,
+        target_business_models:
+          draft?.targetBusinessModels ??
+          preferences?.target_business_models ??
+          null,
 
-      target_business_types:
-        preferences.target_business_types,
+        target_business_types:
+          (draft?.targetBusinessTypes as BusinessType[] | undefined) ??
+          preferences?.target_business_types ??
+          null,
 
-      target_locations:
-        preferences.target_locations,
+        target_locations:
+          draft?.targetLocations ??
+          preferences?.target_locations ??
+          null,
 
-      maximum_purchase_price:
-        preferences.maximum_purchase_price,
+        maximum_purchase_price:
+          draft?.maximumPurchasePrice ??
+          preferences?.maximum_purchase_price ??
+          null,
 
-      minimum_required_sde:
-        preferences.minimum_required_sde,
+        minimum_required_sde:
+          draft?.minimumSDE ??
+          preferences?.minimum_required_sde ??
+          null,
 
-      preferred_sde:
-        preferences.preferred_sde,
+        preferred_sde:
+          draft?.preferredSDE ??
+          preferences?.preferred_sde ??
+          null,
 
-      minimum_required_arr:
-        preferences.minimum_required_arr,
+        minimum_required_arr:
+          draft?.minimumARR ??
+          preferences?.minimum_required_arr ??
+          null,
 
-      preferred_arr:
-        preferences.preferred_arr,
+        preferred_arr:
+          draft?.preferredARR ??
+          preferences?.preferred_arr ??
+          null,
 
-      preferred_owner_hours_per_week:
-        preferences.preferred_owner_hours_per_week,
+        preferred_owner_hours_per_week:
+          draft?.preferredOwnerHoursPerWeek ??
+          preferences?.preferred_owner_hours_per_week ??
+          null,
 
-      required_transition_training_days:
-        preferences.required_transition_training_days,
+        required_transition_training_days:
+          draft?.sellerTrainingDays ??
+          preferences?.required_transition_training_days ??
+          null,
 
-      deal_preference:
-        preferences.deal_preference,
+        deal_preference:
+          draft?.dealPreference ??
+          preferences?.deal_preference ??
+          null,
 
-      real_estate_preference:
-        preferences.real_estate_preference,
+        real_estate_preference:
+          draft?.realEstatePreference ??
+          preferences?.real_estate_preference ??
+          null,
 
-      minimum_years_in_operation:
-        preferences.minimum_years_in_operation,
+        minimum_years_in_operation:
+          draft?.minimumYearsInOperation ??
+          preferences?.minimum_years_in_operation ??
+          null,
 
-      accepts_customer_concentration_above_25_percent:
-        preferences.accepts_customer_concentration_above_25_percent,
+        accepts_customer_concentration_above_25_percent:
+          draft?.customerConcentration ??
+          preferences?.accepts_customer_concentration_above_25_percent ??
+          null,
 
-      preferred_acquisition_timeline:
-        preferences.preferred_acquisition_timeline,
+        preferred_acquisition_timeline:
+          draft?.timeline ??
+          preferences?.preferred_acquisition_timeline ??
+          null,
+      };
     };
-  };
 
   /*
    * ------------------------------------------------
@@ -748,7 +1094,7 @@ export default function BuyerProfileEdit({
 
     try {
       const buyerProfilePayload =
-        buildBuyerProfilePayload();
+      buildBuyerProfilePayload();
 
       const buyerPreferencesPayload =
         buildBuyerPreferencesPayload();
@@ -758,10 +1104,10 @@ export default function BuyerProfileEdit({
           "Buyer profile data is unavailable.",
         );
       }
-
       const [
         savedProfile,
         savedPreferences,
+        savedUser,
       ] = await Promise.all([
         upsertBuyerProfile(
           buyerProfilePayload,
@@ -770,16 +1116,21 @@ export default function BuyerProfileEdit({
         saveBuyerPreferences(
           buyerPreferencesPayload,
         ),
+
+        updateUserPhone(phoneDraft),
       ]);
 
       setProfile(savedProfile);
       setPreferences(savedPreferences);
+      setUserPhone(savedUser);
+      setPhoneDraft(savedUser.phone ?? "");
 
       console.log(
-        "Buyer profile and preferences saved successfully.",
+        "Buyer profile, preferences, and phone saved successfully.",
         {
           profile: savedProfile,
           preferences: savedPreferences,
+          user: savedUser,
         },
       );
 
@@ -902,15 +1253,23 @@ export default function BuyerProfileEdit({
 
         {activeTab === "overview" && (
           <EditOverviewSection
-            mode={mode}
-            initialAbout={
-              profile?.about_me ?? ""
-            }
-            onContinue={
-              handleOverviewContinue
-            }
-            disabled={saving}
-          />
+          mode={mode}
+          initialAbout={
+            profile?.about_me ?? ""
+          }
+          initialPhoneCountryCode={
+            parsedPhone.countryCode
+          }
+          initialPhone={
+            parsedPhone.number
+          }
+          onPhoneChange={setPhoneDraft}
+          onDataChange={setOverviewDraft}
+          onContinue={
+            handleOverviewContinue
+          }
+          disabled={saving}
+        />
         )}
 
         {/* Experience & Credentials */}
@@ -968,6 +1327,8 @@ export default function BuyerProfileEdit({
             onContinue={
               handleExperienceCredentialsContinue
             }
+
+            onDataChange={setExperienceDraft}
 
             disabled={saving}
           />
@@ -1075,6 +1436,8 @@ export default function BuyerProfileEdit({
               handleAcquisitionPreferencesContinue
             }
 
+            onDataChange={setAcquisitionDraft}
+
             disabled={saving}
           />
         )}
@@ -1090,12 +1453,19 @@ export default function BuyerProfileEdit({
                 : ""
             }
             onPurchasePriceChange={(value) => {
+              const nextValue =
+                value.trim() === ""
+                  ? null
+                  : Number(value);
+
               setPreferences((previous) => ({
                 ...(previous ?? ({} as BuyerPreferences)),
-                maximum_purchase_price:
-                  value.trim() === ""
-                    ? null
-                    : Number(value),
+                maximum_purchase_price: nextValue,
+              }));
+
+              setAcquisitionDraft((previous) => ({
+                ...(previous ?? ({} as AcquisitionPreferenceData)),
+                maximumPurchasePrice: nextValue ?? undefined,
               }));
             }}
             onBack={() =>

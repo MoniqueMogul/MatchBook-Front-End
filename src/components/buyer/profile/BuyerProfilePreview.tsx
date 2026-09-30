@@ -21,6 +21,7 @@ interface BuyerProfilePreviewProps {
   location?: string;
   memberType?: string;
   imageSrc?: string;
+  phone?: string | null;
   preferences?: BuyerPreferences;
   profile?: BuyerProfile | null;
   initialTab?: PreviewTab;
@@ -31,6 +32,7 @@ export default function BuyerProfilePreview({
   location = "Location",
   memberType = "Member Type",
   imageSrc,
+  phone,
   preferences,
   profile,
   initialTab = "overview",
@@ -185,18 +187,34 @@ export default function BuyerProfilePreview({
           </button>
         </nav>
 
+        {/* =========================
+            Overview
+           ========================= */}
 
         {activeTab === "overview" && (
           <section className="buyer-profile-preview__overview-card">
+
             <div className="buyer-profile-preview__section">
               <h2 className="buyer-profile-preview__section-title">
                 About
               </h2>
 
               <p className="buyer-profile-preview__value">
-                {profile?.about_me || "No information provided yet."}
+                {profile?.about_me ||
+                  "No information provided yet."}
               </p>
             </div>
+
+            <div className="buyer-profile-preview__section">
+              <h2 className="buyer-profile-preview__section-title">
+                Contact
+              </h2>
+
+              <p className="buyer-profile-preview__value">
+                {phone || "No phone number provided."}
+              </p>
+            </div>
+
           </section>
         )}
 
@@ -213,6 +231,17 @@ export default function BuyerProfilePreview({
                   preferences?.target_industry_preferences?.map(
                     (item) => item.industry,
                   ) ?? [],
+
+                subIndustries:
+                  preferences?.target_industry_preferences?.flatMap(
+                    (item) => item.sub_industries ?? [],
+                  ) ?? [],
+
+                businessModels:
+                  preferences?.target_business_models ?? [],
+
+                businessTypes:
+                  preferences?.target_business_types ?? [],
 
                 targetLocations:
                   preferences?.target_locations ?? [],
@@ -286,18 +315,7 @@ export default function BuyerProfilePreview({
           <section className="buyer-profile-preview__overview-card">
 
             <FinancePreview
-              // data={{
-              //   fundingSource: "all_cash",
-              //   reportedCashAvailable: 500000,
-              //   verifiedCashAvailable: 450000,
-              //   financingAmountRequested: 1000000,
-              //   financingAmountApproved: 750000,
-              //   lenderName: "ABC Bank",
-              //   lenderApprovalStatus: "approved",
-              //   financialVerificationStatus: "verified",
-              // }}
-
-             data={{
+              data={{
                 purchasePrice:
                   preferences?.maximum_purchase_price ?? null,
               }}
