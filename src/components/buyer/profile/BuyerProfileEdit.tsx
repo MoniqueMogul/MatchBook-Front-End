@@ -42,6 +42,10 @@ import {
 import {
   getCurrentUser,
   updateUserPhone,
+  getProfileImage,
+  getProfileImageUploadUrl,
+  uploadProfileImage,
+  confirmProfileImage,
   type UserPersonal,
 } from "@/lib/api/user";
 
@@ -219,10 +223,12 @@ export default function BuyerProfileEdit({
             userResult,
             profileResult,
             preferencesResult,
+            profileImageResult,
           ] = await Promise.allSettled([
             getCurrentUser(),
             getBuyerProfile(),
             getBuyerPreferences(),
+            getProfileImage(),
           ]);
 
   // KEEP THE REST OF YOUR EXISTING CODE BELOW THIS.
@@ -290,6 +296,21 @@ export default function BuyerProfileEdit({
             }
           }
 
+          /*
+          * Profile Image
+          *
+          * A new user may not have an image yet,
+          * so failure here should not block onboarding.
+          */
+          if (
+            profileImageResult.status ===
+            "fulfilled"
+          ) {
+            setProfileImage(
+              profileImageResult.value.url,
+            );
+          }
+
           return;
         }
 
@@ -302,26 +323,45 @@ export default function BuyerProfileEdit({
           profileData,
           preferencesData,
           userData,
-        ] = await Promise.all([
+          profileImageResult,
+        ] = await Promise.allSettled([
           getBuyerProfile(),
           getBuyerPreferences(),
           getCurrentUser(),
+          getProfileImage(),
         ]);
 
         if (!cancelled) {
-          setProfile(profileData);
-          setPreferences(preferencesData);
-          setUserPhone(userData);
-          setPhoneDraft(userData.phone ?? "");
+          if (profileData.status === "fulfilled") {
+            setProfile(profileData.value);
 
-          const currentLocation = [
-            profileData.city,
-            profileData.state,
-          ]
-            .filter(Boolean)
-            .join(", ");
+            const currentLocation = [
+              profileData.value.city,
+              profileData.value.state,
+            ]
+              .filter(Boolean)
+              .join(", ");
 
-          setLocation(currentLocation);
+            setLocation(currentLocation);
+          }
+
+          if (preferencesData.status === "fulfilled") {
+            setPreferences(preferencesData.value);
+          }
+
+          if (userData.status === "fulfilled") {
+            setUserPhone(userData.value);
+            setPhoneDraft(userData.value.phone ?? "");
+          }
+
+          if (
+            profileImageResult.status ===
+            "fulfilled"
+          ) {
+            setProfileImage(
+              profileImageResult.value.url,
+            );
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -408,9 +448,45 @@ export default function BuyerProfileEdit({
    * ------------------------------------------------
    */
 
-  const handleProfileImageDone = (imageSrc: string) => {
-    setProfileImage(imageSrc);
-    setIsImageModalOpen(false);
+  const handleProfileImageDone = async (
+    imageBlob: Blob,
+  ) => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const uploadData =
+        await getProfileImageUploadUrl(
+          "image/webp",
+        );
+
+      await uploadProfileImage(
+        uploadData.upload_url,
+        imageBlob,
+        uploadData.required_headers,
+      );
+
+      await confirmProfileImage(
+        uploadData.object_key,
+      );
+
+      const profileImageData =
+        await getProfileImage();
+
+      setProfileImage(
+        profileImageData.url,
+      );
+
+      setIsImageModalOpen(false);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update profile image.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const parsePhone = (
@@ -505,8 +581,8 @@ export default function BuyerProfileEdit({
 
       if (isOnboarding) {
         markSectionCompleted("overview");
-        setActiveTab("industry-experience");
       }
+      setActiveTab("industry-experience");
     }catch (err) {
       setError(
         err instanceof Error

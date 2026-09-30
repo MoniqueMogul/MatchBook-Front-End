@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import PhoneInputField from "@/components/onboarding/PhoneInputField";
 import "./EditOverviewSection.css";
 
@@ -46,6 +47,7 @@ export default function EditOverviewSection({
     useState(initialPhoneCountryCode);
 
   const [phone, setPhone] = useState(initialPhone);
+  const [phoneError, setPhoneError] = useState<string>("");
 
   useEffect(() => {
     setAbout(initialAbout);
@@ -73,10 +75,25 @@ export default function EditOverviewSection({
   ]);
 
   const handleContinue = () => {
+    const trimmedPhone = phone.trim();
+    const fullPhoneNumber = `${phoneCountryCode}${trimmedPhone.replace(/\D/g, "")}`;
+
+    if (!trimmedPhone) {
+      setPhoneError("Please enter your phone number.");
+      return;
+    }
+
+    if (!isValidPhoneNumber(fullPhoneNumber)) {
+      setPhoneError("Please enter a valid phone number.");
+      return;
+    }
+
+    setPhoneError("");
+
     onContinue?.({
       about: about.trim(),
       phoneCountryCode,
-      phone: phone.trim(),
+      phone: trimmedPhone,
     });
   };
 
@@ -109,8 +126,13 @@ export default function EditOverviewSection({
           <PhoneInputField
           label="Contact"
           countryCodeValue={phoneCountryCode}
+          error={phoneError}
           onCountryCodeChange={(countryCode) => {
             setPhoneCountryCode(countryCode);
+
+             if (phoneError) {
+              setPhoneError("");
+            }
 
             onPhoneChange?.(
               `${countryCode}${phone.replace(/\D/g, "")}`,
@@ -121,6 +143,10 @@ export default function EditOverviewSection({
             const value = event.target.value;
 
             setPhone(value);
+
+            if (phoneError) {
+              setPhoneError("");
+            }
 
             onPhoneChange?.(
               `${phoneCountryCode}${value.replace(/\D/g, "")}`,

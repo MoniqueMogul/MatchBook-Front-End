@@ -328,6 +328,16 @@ export default function ExperienceCredentialsEdit({
 
   return (
     <section className="experience-credentials-section">
+      <p className="experience-credentials-section__required-note">
+        Fields marked{" "}
+        <span
+          className="experience-credentials-section__required"
+          aria-hidden="true"
+        >
+          *
+        </span>{" "}
+        are required for matching.
+      </p>
       <div className="experience-credentials-section__fields">
 
         {/* =================================================
@@ -337,6 +347,12 @@ export default function ExperienceCredentialsEdit({
         <fieldset className="experience-credentials-section__group">
           <legend className="experience-credentials-section__label">
             What best describes your buyer type? (Select one)
+            <span
+              className="experience-credentials-section__required"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </legend>
 
           <div className="experience-credentials-section__radio-grid">

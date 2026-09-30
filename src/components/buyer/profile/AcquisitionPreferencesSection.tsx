@@ -203,6 +203,7 @@ interface MultiSelectProps {
   required?: boolean;
   options: MultiSelectOption[];
   selected: string[];
+  error?: string;
   onChange: (values: string[]) => void;
   disabled?: boolean;
 }
@@ -211,6 +212,7 @@ function MultiSelect({
   label,
   required = false,
   options,
+  error,
   selected,
   onChange,
   disabled = false,
@@ -299,6 +301,10 @@ function MultiSelect({
             open
               ? "acquisition-preferences-section__select-trigger--open"
               : ""
+          } ${
+            error
+              ? "acquisition-preferences-section__select-trigger--error"
+              : ""
           }`}
           onClick={() =>
             !disabled &&
@@ -306,6 +312,7 @@ function MultiSelect({
           }
           disabled={disabled}
           aria-expanded={open}
+          aria-invalid={Boolean(error)}
         >
           <span>Select all that apply</span>
 
@@ -387,6 +394,15 @@ function MultiSelect({
           ))}
         </div>
       )}
+
+      {error && (
+        <p
+          className="acquisition-preferences-section__field-error"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -400,6 +416,7 @@ interface SingleSelectProps {
   required?: boolean;
   value: string;
   options: string[];
+  error?: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 }
@@ -409,6 +426,7 @@ function SingleSelect({
   required = false,
   value,
   options,
+  error,
   onChange,
   disabled = false,
 }: SingleSelectProps) {
@@ -476,6 +494,7 @@ function SingleSelect({
           }
           disabled={disabled}
           aria-expanded={open}
+          aria-invalid={Boolean(error)}
         >
           <span>
             {value || "Select an option"}
@@ -521,6 +540,15 @@ function SingleSelect({
           </div>
         )}
       </div>
+
+      {error && (
+        <p
+          className="acquisition-preferences-section__field-error"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -606,10 +634,24 @@ export default function AcquisitionPreferencesSection({
     setTaxonomyError,
   ] = useState<string | null>(null);
 
-  const [
-    validationError,
-    setValidationError,
-  ] = useState<string | null>(null);
+  type FieldErrorKey =
+  | "industries"
+  | "businessModels"
+  | "businessTypes"
+  | "preferredRegions"
+  | "minimumARR"
+  | "minimumSDE"
+  | "maximumPurchasePrice"
+  | "preferredARR"
+  | "preferredSDE"
+  | "preferredOwnerHours"
+  | "customerConcentration"
+  | "sellerTrainingDays"
+  | "dealPreference"
+  | "timeline";
+
+  const [fieldErrors, setFieldErrors] =
+    useState<Partial<Record<FieldErrorKey, string>>>({});
 
 
 
@@ -909,7 +951,7 @@ useEffect(() => {
 
   setTimeline(initialTimeline ?? "");
 
-  setValidationError(null);
+  setFieldErrors({});
 }, [
   initialTargetIndustryPreferences,
   initialTargetBusinessModels,
@@ -1011,7 +1053,7 @@ useEffect(() => {
       },
     );
 
-    setValidationError(null);
+    clearFieldError("industries");
   };
 
   const updateSubIndustries = (
@@ -1030,8 +1072,6 @@ useEffect(() => {
             : item,
         ),
     );
-
-    setValidationError(null);
   };
 
   /* ------------------------------------------------
@@ -1298,7 +1338,7 @@ useEffect(() => {
       -1,
     );
     setLocationError(null);
-    setValidationError(null);
+    clearFieldError("preferredRegions");
   };
 
   const handleRemoveLocation = (
@@ -1317,7 +1357,7 @@ useEffect(() => {
         ),
     );
 
-    setValidationError(null);
+    clearFieldError("preferredRegions");
   };
 
   const handleLocationKeyDown = (
@@ -1386,6 +1426,33 @@ useEffect(() => {
     }
   };
 
+  const clearFieldError = (field: FieldErrorKey) => {
+    setFieldErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const isValidNonNegativeNumber = (
+    value: string,
+  ): boolean => {
+    if (value.trim() === "") {
+      return false;
+    }
+
+    const number = Number(value);
+
+    return (
+      Number.isFinite(number) &&
+      number >= 0
+    );
+  };
+
   /* ------------------------------------------------
    * Continue validation
    *
@@ -1399,115 +1466,152 @@ useEffect(() => {
    * ------------------------------------------------ */
 
   const handleContinue = () => {
-    setValidationError(null);
+    const errors: Partial<Record<FieldErrorKey, string>> = {};
 
-    const requiredChecks = [
-      {
-        missing:
-          targetIndustryPreferences.length ===
-          0,
-        label: "industries",
-      },
-      {
-        missing:
-          targetBusinessModels.length ===
-          0,
-        label: "business models",
-      },
-      {
-        missing:
-          targetBusinessTypes.length ===
-          0,
-        label: "business types",
-      },
-      {
-        missing:
-          targetLocations.length === 0,
-        label: "preferred regions",
-      },
-      {
-        missing:
-          minimumARR.trim() === "",
-        label: "minimum ARR",
-      },
-      {
-        missing:
-          minimumSDE.trim() === "",
-        label: "minimum SDE",
-      },
-      {
-        missing:
-          maximumPurchasePrice.trim() ===
-          "",
-        label: "maximum purchase budget",
-      },
-      {
-        missing:
-          preferredARR.trim() === "",
-        label: "preferred ARR",
-      },
-      {
-        missing:
-          preferredSDE.trim() === "",
-        label: "preferred SDE",
-      },
-      {
-        missing:
-          preferredOwnerHoursPerWeek.trim() ===
-          "",
-        label: "preferred owner hours",
-      },
-      {
-        missing:
-          customerConcentration === "",
-        label: "customer concentration preference",
-      },
-      {
-        missing:
-          sellerTrainingDays === "",
-        label: "seller transition training",
-      },
-      {
-        missing:
-          dealPreference === "",
-        label: "deal preference",
-      },
-      {
-        missing:
-          timeline === "",
-        label: "acquisition timeline",
-      },
-    ];
+    if (targetIndustryPreferences.length === 0) {
+      errors.industries =
+        "Select at least one industry.";
+    }
 
-    const missing =
-      requiredChecks
-        .filter(
-          (check) => check.missing,
-        )
-        .map(
-          (check) => check.label,
-        );
+    if (targetBusinessModels.length === 0) {
+      errors.businessModels =
+        "Select at least one business model.";
+    }
 
-    if (missing.length > 0) {
-      setValidationError(
-        `Please complete the required fields before continuing. Missing: ${missing.join(", ")}.`,
-      );
+    if (targetBusinessTypes.length === 0) {
+      errors.businessTypes =
+        "Select at least one business type.";
+    }
 
+    if (targetLocations.length === 0) {
+      errors.preferredRegions =
+        "Select at least one preferred region.";
+    }
+
+    if (!isValidNonNegativeNumber(minimumARR)) {
+      errors.minimumARR =
+        minimumARR.trim() === ""
+          ? "Enter your minimum ARR."
+          : "Enter a valid minimum ARR.";
+    }
+
+    if (!isValidNonNegativeNumber(minimumSDE)) {
+      errors.minimumSDE =
+        minimumSDE.trim() === ""
+          ? "Enter your minimum SDE."
+          : "Enter a valid minimum SDE.";
+    }
+
+    if (
+      !isValidNonNegativeNumber(
+        maximumPurchasePrice,
+      )
+    ) {
+      errors.maximumPurchasePrice =
+        maximumPurchasePrice.trim() === ""
+          ? "Enter your maximum purchase budget."
+          : "Enter a valid maximum purchase budget.";
+    }
+
+    if (!isValidNonNegativeNumber(preferredARR)) {
+      errors.preferredARR =
+        preferredARR.trim() === ""
+          ? "Enter your preferred ARR."
+          : "Enter a valid preferred ARR.";
+    }
+
+    if (!isValidNonNegativeNumber(preferredSDE)) {
+      errors.preferredSDE =
+        preferredSDE.trim() === ""
+          ? "Enter your preferred SDE."
+          : "Enter a valid preferred SDE.";
+    }
+
+    const ownerHours = Number(
+      preferredOwnerHoursPerWeek,
+    );
+
+    if (
+      preferredOwnerHoursPerWeek.trim() === ""
+    ) {
+      errors.preferredOwnerHours =
+        "Enter your preferred owner hours per week.";
+    } else if (
+      !Number.isInteger(ownerHours) ||
+      ownerHours < 0 ||
+      ownerHours > 168
+    ) {
+      errors.preferredOwnerHours =
+        "Enter a whole number between 0 and 168.";
+    }
+
+    if (customerConcentration === "") {
+      errors.customerConcentration =
+        "Select a customer concentration preference.";
+    }
+
+    if (sellerTrainingDays === "") {
+      errors.sellerTrainingDays =
+        "Select the seller transition training period.";
+    }
+
+    if (dealPreference === "") {
+      errors.dealPreference =
+        "Select your preferred deal structure.";
+    }
+
+    if (timeline === "") {
+      errors.timeline =
+        "Select your acquisition timeline.";
+    }
+
+    /*
+    * ARR relationship validation
+    */
+    const minimumARRValue = Number(minimumARR);
+    const preferredARRValue = Number(preferredARR);
+
+    if (
+      !errors.minimumARR &&
+      !errors.preferredARR &&
+      minimumARR.trim() !== "" &&
+      preferredARR.trim() !== "" &&
+      preferredARRValue <= minimumARRValue
+    ) {
+      errors.preferredARR =
+        "Preferred ARR must be greater than Minimum ARR.";
+    }
+
+    /*
+    * SDE relationship validation
+    */
+    const minimumSDEValue = Number(minimumSDE);
+    const preferredSDEValue = Number(preferredSDE);
+
+    if (
+      !errors.minimumSDE &&
+      !errors.preferredSDE &&
+      minimumSDE.trim() !== "" &&
+      preferredSDE.trim() !== "" &&
+      preferredSDEValue <= minimumSDEValue
+    ) {
+      errors.preferredSDE =
+        "Preferred SDE must be greater than Minimum SDE.";
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
-    const trainingDays =
-      Number.parseInt(
-        sellerTrainingDays.replace(
-          " days",
-          "",
-        ),
-        10,
-      );
+    const trainingDays = Number.parseInt(
+      sellerTrainingDays.replace(" days", ""),
+      10,
+    );
 
     const customerConcentrationValue =
-      customerConcentration ===
-      "yes";
+      customerConcentration === "yes";
 
     onContinue?.({
       targetIndustryPreferences,
@@ -1515,24 +1619,16 @@ useEffect(() => {
       targetBusinessTypes,
       targetLocations,
 
-      /*
-       * Optional fields are still included
-       * when the user has entered them.
-       */
       minimumYearsInOperation:
         toNumberOrUndefined(
           minimumYearsInOperation,
         ),
 
       minimumARR:
-        toNumberOrUndefined(
-          minimumARR,
-        ),
+        toNumberOrUndefined(minimumARR),
 
       minimumSDE:
-        toNumberOrUndefined(
-          minimumSDE,
-        ),
+        toNumberOrUndefined(minimumSDE),
 
       maximumPurchasePrice:
         toNumberOrUndefined(
@@ -1540,14 +1636,10 @@ useEffect(() => {
         ),
 
       preferredARR:
-        toNumberOrUndefined(
-          preferredARR,
-        ),
+        toNumberOrUndefined(preferredARR),
 
       preferredSDE:
-        toNumberOrUndefined(
-          preferredSDE,
-        ),
+        toNumberOrUndefined(preferredSDE),
 
       preferredOwnerHoursPerWeek:
         toNumberOrUndefined(
@@ -1566,8 +1658,7 @@ useEffect(() => {
           : dealPreference,
 
       realEstatePreference:
-        realEstatePreference ===
-        ""
+        realEstatePreference === ""
           ? undefined
           : realEstatePreference,
 
@@ -1584,15 +1675,6 @@ useEffect(() => {
 
   return (
     <section className="acquisition-preferences-section">
-      {validationError && (
-        <div
-          className="acquisition-preferences-section__validation-error"
-          role="alert"
-        >
-          {validationError}
-        </div>
-      )}
-
       {taxonomyError && (
         <div
           className="acquisition-preferences-section__validation-error"
@@ -1621,6 +1703,7 @@ useEffect(() => {
         <MultiSelect
           label="Which industries are you interested in?"
           required
+          error={fieldErrors.industries}
           options={industryOptions.map(
             (option) => ({
               value: option.value,
@@ -1693,6 +1776,7 @@ useEffect(() => {
         <MultiSelect
           label="Preferred Business Models"
           required
+          error={fieldErrors.businessModels}
           options={businessModelOptions.map(
             (option) => ({
               value: option.value,
@@ -1706,7 +1790,7 @@ useEffect(() => {
             setTargetBusinessModels(
               values,
             );
-            setValidationError(null);
+            clearFieldError("businessModels");
           }}
           disabled={
             disabled ||
@@ -1721,6 +1805,7 @@ useEffect(() => {
         <MultiSelect
           label="Preferred Business Types"
           required
+          error={fieldErrors.businessTypes}
           options={
             BUSINESS_TYPE_OPTIONS
           }
@@ -1731,7 +1816,7 @@ useEffect(() => {
             setTargetBusinessTypes(
               values,
             );
-            setValidationError(null);
+            clearFieldError("businessTypes");
           }}
           disabled={disabled}
         />
@@ -1791,6 +1876,9 @@ useEffect(() => {
               }
               aria-autocomplete="list"
               aria-controls="preferred-regions-list"
+              aria-invalid={Boolean(
+                fieldErrors.preferredRegions,
+              )}
             />
 
             {locationLoading && (
@@ -1863,6 +1951,14 @@ useEffect(() => {
               role="alert"
             >
               {locationError}
+            </p>
+          )}
+          {fieldErrors.preferredRegions && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.preferredRegions}
             </p>
           )}
 
@@ -1960,15 +2056,25 @@ useEffect(() => {
             type="number"
             min="0"
             value={minimumARR}
-            onChange={(event) =>
-              setMinimumARR(
-                event.target.value,
-              )
-            }
+            onChange={(event) => {
+              setMinimumARR(event.target.value);
+              clearFieldError("minimumARR");
+              clearFieldError("preferredARR");
+            }}
             placeholder="Value"
             disabled={disabled}
             className="acquisition-preferences-section__input"
+            aria-invalid={Boolean(fieldErrors.minimumARR)}
           />
+
+          {fieldErrors.minimumARR && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.minimumARR}
+            </p>
+          )}
         </div>
 
         {/* ------------------------------------------------
@@ -1995,15 +2101,25 @@ useEffect(() => {
             type="number"
             min="0"
             value={minimumSDE}
-            onChange={(event) =>
-              setMinimumSDE(
-                event.target.value,
-              )
-            }
+            onChange={(event) => {
+              setMinimumSDE(event.target.value);
+              clearFieldError("minimumSDE");
+              clearFieldError("preferredSDE");
+            }}
             placeholder="Value"
             disabled={disabled}
             className="acquisition-preferences-section__input"
+            aria-invalid={Boolean(fieldErrors.minimumSDE)}
           />
+
+          {fieldErrors.minimumSDE && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.minimumSDE}
+            </p>
+          )}
         </div>
 
         {/* ------------------------------------------------
@@ -2029,18 +2145,29 @@ useEffect(() => {
             id="maximum-purchase-price"
             type="number"
             min="0"
-            value={
-              maximumPurchasePrice
-            }
-            onChange={(event) =>
+            value={maximumPurchasePrice}
+            onChange={(event) => {
               setMaximumPurchasePrice(
                 event.target.value,
-              )
-            }
+              );
+              clearFieldError("maximumPurchasePrice");
+            }}
             placeholder="Value"
             disabled={disabled}
             className="acquisition-preferences-section__input"
+            aria-invalid={Boolean(
+              fieldErrors.maximumPurchasePrice,
+            )}
           />
+
+          {fieldErrors.maximumPurchasePrice && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.maximumPurchasePrice}
+            </p>
+          )}
         </div>
 
         {/* ------------------------------------------------
@@ -2067,15 +2194,26 @@ useEffect(() => {
             type="number"
             min="0"
             value={preferredARR}
-            onChange={(event) =>
-              setPreferredARR(
-                event.target.value,
-              )
-            }
+            onChange={(event) => {
+              setPreferredARR(event.target.value);
+              clearFieldError("preferredARR");
+            }}
             placeholder="Value"
             disabled={disabled}
             className="acquisition-preferences-section__input"
+            aria-invalid={Boolean(
+              fieldErrors.preferredARR,
+            )}
           />
+
+          {fieldErrors.preferredARR && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.preferredARR}
+            </p>
+          )}
         </div>
 
         {/* ------------------------------------------------
@@ -2102,15 +2240,26 @@ useEffect(() => {
             type="number"
             min="0"
             value={preferredSDE}
-            onChange={(event) =>
-              setPreferredSDE(
-                event.target.value,
-              )
-            }
+            onChange={(event) => {
+              setPreferredSDE(event.target.value);
+              clearFieldError("preferredSDE");
+            }}
             placeholder="Value"
             disabled={disabled}
             className="acquisition-preferences-section__input"
+            aria-invalid={Boolean(
+              fieldErrors.preferredSDE,
+            )}
           />
+
+          {fieldErrors.preferredSDE && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.preferredSDE}
+            </p>
+          )}
         </div>
 
         {/* ------------------------------------------------
@@ -2138,18 +2287,29 @@ useEffect(() => {
             min="0"
             max="168"
             step="1"
-            value={
-              preferredOwnerHoursPerWeek
-            }
-            onChange={(event) =>
+            value={preferredOwnerHoursPerWeek}
+            onChange={(event) => {
               setPreferredOwnerHoursPerWeek(
                 event.target.value,
-              )
-            }
+              );
+              clearFieldError("preferredOwnerHours");
+            }}
             placeholder="Hours"
             disabled={disabled}
             className="acquisition-preferences-section__input"
+            aria-invalid={Boolean(
+              fieldErrors.preferredOwnerHours,
+            )}
           />
+
+          {fieldErrors.preferredOwnerHours && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.preferredOwnerHours}
+            </p>
+          )}
         </div>
 
         {/* ------------------------------------------------
@@ -2159,6 +2319,7 @@ useEffect(() => {
         <SingleSelect
           label="Customer concentration above 25%?"
           required
+          error={fieldErrors.customerConcentration}
           value={
             customerConcentration ===
             "yes"
@@ -2175,7 +2336,7 @@ useEffect(() => {
             setCustomerConcentration(
               value.toLowerCase() as CustomerConcentrationOption,
             );
-            setValidationError(null);
+            clearFieldError("customerConcentration");
           }}
           disabled={disabled}
         />
@@ -2187,6 +2348,7 @@ useEffect(() => {
         <SingleSelect
           label="Seller transition training"
           required
+          error={fieldErrors.sellerTrainingDays}
           value={
             sellerTrainingDays
           }
@@ -2195,7 +2357,7 @@ useEffect(() => {
           }
           onChange={(value) => {
             setSellerTrainingDays(value);
-            setValidationError(null);
+            clearFieldError("sellerTrainingDays");
           }}
           disabled={disabled}
         />
@@ -2207,6 +2369,7 @@ useEffect(() => {
         <SingleSelect
           label="Preferred deal structure"
           required
+          error={fieldErrors.dealPreference}
           value={
             dealPreference ===
             "cash"
@@ -2236,7 +2399,7 @@ useEffect(() => {
                 "",
             );
 
-            setValidationError(null);
+            clearFieldError("dealPreference");
           }}
           disabled={disabled}
         />
@@ -2325,9 +2488,7 @@ useEffect(() => {
                         setTimeline(
                           option.value,
                         );
-                        setValidationError(
-                          null,
-                        );
+                        clearFieldError("timeline");
                       }}
                       disabled={
                         disabled
@@ -2356,6 +2517,14 @@ useEffect(() => {
               },
             )}
           </div>
+          {fieldErrors.timeline && (
+            <p
+              className="acquisition-preferences-section__field-error"
+              role="alert"
+            >
+              {fieldErrors.timeline}
+            </p>
+          )}
         </fieldset>
       </div>
 

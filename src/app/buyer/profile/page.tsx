@@ -20,10 +20,11 @@ import {
   type BuyerProfile,
 } from "@/lib/api/buyer";
 
-import {
+import { 
   getCurrentUser,
-  type UserPersonal,
-} from "@/lib/api/user";
+  getProfileImage,
+  type UserPersonal, 
+} from "@/lib/api/user"; 
 
 import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
 import { supabase } from "@/lib/supabase";
@@ -69,6 +70,9 @@ function BuyerProfilePageContent() {
   const [user, setUser] =
     useState<UserPersonal | null>(null);
 
+  const [profileImage, setProfileImage] =
+    useState<string | undefined>(undefined);
+
   const [userName, setUserName] =
     useState("");
 
@@ -86,17 +90,19 @@ function BuyerProfilePageContent() {
         setLoading(true);
         setError(null);
 
-        const [
-          profileData,
-          preferencesData,
+        const [ 
+          profileData, 
+          preferencesData, 
           userData,
-          supabaseUserResult,
-        ] = await Promise.all([
-          getBuyerProfile(),
-          getBuyerPreferences(),
+          profileImageData,
+          supabaseUserResult, 
+        ] = await Promise.all([ 
+          getBuyerProfile(), 
+          getBuyerPreferences(), 
           getCurrentUser(),
-          supabase.auth.getUser(),
-        ]);
+          getProfileImage(),
+          supabase.auth.getUser(), 
+        ]); 
 
         const {
           data: { user: authUser },
@@ -111,6 +117,7 @@ function BuyerProfilePageContent() {
           setProfile(profileData);
           setPreferences(preferencesData);
           setUser(userData);
+          setProfileImage(profileImageData.url);
 
           const firstName =
             authUser?.user_metadata?.first_name;
@@ -184,6 +191,7 @@ function BuyerProfilePageContent() {
             profile={profile}
             location={location}
             memberType={memberType}
+            imageSrc={profileImage}
             preferences={preferences}
             phone={user?.phone}
             initialTab={initialTab}
