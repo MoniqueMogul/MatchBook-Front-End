@@ -1,6 +1,8 @@
 
 "use client";
 
+import axios from "axios";
+
 import { Suspense, useEffect, useState } from "react";
 import {
   useRouter,
@@ -147,7 +149,16 @@ function BuyerProfilePageContent() {
           getBuyerProfile(),
           getBuyerPreferences(),
           getCurrentUser(),
-          getProfileImage(),
+          getProfileImage().catch((imageError: unknown) => {
+            if (
+              axios.isAxiosError(imageError) &&
+              imageError.response?.status === 404
+            ) {
+              return null;
+            }
+
+            throw imageError;
+          }),
           supabase.auth.getUser(),
         ]);
 
@@ -164,7 +175,7 @@ function BuyerProfilePageContent() {
           setProfile(profileData);
           setPreferences(preferencesData);
           setUser(userData);
-          setProfileImage(profileImageData.url);
+          setProfileImage(profileImageData?.url);
 
           const firstName =
             authUser?.user_metadata?.first_name;
