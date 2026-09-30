@@ -30,6 +30,7 @@ interface ExperienceCredentialsEditProps {
   initialData?: Partial<ExperienceCredentialsData>;
   onBack: () => void;
   onContinue: (data: ExperienceCredentialsData) => void;
+  onDataChange?: (data: ExperienceCredentialsData) => void;
   disabled?: boolean;
 }
 
@@ -83,6 +84,7 @@ export default function ExperienceCredentialsEdit({
   initialData,
   onBack,
   onContinue,
+  onDataChange,
   disabled = false,
 }: ExperienceCredentialsEditProps) {
   const [data, setData] =
@@ -105,7 +107,22 @@ export default function ExperienceCredentialsEdit({
     });
 
     setErrors({});
-  }, [initialData]);
+  }, [
+    initialData?.buyerType,
+    initialData?.currentIndustry,
+    initialData?.currentPosition,
+    initialData?.businessExperienceYears,
+    initialData?.relevantExperience,
+    initialData?.availableHoursPerWeek,
+    initialData?.city,
+    initialData?.county,
+    initialData?.state,
+    initialData?.zipCode,
+  ]);
+
+  useEffect(() => {
+    onDataChange?.(data);
+    }, [data, onDataChange]);
 
   const updateField = <
     K extends keyof ExperienceCredentialsData

@@ -7,7 +7,9 @@ import EditOverviewSection from "./EditOverviewSection";
 import ExperienceCredentialsEdit, {
   type ExperienceCredentialsData,
 } from "./ExperienceCredentialsEdit";
-import AcquisitionPreferencesSection from "./AcquisitionPreferencesSection";
+import AcquisitionPreferencesSection, {
+  type AcquisitionPreferenceData,
+} from "./AcquisitionPreferencesSection";
 import FinanceEdit from "./FinanceEdit";
 import ProfileEditHeader from "./ProfileEditHeader";
 import ProfileImageModal from "./ProfileImageModal";
@@ -80,6 +82,19 @@ export default function BuyerProfileEdit({
     useState<BuyerProfile | null>(
       isOnboarding ? ({} as BuyerProfile) : null,
     );
+
+  const [overviewDraft, setOverviewDraft] =
+    useState<{
+      about: string;
+      phoneCountryCode: string;
+      phone: string;
+    } | null>(null);
+
+  const [experienceDraft, setExperienceDraft] =
+    useState<ExperienceCredentialsData | null>(null);
+
+  const [acquisitionDraft, setAcquisitionDraft] =
+    useState<AcquisitionPreferenceData | null>(null);
 
   const [loading, setLoading] =
     useState(true);
@@ -752,39 +767,74 @@ export default function BuyerProfileEdit({
         return null;
       }
 
+      const experience = experienceDraft;
+
       return {
         buyer_type:
+          experience?.buyerType ??
           profile.buyer_type,
 
         current_industry:
-          profile.current_industry ?? null,
+          experience?.currentIndustry ??
+          profile.current_industry ??
+          null,
 
         current_position:
-          profile.current_position ?? null,
+          experience?.currentPosition ??
+          profile.current_position ??
+          null,
 
         business_experience_years:
-          profile.business_experience_years ?? null,
+          experience?.businessExperienceYears !==
+          undefined &&
+          experience?.businessExperienceYears !== ""
+            ? Number(
+                experience.businessExperienceYears,
+              )
+            : profile.business_experience_years ??
+              null,
 
         relevant_experience:
-          profile.relevant_experience ?? null,
+          experience?.relevantExperience ??
+          profile.relevant_experience ??
+          null,
 
         available_hours_per_week:
-          profile.available_hours_per_week ?? null,
+          experience?.availableHoursPerWeek !==
+            undefined &&
+          experience?.availableHoursPerWeek !== ""
+            ? Number(
+                experience.availableHoursPerWeek,
+              )
+            : profile.available_hours_per_week ??
+              null,
 
         city:
-          profile.city ?? null,
+          experience?.city ??
+          profile.city ??
+          null,
 
         county:
-          profile.county ?? null,
+          experience?.county ??
+          profile.county ??
+          null,
 
         state:
-          profile.state ?? null,
+          experience?.state ??
+          profile.state ??
+          null,
 
         zip_code:
-          profile.zip_code ?? null,
+          experience?.zipCode ??
+          profile.zip_code ??
+          null,
+
+        about_me:
+          overviewDraft?.about ??
+          profile.about_me ??
+          null,
       };
     };
-
   /*
    * ------------------------------------------------
    * Build Buyer Preferences PUT payload
@@ -792,61 +842,91 @@ export default function BuyerProfileEdit({
    */
 
   const buildBuyerPreferencesPayload =
-  (): BuyerPreferencesPayload => {
-    if (!preferences) {
-      return {};
-    }
+    (): BuyerPreferencesPayload => {
+      const draft = acquisitionDraft;
 
-    return {
-      target_industry_preferences:
-        preferences.target_industry_preferences,
+      return {
+        target_industry_preferences:
+          draft?.targetIndustryPreferences ??
+          preferences?.target_industry_preferences ??
+          null,
 
-      target_business_models:
-        preferences.target_business_models,
+        target_business_models:
+          draft?.targetBusinessModels ??
+          preferences?.target_business_models ??
+          null,
 
-      target_business_types:
-        preferences.target_business_types,
+        target_business_types:
+          (draft?.targetBusinessTypes as BusinessType[] | undefined) ??
+          preferences?.target_business_types ??
+          null,
 
-      target_locations:
-        preferences.target_locations,
+        target_locations:
+          draft?.targetLocations ??
+          preferences?.target_locations ??
+          null,
 
-      maximum_purchase_price:
-        preferences.maximum_purchase_price,
+        maximum_purchase_price:
+          draft?.maximumPurchasePrice ??
+          preferences?.maximum_purchase_price ??
+          null,
 
-      minimum_required_sde:
-        preferences.minimum_required_sde,
+        minimum_required_sde:
+          draft?.minimumSDE ??
+          preferences?.minimum_required_sde ??
+          null,
 
-      preferred_sde:
-        preferences.preferred_sde,
+        preferred_sde:
+          draft?.preferredSDE ??
+          preferences?.preferred_sde ??
+          null,
 
-      minimum_required_arr:
-        preferences.minimum_required_arr,
+        minimum_required_arr:
+          draft?.minimumARR ??
+          preferences?.minimum_required_arr ??
+          null,
 
-      preferred_arr:
-        preferences.preferred_arr,
+        preferred_arr:
+          draft?.preferredARR ??
+          preferences?.preferred_arr ??
+          null,
 
-      preferred_owner_hours_per_week:
-        preferences.preferred_owner_hours_per_week,
+        preferred_owner_hours_per_week:
+          draft?.preferredOwnerHoursPerWeek ??
+          preferences?.preferred_owner_hours_per_week ??
+          null,
 
-      required_transition_training_days:
-        preferences.required_transition_training_days,
+        required_transition_training_days:
+          draft?.sellerTrainingDays ??
+          preferences?.required_transition_training_days ??
+          null,
 
-      deal_preference:
-        preferences.deal_preference,
+        deal_preference:
+          draft?.dealPreference ??
+          preferences?.deal_preference ??
+          null,
 
-      real_estate_preference:
-        preferences.real_estate_preference,
+        real_estate_preference:
+          draft?.realEstatePreference ??
+          preferences?.real_estate_preference ??
+          null,
 
-      minimum_years_in_operation:
-        preferences.minimum_years_in_operation,
+        minimum_years_in_operation:
+          draft?.minimumYearsInOperation ??
+          preferences?.minimum_years_in_operation ??
+          null,
 
-      accepts_customer_concentration_above_25_percent:
-        preferences.accepts_customer_concentration_above_25_percent,
+        accepts_customer_concentration_above_25_percent:
+          draft?.customerConcentration ??
+          preferences?.accepts_customer_concentration_above_25_percent ??
+          null,
 
-      preferred_acquisition_timeline:
-        preferences.preferred_acquisition_timeline,
+        preferred_acquisition_timeline:
+          draft?.timeline ??
+          preferences?.preferred_acquisition_timeline ??
+          null,
+      };
     };
-  };
 
   /*
    * ------------------------------------------------
@@ -1108,6 +1188,7 @@ export default function BuyerProfileEdit({
             parsedPhone.number
           }
           onPhoneChange={setPhoneDraft}
+          onDataChange={setOverviewDraft}
           onContinue={
             handleOverviewContinue
           }
@@ -1170,6 +1251,8 @@ export default function BuyerProfileEdit({
             onContinue={
               handleExperienceCredentialsContinue
             }
+
+            onDataChange={setExperienceDraft}
 
             disabled={saving}
           />
@@ -1277,6 +1360,8 @@ export default function BuyerProfileEdit({
               handleAcquisitionPreferencesContinue
             }
 
+            onDataChange={setAcquisitionDraft}
+
             disabled={saving}
           />
         )}
@@ -1292,12 +1377,19 @@ export default function BuyerProfileEdit({
                 : ""
             }
             onPurchasePriceChange={(value) => {
+              const nextValue =
+                value.trim() === ""
+                  ? null
+                  : Number(value);
+
               setPreferences((previous) => ({
                 ...(previous ?? ({} as BuyerPreferences)),
-                maximum_purchase_price:
-                  value.trim() === ""
-                    ? null
-                    : Number(value),
+                maximum_purchase_price: nextValue,
+              }));
+
+              setAcquisitionDraft((previous) => ({
+                ...(previous ?? ({} as AcquisitionPreferenceData)),
+                maximumPurchasePrice: nextValue ?? undefined,
               }));
             }}
             onBack={() =>

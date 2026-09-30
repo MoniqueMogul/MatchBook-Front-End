@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/user";
 
 import { useBuyerOnboardingStore } from "@/store/useBuyerOnboardingStore";
+import { supabase } from "@/lib/supabase";
 
 import "./page.css";
 
@@ -68,6 +69,9 @@ function BuyerProfilePageContent() {
   const [user, setUser] =
     useState<UserPersonal | null>(null);
 
+  const [userName, setUserName] =
+    useState("");
+
   const [loading, setLoading] =
     useState(true);
 
@@ -86,16 +90,43 @@ function BuyerProfilePageContent() {
           profileData,
           preferencesData,
           userData,
+          supabaseUserResult,
         ] = await Promise.all([
           getBuyerProfile(),
           getBuyerPreferences(),
           getCurrentUser(),
+          supabase.auth.getUser(),
         ]);
+
+        const {
+          data: { user: authUser },
+          error: authError,
+        } = supabaseUserResult;
+
+        if (authError) {
+          throw authError;
+        }
 
         if (!cancelled) {
           setProfile(profileData);
           setPreferences(preferencesData);
           setUser(userData);
+
+          const firstName =
+            authUser?.user_metadata?.first_name;
+
+          const lastName =
+            authUser?.user_metadata?.last_name;
+
+          const fullName =
+            [firstName, lastName]
+              .filter(Boolean)
+              .join(" ") ||
+            authUser?.user_metadata?.full_name ||
+            authUser?.email?.split("@")[0] ||
+            "";
+
+          setUserName(fullName);
         }
       } catch (err) {
         if (!cancelled) {
@@ -149,6 +180,7 @@ function BuyerProfilePageContent() {
           </div>
         ) : (
           <BuyerProfilePreview
+            name={userName || "Profile Name"}
             profile={profile}
             location={location}
             memberType={memberType}

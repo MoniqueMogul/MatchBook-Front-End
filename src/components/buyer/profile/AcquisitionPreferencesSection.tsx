@@ -48,7 +48,7 @@ type CustomerConcentrationOption =
   | "yes"
   | "no";
 
-type AcquisitionPreferenceData = {
+export type AcquisitionPreferenceData = {
   targetIndustryPreferences: TargetIndustryPreference[];
   targetBusinessModels: string[];
   targetBusinessTypes: string[];
@@ -99,6 +99,7 @@ interface AcquisitionPreferencesSectionProps {
 
   onBack?: () => void;
   onContinue?: (data: AcquisitionPreferenceData) => void;
+  onDataChange?: (data: AcquisitionPreferenceData) => void;
   disabled?: boolean;
 }
 
@@ -555,6 +556,7 @@ export default function AcquisitionPreferencesSection({
 
   onBack,
   onContinue,
+  onDataChange,
   disabled = false,
 }: AcquisitionPreferencesSectionProps) {
   /* ------------------------------------------------
@@ -1145,6 +1147,92 @@ useEffect(() => {
       : parsed;
   };
 
+  useEffect(() => {
+    const trainingDays =
+      sellerTrainingDays.trim() === ""
+        ? undefined
+        : Number.parseInt(
+            sellerTrainingDays.replace(" days", ""),
+            10,
+          );
+
+    onDataChange?.({
+      targetIndustryPreferences,
+      targetBusinessModels,
+      targetBusinessTypes,
+      targetLocations,
+
+      minimumYearsInOperation:
+        toNumberOrUndefined(
+          minimumYearsInOperation,
+        ),
+
+      minimumARR:
+        toNumberOrUndefined(minimumARR),
+
+      minimumSDE:
+        toNumberOrUndefined(minimumSDE),
+
+      maximumPurchasePrice:
+        toNumberOrUndefined(
+          maximumPurchasePrice,
+        ),
+
+      preferredARR:
+        toNumberOrUndefined(preferredARR),
+
+      preferredSDE:
+        toNumberOrUndefined(preferredSDE),
+
+      preferredOwnerHoursPerWeek:
+        toNumberOrUndefined(
+          preferredOwnerHoursPerWeek,
+        ),
+
+      customerConcentration:
+        customerConcentration === ""
+          ? undefined
+          : customerConcentration === "yes",
+
+      sellerTrainingDays:
+        Number.isNaN(trainingDays)
+          ? undefined
+          : trainingDays,
+
+      dealPreference:
+        dealPreference === ""
+          ? undefined
+          : dealPreference,
+
+      realEstatePreference:
+        realEstatePreference === ""
+          ? undefined
+          : realEstatePreference,
+
+      timeline:
+        timeline === ""
+          ? undefined
+          : timeline,
+    });
+  }, [
+    targetIndustryPreferences,
+    targetBusinessModels,
+    targetBusinessTypes,
+    targetLocations,
+    minimumYearsInOperation,
+    minimumARR,
+    minimumSDE,
+    maximumPurchasePrice,
+    preferredARR,
+    preferredSDE,
+    preferredOwnerHoursPerWeek,
+    customerConcentration,
+    sellerTrainingDays,
+    dealPreference,
+    realEstatePreference,
+    timeline,
+    onDataChange,
+  ]);
   /* ------------------------------------------------
    * Location handlers
    * ------------------------------------------------ */

@@ -15,6 +15,12 @@ interface EditOverviewSectionProps {
 
   onPhoneChange?: (phone: string) => void;
 
+  onDataChange?: (data: {
+    about: string;
+    phoneCountryCode: string;
+    phone: string;
+  }) => void;
+
   onContinue?: (data: {
     about: string;
     phoneCountryCode: string;
@@ -30,6 +36,7 @@ export default function EditOverviewSection({
   initialPhoneCountryCode = "+91",
   initialPhone = "",
   onPhoneChange,
+  onDataChange,
   onContinue,
   disabled = false,
 }: EditOverviewSectionProps) {
@@ -51,6 +58,19 @@ export default function EditOverviewSection({
   useEffect(() => {
     setPhone(initialPhone);
   }, [initialPhone]);
+
+  useEffect(() => {
+    onDataChange?.({
+      about,
+      phoneCountryCode,
+      phone,
+    });
+  }, [
+    about,
+    phoneCountryCode,
+    phone,
+    onDataChange,
+  ]);
 
   const handleContinue = () => {
     onContinue?.({
