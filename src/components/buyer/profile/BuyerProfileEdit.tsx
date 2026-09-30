@@ -37,6 +37,12 @@ import {
   type BuyerProfilePayload,
 } from "@/lib/api/buyer";
 
+import {
+  getCurrentUser,
+  updateUserPhone,
+  type UserPersonal,
+} from "@/lib/api/user";
+
 import "./BuyerProfileEdit.css";
 
 interface BuyerProfileEditProps {
@@ -72,7 +78,7 @@ export default function BuyerProfileEdit({
     );
 
   const [loading, setLoading] =
-    useState(!isOnboarding);
+    useState(true);
 
   const [saving, setSaving] =
     useState(false);
@@ -87,6 +93,11 @@ export default function BuyerProfileEdit({
 
   const [userName, setUserName] =
     useState("");
+
+  const [userPhone, setUserPhone] =
+    useState<UserPersonal | null>(null);
+
+  const [phoneDraft, setPhoneDraft] = useState("");
 
   const [profileImage, setProfileImage] =
     useState<string | undefined>(undefined);
@@ -111,58 +122,149 @@ export default function BuyerProfileEdit({
   useEffect(() => {
     let cancelled = false;
 
+    const getResponseStatus = (err: unknown) => {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err
+      ) {
+        return (
+          err as {
+            response?: {
+              status?: number;
+            };
+          }
+        ).response?.status;
+      }
+
+      return undefined;
+    };
+
     const loadProfile = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // During onboarding, check whether a buyer profile
-        // already exists for the authenticated user.
+        /*
+        * ------------------------------------------------
+        * ONBOARDING MODE
+        * ------------------------------------------------
+        *
+        * The parent state is empty when this component
+        * is mounted for a fresh browser/session.
+        *
+        * Therefore load the durable data from the backend.
+        *
+        * Once loaded:
+        *
+        * backend
+        *    ↓
+        * parent state
+        *    ↓
+        * child props
+        *
+        * We do this only when BuyerProfileEdit mounts.
+        * Navigating between child sections does NOT
+        * remount BuyerProfileEdit, so we do not issue
+        * another GET just because the user goes back.
+        */
         if (isOnboarding) {
-          try {
-            const profileData = await getBuyerProfile();
+          const [
+            userResult,
+            profileResult,
+            preferencesResult,
+          ] = await Promise.allSettled([
+            getCurrentUser(),
+            getBuyerProfile(),
+            getBuyerPreferences(),
+          ]);
 
-            if (!cancelled) {
-              setProfile(profileData);
-            }
-          } catch (err) {
-            const status =
-              typeof err === "object" &&
-              err !== null &&
-              "response" in err
-                ? (
-                    err as {
-                      response?: {
-                        status?: number;
-                      };
-                    }
-                  ).response?.status
-                : undefined;
+          if (cancelled) {
+            return;
+          }
 
-            // 404 means this is a new buyer profile.
-            if (status !== 404) {
-              throw err;
-            }
+          /*
+          * User / Phone
+          */
+          if (userResult.status === "fulfilled") {
+            setUserPhone(userResult.value);
+            setPhoneDraft(userResult.value.phone ?? "");
+          } else {
+            console.error(
+              "Failed to load user data:",
+              userResult.reason,
+            );
+          }
 
-            if (!cancelled) {
+          /*
+          * Buyer Profile
+          *
+          * 404 is expected for a brand-new buyer.
+          */
+          if (profileResult.status === "fulfilled") {
+            setProfile(profileResult.value);
+          } else {
+            const status = getResponseStatus(
+              profileResult.reason,
+            );
+
+            if (status === 404) {
               setProfile({} as BuyerProfile);
+            } else {
+              throw profileResult.reason;
+            }
+          }
+
+          /*
+          * Buyer Preferences
+          *
+          * 404 is also treated as an empty/new
+          * preferences record.
+          */
+          if (
+            preferencesResult.status ===
+            "fulfilled"
+          ) {
+            setPreferences(
+              preferencesResult.value,
+            );
+          } else {
+            const status = getResponseStatus(
+              preferencesResult.reason,
+            );
+
+            if (status === 404) {
+              setPreferences(
+                {} as BuyerPreferences,
+              );
+            } else {
+              throw preferencesResult.reason;
             }
           }
 
           return;
         }
 
-        // Normal edit mode:
-        // load both profile and preferences.
-        const [profileData, preferencesData] =
-          await Promise.all([
-            getBuyerProfile(),
-            getBuyerPreferences(),
-          ]);
+        /*
+        * ------------------------------------------------
+        * NORMAL EDIT MODE
+        * ------------------------------------------------
+        */
+        const [
+          profileData,
+          preferencesData,
+          userData,
+        ] = await Promise.all([
+          getBuyerProfile(),
+          getBuyerPreferences(),
+          getCurrentUser(),
+        ]);
 
         if (!cancelled) {
           setProfile(profileData);
           setPreferences(preferencesData);
+          setUserPhone(userData);
+          setPhoneDraft(userData.phone ?? "");
 
           const currentLocation = [
             profileData.city,
@@ -263,6 +365,46 @@ export default function BuyerProfileEdit({
     setIsImageModalOpen(false);
   };
 
+  const parsePhone = (
+    phone: string | null | undefined,
+  ) => {
+    if (!phone) {
+      return {
+        countryCode: "+91",
+        number: "",
+      };
+    }
+
+    const countryCodes = [
+      "+1",
+      "+44",
+      "+91",
+      "+61",
+      "+49",
+      "+33",
+      "+81",
+      "+86",
+      "+55",
+      "+52",
+    ];
+
+    const matchedCode = countryCodes.find(
+      (code) => phone.startsWith(code),
+    );
+
+    if (!matchedCode) {
+      return {
+        countryCode: "+91",
+        number: phone,
+      };
+    }
+
+    return {
+      countryCode: matchedCode,
+      number: phone.slice(matchedCode.length),
+    };
+  };
+  const parsedPhone = parsePhone(userPhone?.phone);
   /*
    * ------------------------------------------------
    * Overview
@@ -275,11 +417,18 @@ export default function BuyerProfileEdit({
 
   const handleOverviewContinue = async (data: {
     about: string;
+    phoneCountryCode: string;
+    phone: string;
   }) => {
     if (isOnboarding && !data.about.trim()) {
       setError(
         "Please tell sellers a little about yourself.",
       );
+      return;
+    }
+
+    if (isOnboarding && !data.phone.trim()) {
+      setError("Please enter your phone number.");
       return;
     }
 
@@ -290,11 +439,19 @@ export default function BuyerProfileEdit({
     savingRef.current = true;
     setSaving(true);
     setError(null);
-
     try {
-      const savedProfile = await upsertBuyerProfile({
-        about_me: data.about.trim(),
-      });
+      const fullPhone =
+        `${data.phoneCountryCode}${data.phone.replace(/\D/g, "")}`;
+
+      const savedUser =
+        await updateUserPhone(fullPhone);
+
+      setUserPhone(savedUser);
+
+      const savedProfile =
+        await upsertBuyerProfile({
+          about_me: data.about.trim(),
+        });
 
       setProfile(savedProfile);
 
@@ -302,7 +459,7 @@ export default function BuyerProfileEdit({
         markSectionCompleted("overview");
         setActiveTab("industry-experience");
       }
-    } catch (err) {
+    }catch (err) {
       setError(
         err instanceof Error
           ? err.message
@@ -482,8 +639,6 @@ export default function BuyerProfileEdit({
           data.timeline ?? null,
       };
 
-      setPreferences(nextPreferences);
-
       const savedPreferences =
         await saveBuyerPreferences({
           target_industry_preferences:
@@ -537,7 +692,9 @@ export default function BuyerProfileEdit({
         });
 
       setPreferences(savedPreferences);
-      markSectionCompleted("acquisition");
+      if (isOnboarding) {
+        markSectionCompleted("acquisition");
+      }
       setActiveTab("finances");
     } catch (err) {
       setError(
@@ -748,7 +905,7 @@ export default function BuyerProfileEdit({
 
     try {
       const buyerProfilePayload =
-        buildBuyerProfilePayload();
+      buildBuyerProfilePayload();
 
       const buyerPreferencesPayload =
         buildBuyerPreferencesPayload();
@@ -758,10 +915,10 @@ export default function BuyerProfileEdit({
           "Buyer profile data is unavailable.",
         );
       }
-
       const [
         savedProfile,
         savedPreferences,
+        savedUser,
       ] = await Promise.all([
         upsertBuyerProfile(
           buyerProfilePayload,
@@ -770,16 +927,21 @@ export default function BuyerProfileEdit({
         saveBuyerPreferences(
           buyerPreferencesPayload,
         ),
+
+        updateUserPhone(phoneDraft),
       ]);
 
       setProfile(savedProfile);
       setPreferences(savedPreferences);
+      setUserPhone(savedUser);
+      setPhoneDraft(savedUser.phone ?? "");
 
       console.log(
-        "Buyer profile and preferences saved successfully.",
+        "Buyer profile, preferences, and phone saved successfully.",
         {
           profile: savedProfile,
           preferences: savedPreferences,
+          user: savedUser,
         },
       );
 
@@ -902,15 +1064,22 @@ export default function BuyerProfileEdit({
 
         {activeTab === "overview" && (
           <EditOverviewSection
-            mode={mode}
-            initialAbout={
-              profile?.about_me ?? ""
-            }
-            onContinue={
-              handleOverviewContinue
-            }
-            disabled={saving}
-          />
+          mode={mode}
+          initialAbout={
+            profile?.about_me ?? ""
+          }
+          initialPhoneCountryCode={
+            parsedPhone.countryCode
+          }
+          initialPhone={
+            parsedPhone.number
+          }
+          onPhoneChange={setPhoneDraft}
+          onContinue={
+            handleOverviewContinue
+          }
+          disabled={saving}
+        />
         )}
 
         {/* Experience & Credentials */}

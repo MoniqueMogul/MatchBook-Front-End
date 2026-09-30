@@ -609,6 +609,9 @@ export default function AcquisitionPreferencesSection({
     setValidationError,
   ] = useState<string | null>(null);
 
+
+
+
   /* ------------------------------------------------
    * Preferred Regions
    * ------------------------------------------------ */
@@ -782,6 +785,148 @@ export default function AcquisitionPreferencesSection({
     initialTimeline ?? "",
   );
 
+
+  /*
+ * ------------------------------------------------
+ * Synchronize form with parent/backend data
+ * ------------------------------------------------
+ *
+ * This is important when BuyerProfileEdit loads
+ * existing onboarding data asynchronously.
+ *
+ * Example:
+ *
+ *   component mounts
+ *       ↓
+ *   initial props are empty
+ *       ↓
+ *   backend GET finishes
+ *       ↓
+ *   parent preferences update
+ *       ↓
+ *   new initial props arrive
+ *       ↓
+ *   this effect hydrates the form
+ */
+useEffect(() => {
+  setTargetIndustryPreferences(
+    initialTargetIndustryPreferences,
+  );
+
+  setTargetBusinessModels(
+    initialTargetBusinessModels,
+  );
+
+  setTargetBusinessTypes(
+    initialTargetBusinessTypes,
+  );
+
+  setTargetLocations(
+    initialTargetLocations,
+  );
+
+  setMinimumYearsInOperation(
+    initialMinimumYearsInOperation !== null &&
+      initialMinimumYearsInOperation !==
+        undefined
+      ? String(initialMinimumYearsInOperation)
+      : "",
+  );
+
+  setMinimumARR(
+    initialMinimumARR !== null &&
+      initialMinimumARR !== undefined
+      ? String(initialMinimumARR)
+      : "",
+  );
+
+  setMinimumSDE(
+    initialMinimumSDE !== null &&
+      initialMinimumSDE !== undefined
+      ? String(initialMinimumSDE)
+      : "",
+  );
+
+  setMaximumPurchasePrice(
+    initialMaximumPurchasePrice !== null &&
+      initialMaximumPurchasePrice !==
+        undefined
+      ? String(initialMaximumPurchasePrice)
+      : "",
+  );
+
+  setPreferredARR(
+    initialPreferredARR !== null &&
+      initialPreferredARR !== undefined
+      ? String(initialPreferredARR)
+      : "",
+  );
+
+  setPreferredSDE(
+    initialPreferredSDE !== null &&
+      initialPreferredSDE !== undefined
+      ? String(initialPreferredSDE)
+      : "",
+  );
+
+  setPreferredOwnerHoursPerWeek(
+    initialPreferredOwnerHoursPerWeek !==
+        null &&
+      initialPreferredOwnerHoursPerWeek !==
+        undefined
+      ? String(
+          initialPreferredOwnerHoursPerWeek,
+        )
+      : "",
+  );
+
+  setCustomerConcentration(
+    initialCustomerConcentration === true
+      ? "yes"
+      : initialCustomerConcentration ===
+          false
+        ? "no"
+        : "",
+  );
+
+  setSellerTrainingDays(
+    initialSellerTrainingDays !== null &&
+      initialSellerTrainingDays !==
+        undefined
+      ? `${initialSellerTrainingDays} days`
+      : "",
+  );
+
+  setDealPreference(
+    initialDealPreference ?? "",
+  );
+
+  setRealEstatePreference(
+    initialRealEstatePreference ?? "",
+  );
+
+  setTimeline(initialTimeline ?? "");
+
+  setValidationError(null);
+}, [
+  initialTargetIndustryPreferences,
+  initialTargetBusinessModels,
+  initialTargetBusinessTypes,
+  initialTargetLocations,
+  initialMinimumYearsInOperation,
+  initialMinimumARR,
+  initialMinimumSDE,
+  initialMaximumPurchasePrice,
+  initialPreferredARR,
+  initialPreferredSDE,
+  initialPreferredOwnerHoursPerWeek,
+  initialCustomerConcentration,
+  initialSellerTrainingDays,
+  initialDealPreference,
+  initialRealEstatePreference,
+  initialTimeline,
+]);
+
   /* ------------------------------------------------
    * Load backend taxonomy
    * ------------------------------------------------ */
@@ -829,6 +974,9 @@ export default function AcquisitionPreferencesSection({
       cancelled = true;
     };
   }, []);
+
+
+
 
   /* ------------------------------------------------
    * Industry helpers
@@ -1816,7 +1964,7 @@ export default function AcquisitionPreferencesSection({
             htmlFor="preferred-arr"
             className="acquisition-preferences-section__label"
           >
-            Preferred ARR
+            Preferred ARR (Must be greater than Minimum ARR)
 
             <span
               className="acquisition-preferences-section__required"
@@ -1851,7 +1999,7 @@ export default function AcquisitionPreferencesSection({
             htmlFor="preferred-sde"
             className="acquisition-preferences-section__label"
           >
-            Preferred SDE
+            Preferred SDE (Must be greater than Minimum SDE)
 
             <span
               className="acquisition-preferences-section__required"

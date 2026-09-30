@@ -2,44 +2,17 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+
 import Sidebar from '@/components/dashboard/Sidebar';
 import StepTrackerCard from '@/components/dashboard/StepTrackerCard';
 import EmptyMatchesState from '@/components/dashboard/EmptyMatchesState';
+
 import { useBuyerOnboardingStore } from '@/store/useBuyerOnboardingStore';
-import type { StepData } from '@/components/dashboard/StepTrackerCard';
+import type {
+  StepData,
+} from '@/components/dashboard/StepTrackerCard';
+
 import { supabase } from '@/lib/supabase';
-
-/* ------------------------------------------------------------------ */
-/*  Default Onboarding Steps                                           */
-/* ------------------------------------------------------------------ */
-
-const DEFAULT_STEPS: StepData[] = [
-  {
-    number: 1,
-    label: 'Overview',
-    status: 'current',
-  },
-  {
-    number: 2,
-    label: 'Experience & Credentials',
-    status: 'upcoming',
-  },
-  {
-    number: 3,
-    label: 'Acquisition Preferences',
-    status: 'upcoming',
-  },
-  {
-    number: 4,
-    label: 'Finances',
-    status: 'upcoming',
-  },
-  {
-    number: 5,
-    label: 'Verification',
-    status: 'upcoming',
-  },
-];
 
 /* ------------------------------------------------------------------ */
 /*  Page Component                                                     */
@@ -47,21 +20,91 @@ const DEFAULT_STEPS: StepData[] = [
 
 export default function BuyerDashboardNewUser() {
   const router = useRouter();
+
   const completedSections =
     useBuyerOnboardingStore(
       (state) => state.completedSections
     );
-    const totalSections = 5;
 
-    const completedCount = Object.values(
-      completedSections
-    ).filter(Boolean).length;
+  const totalSections = 5;
 
-    const percentage = Math.round(
-      (completedCount / totalSections) * 100
+  const completedCount =
+    Object.values(completedSections).filter(Boolean).length;
+
+  const percentage = Math.round(
+    (completedCount / totalSections) * 100
+  );
+
+  /* ---------------------------------------------------------------- */
+  /*  Build dynamic onboarding steps                                  */
+  /* ---------------------------------------------------------------- */
+
+  const sectionDefinitions: {
+    key: keyof typeof completedSections;
+    number: number;
+    label: string;
+  }[] = [
+    {
+      key: 'overview',
+      number: 1,
+      label: 'Overview',
+    },
+    {
+      key: 'experience',
+      number: 2,
+      label: 'Experience & Credentials',
+    },
+    {
+      key: 'acquisition',
+      number: 3,
+      label: 'Acquisition Preferences',
+    },
+    {
+      key: 'finances',
+      number: 4,
+      label: 'Finances',
+    },
+    {
+      key: 'verification',
+      number: 5,
+      label: 'Verification',
+    },
+  ];
+
+  const firstIncompleteIndex =
+    sectionDefinitions.findIndex(
+      (section) =>
+        !completedSections[section.key]
     );
 
-  const [firstName, setFirstName] = React.useState('');
+  const steps: StepData[] =
+    sectionDefinitions.map(
+      (section, index) => {
+        const isCompleted =
+          completedSections[section.key];
+
+        const isCurrent =
+          !isCompleted &&
+          index === firstIncompleteIndex;
+
+        return {
+          number: section.number,
+          label: section.label,
+          status: isCompleted
+            ? 'completed'
+            : isCurrent
+              ? 'current'
+              : 'upcoming',
+        };
+      }
+    );
+
+  /* ---------------------------------------------------------------- */
+  /*  User name                                                       */
+  /* ---------------------------------------------------------------- */
+
+  const [firstName, setFirstName] =
+    React.useState('');
 
   /* ---------------------------------------------------------------- */
   /*  Get authenticated user's real name                              */
@@ -77,7 +120,8 @@ export default function BuyerDashboardNewUser() {
         return;
       }
 
-      const metadata = user.user_metadata ?? {};
+      const metadata =
+        user.user_metadata ?? {};
 
       const firstNameFromMetadata =
         typeof metadata.first_name === 'string'
@@ -90,7 +134,9 @@ export default function BuyerDashboardNewUser() {
           : '';
 
       if (firstNameFromMetadata) {
-        setFirstName(firstNameFromMetadata);
+        setFirstName(
+          firstNameFromMetadata
+        );
         return;
       }
 
@@ -104,7 +150,9 @@ export default function BuyerDashboardNewUser() {
           : '';
 
       if (fullNameFromMetadata) {
-        setFirstName(fullNameFromMetadata.split(' ')[0]);
+        setFirstName(
+          fullNameFromMetadata.split(' ')[0]
+        );
         return;
       }
 
@@ -113,7 +161,9 @@ export default function BuyerDashboardNewUser() {
        * This avoids displaying a hardcoded person's name.
        */
       if (user.email) {
-        setFirstName(user.email.split('@')[0]);
+        setFirstName(
+          user.email.split('@')[0]
+        );
       }
     };
 
@@ -125,21 +175,31 @@ export default function BuyerDashboardNewUser() {
   /* ---------------------------------------------------------------- */
 
   const handleContinueProfile = () => {
-    router.push('/buyer-onboarding/profile');
+    router.push(
+      '/buyer-onboarding/profile'
+    );
   };
 
   /* ---------------------------------------------------------------- */
   /*  Sidebar Navigation                                              */
   /* ---------------------------------------------------------------- */
 
-  const handleNavigation = (id: string) => {
+  const handleNavigation = (
+    id: string
+  ) => {
     if (id === 'home') {
       router.push('/buyer-dashboard');
       return;
     }
 
-    console.log(`Navigate to: ${id}`);
+    console.log(
+      `Navigate to: ${id}`
+    );
   };
+
+  /* ---------------------------------------------------------------- */
+  /*  Render                                                           */
+  /* ---------------------------------------------------------------- */
 
   return (
     <div className="dashboard-shell">
@@ -154,7 +214,10 @@ export default function BuyerDashboardNewUser() {
         <div className="dashboard-main__inner">
           {/* Heading */}
           <h1 className="dashboard-heading">
-            Welcome In{firstName ? `, ${firstName}` : ''}
+            Welcome In
+            {firstName
+              ? `, ${firstName}`
+              : ''}
           </h1>
 
           {/* Step Tracker Card */}
@@ -162,9 +225,11 @@ export default function BuyerDashboardNewUser() {
             percentage={percentage}
             completedSections={completedCount}
             totalSections={totalSections}
-            steps={DEFAULT_STEPS}
+            steps={steps}
             ctaLabel="Continue your profile"
-            onCtaClick={handleContinueProfile}
+            onCtaClick={
+              handleContinueProfile
+            }
           />
 
           {/* Your matches section */}
@@ -172,13 +237,15 @@ export default function BuyerDashboardNewUser() {
             Your matches
           </h2>
 
-          {/* Empty Matches State */}
           <EmptyMatchesState
             buttonLabel="Finish your profile"
-            onButtonClick={handleContinueProfile}
+            onButtonClick={
+              handleContinueProfile
+            }
           />
         </div>
       </main>
     </div>
   );
 }
+

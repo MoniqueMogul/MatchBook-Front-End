@@ -5,11 +5,16 @@ import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+
 import {
   getBuyerProfile,
   upsertBuyerProfile,
-  type BuyerProfile,
 } from "@/lib/api/buyer";
+
+import {
+  getCurrentUser,
+  updateUserPhone,
+} from "@/lib/api/user";
 
 import "./AccountEdit.css";
 
@@ -22,14 +27,18 @@ export default function AccountEdit() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
 
-  const [countryCode, setCountryCode] = useState("+1");
+  const [countryCode, setCountryCode] =
+    useState("+1");
+
   const [phone, setPhone] = useState("");
 
   const [email, setEmail] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [error, setError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,9 +54,11 @@ export default function AccountEdit() {
             error: userError,
           },
           profile,
+          currentUser,
         ] = await Promise.all([
           supabase.auth.getUser(),
           getBuyerProfile(),
+          getCurrentUser(),
         ]);
 
         if (userError) {
@@ -55,7 +66,9 @@ export default function AccountEdit() {
         }
 
         if (!user) {
-          throw new Error("You are not authenticated.");
+          throw new Error(
+            "You are not authenticated.",
+          );
         }
 
         if (cancelled) {
@@ -76,11 +89,54 @@ export default function AccountEdit() {
         setState(profile.state ?? "");
 
         /*
-         * Phone is intentionally not loaded yet.
-         * Tim's User API will provide the backend source
-         * for this field.
+         * ----------------------------------------------
+         * Phone
+         * ----------------------------------------------
+         *
+         * Phone is stored in the User record as the
+         * complete international phone number.
+         *
+         * Example:
+         * +919876543210
+         *
+         * We split it into:
+         * countryCode = +91
+         * phone = 9876543210
          */
-        setPhone("");
+
+        const storedPhone =
+          currentUser.phone ?? "";
+
+        const countryCodes = [
+          "+1",
+          "+44",
+          "+91",
+          "+61",
+          "+49",
+          "+33",
+          "+81",
+          "+86",
+          "+55",
+          "+52",
+        ];
+
+        const matchedCountryCode =
+          countryCodes.find((code) =>
+            storedPhone.startsWith(code),
+          );
+
+        if (matchedCountryCode) {
+          setCountryCode(matchedCountryCode);
+
+          setPhone(
+            storedPhone.slice(
+              matchedCountryCode.length,
+            ),
+          );
+        } else {
+          setCountryCode("+91");
+          setPhone(storedPhone);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -137,7 +193,11 @@ export default function AccountEdit() {
        *
        * Email is stored on the Supabase Auth user.
        */
-      const { data: updatedAuth, error: authError } =
+
+      const {
+        data: updatedAuth,
+        error: authError,
+      } =
         await supabase.auth.updateUser({
           email: email.trim(),
           data: {
@@ -166,6 +226,7 @@ export default function AccountEdit() {
        * Existing county, zip code, buyer type, and
        * other Buyer Profile fields remain untouched.
        */
+
       await upsertBuyerProfile({
         city: city.trim() || null,
         state: state.trim() || null,
@@ -173,14 +234,17 @@ export default function AccountEdit() {
 
       /*
        * ----------------------------------------------
-       * 3. Phone
+       * 3. Update Phone
        * ----------------------------------------------
        *
-       * Intentionally not sent yet.
-       *
-       * Tim's User API will be wired here once the
-       * backend endpoint is available.
+       * Combine country code + phone number and
+       * save it through the User API.
        */
+
+      const fullPhone =
+        `${countryCode}${phone.replace(/\D/g, "")}`;
+
+      await updateUserPhone(fullPhone);
 
       /*
        * ----------------------------------------------
@@ -255,7 +319,9 @@ export default function AccountEdit() {
                 type="text"
                 value={firstName}
                 onChange={(event) =>
-                  setFirstName(event.target.value)
+                  setFirstName(
+                    event.target.value,
+                  )
                 }
                 className="account-edit__input"
                 autoComplete="given-name"
@@ -275,7 +341,9 @@ export default function AccountEdit() {
                 type="text"
                 value={lastName}
                 onChange={(event) =>
-                  setLastName(event.target.value)
+                  setLastName(
+                    event.target.value,
+                  )
                 }
                 className="account-edit__input"
                 autoComplete="family-name"
@@ -362,11 +430,12 @@ export default function AccountEdit() {
                 <select
                   value={countryCode}
                   onChange={(event) =>
-                    setCountryCode(event.target.value)
+                    setCountryCode(
+                      event.target.value,
+                    )
                   }
                   className="account-edit__country-code"
                   aria-label="Country calling code"
-                  disabled
                 >
                   <option>+1</option>
                   <option>+91</option>
@@ -378,15 +447,20 @@ export default function AccountEdit() {
                   id="account-phone"
                   type="tel"
                   value={phone}
-                  placeholder="Coming soon"
+                  onChange={(event) =>
+                    setPhone(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Phone number"
                   className="account-edit__input account-edit__input--phone"
-                  disabled
+                  autoComplete="tel"
                 />
               </div>
 
               <span className="account-edit__helper">
-                Phone editing will be available once the
-                User API is connected.
+                Your phone number is saved securely
+                to your account.
               </span>
             </div>
 
@@ -403,7 +477,9 @@ export default function AccountEdit() {
                 type="email"
                 value={email}
                 onChange={(event) =>
-                  setEmail(event.target.value)
+                  setEmail(
+                    event.target.value,
+                  )
                 }
                 className="account-edit__input"
                 autoComplete="email"

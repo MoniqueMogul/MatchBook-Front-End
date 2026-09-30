@@ -1,30 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
-
+import PhoneInputField from "@/components/onboarding/PhoneInputField";
 import "./EditOverviewSection.css";
 
 interface EditOverviewSectionProps {
   mode?: "edit" | "onboarding";
+
   initialAbout?: string;
+
+  initialPhoneCountryCode?: string;
+  initialPhone?: string;
+
+  onPhoneChange?: (phone: string) => void;
+
   onContinue?: (data: {
     about: string;
+    phoneCountryCode: string;
+    phone: string;
   }) => void;
+
   disabled?: boolean;
 }
 
 export default function EditOverviewSection({
   mode = "edit",
   initialAbout = "",
+  initialPhoneCountryCode = "+91",
+  initialPhone = "",
+  onPhoneChange,
   onContinue,
   disabled = false,
 }: EditOverviewSectionProps) {
   const [about, setAbout] = useState(initialAbout);
 
+  const [phoneCountryCode, setPhoneCountryCode] =
+    useState(initialPhoneCountryCode);
+
+  const [phone, setPhone] = useState(initialPhone);
+
+  useEffect(() => {
+    setAbout(initialAbout);
+  }, [initialAbout]);
+
+  useEffect(() => {
+    setPhoneCountryCode(initialPhoneCountryCode);
+  }, [initialPhoneCountryCode]);
+
+  useEffect(() => {
+    setPhone(initialPhone);
+  }, [initialPhone]);
+
   const handleContinue = () => {
     onContinue?.({
       about: about.trim(),
+      phoneCountryCode,
+      phone: phone.trim(),
     });
   };
 
@@ -52,6 +84,32 @@ export default function EditOverviewSection({
           />
         </div>
 
+        {/* Contact / Phone */}
+        <div className="edit-overview-section__field">
+          <PhoneInputField
+          label="Contact"
+          countryCodeValue={phoneCountryCode}
+          onCountryCodeChange={(countryCode) => {
+            setPhoneCountryCode(countryCode);
+
+            onPhoneChange?.(
+              `${countryCode}${phone.replace(/\D/g, "")}`,
+            );
+          }}
+          value={phone}
+          onChange={(event) => {
+            const value = event.target.value;
+
+            setPhone(value);
+
+            onPhoneChange?.(
+              `${phoneCountryCode}${value.replace(/\D/g, "")}`,
+            );
+          }}
+          name="phone"
+        />
+        </div>
+
       </div>
 
       {/* Continue */}
@@ -62,11 +120,11 @@ export default function EditOverviewSection({
           onClick={handleContinue}
           disabled={disabled}
           aria-label={
-             mode === "onboarding"
-            ? "Save and continue"
-            : "Continue to next profile section"
+            mode === "onboarding"
+              ? "Save and continue"
+              : "Continue to next profile section"
           }
-          >
+        >
           {mode === "onboarding" ? (
             "Save & Continue"
           ) : (

@@ -36,12 +36,12 @@
   display: flex;
   flex-direction: column;
 
-  gap: 10px;
+  gap: 20px;
 }
 
 
 /* =========================================
-   About Field
+   Overview Field
    ========================================= */
 
 .edit-overview-section__field {
@@ -161,6 +161,162 @@
 
 
 /* =========================================
+   Contact / Phone Field
+   ========================================= */
+
+.edit-overview-section__field .phone-input {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+
+/* =========================================
+   Contact / Phone Label
+   ========================================= */
+
+.edit-overview-section__field .phone-input__label {
+  display: block;
+
+  margin: 0;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+
+  color: #333d4d;
+}
+
+
+/* =========================================
+   Contact / Phone Row
+   ========================================= */
+
+.edit-overview-section__field .phone-input__row {
+  display: flex;
+  align-items: stretch;
+
+  width: 237px;
+  height: 40px;
+}
+
+
+/* =========================================
+   Country Code
+   ========================================= */
+
+.edit-overview-section__field .phone-input__code-wrapper {
+  flex: 0 0 72px;
+}
+
+
+.edit-overview-section__field .phone-input__code-select,
+.edit-overview-section__field .phone-input__number {
+  height: 40px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #c8ced6;
+
+  background: #f7f8fa;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 11px;
+  font-weight: 400;
+
+  color: #333d4d;
+
+  outline: none;
+}
+
+
+/* =========================================
+   Country Code Select
+   ========================================= */
+
+.edit-overview-section__field .phone-input__code-select {
+  width: 100%;
+
+  padding: 0 8px;
+
+  border-radius: 6px 0 0 6px;
+
+  border-right: 0;
+
+  cursor: pointer;
+}
+
+
+/* =========================================
+   Phone Number Input
+   ========================================= */
+
+.edit-overview-section__field .phone-input__number {
+  width: calc(100% - 72px);
+
+  padding: 0 12px;
+
+  border-radius: 0 6px 6px 0;
+}
+
+
+/* =========================================
+   Phone Placeholder
+   ========================================= */
+
+.edit-overview-section__field .phone-input__number::placeholder {
+  color: #98a2b3;
+
+  opacity: 1;
+}
+
+
+/* =========================================
+   Phone Hover
+   ========================================= */
+
+.edit-overview-section__field .phone-input__code-select:hover,
+.edit-overview-section__field .phone-input__number:hover {
+  border-color: #b8c0ca;
+}
+
+
+/* =========================================
+   Phone Focus
+   ========================================= */
+
+.edit-overview-section__field .phone-input__number:focus,
+.edit-overview-section__field .phone-input__code-select:focus {
+  border-color: #498441;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 1px rgba(73, 132, 65, 0.05);
+}
+
+
+/* =========================================
+   Phone Error
+   ========================================= */
+
+.edit-overview-section__field .phone-input__error {
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: 11px;
+  line-height: 16px;
+
+  color: #b42318;
+}
+
+
+/* =========================================
    Continue Button
    ========================================= */
 
@@ -184,18 +340,28 @@
 .edit-overview-section__continue-button {
   min-width: 150px;
   height: 48px;
+
   flex: 0 0 auto;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   padding: 0 20px;
+
   border: 0;
   border-radius: 8px;
+
   background: #498441;
+
   color: #ffffff;
+
   cursor: pointer;
+
   pointer-events: auto;
+
   white-space: nowrap;
+
   font-size: 16px;
   font-weight: 500;
 }
@@ -234,7 +400,13 @@
   }
 
   .edit-overview-section__textarea {
-    width: 237px;
+    width: 100%;
+    max-width: 237px;
     height: 104px;
+  }
+
+  .edit-overview-section__field .phone-input__row {
+    width: 100%;
+    max-width: 237px;
   }
 }

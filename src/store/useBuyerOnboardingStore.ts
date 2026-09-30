@@ -8,11 +8,6 @@ export type BuyerProfileSection =
   | "finances"
   | "verification";
 
-export interface BuyerAboutYouData {
-  countryCode: string;
-  phone: string;
-}
-
 export interface BuyerOnboardingState {
   currentStep: number;
   totalSteps: number;
@@ -23,16 +18,7 @@ export interface BuyerOnboardingState {
    */
   onboardingInProgress: boolean;
 
-  aboutYou: BuyerAboutYouData;
-
-  completedSections: Record<
-    BuyerProfileSection,
-    boolean
-  >;
-
-  setAboutYou: (
-    data: Partial<BuyerAboutYouData>
-  ) => void;
+  completedSections: Record<BuyerProfileSection, boolean>;
 
   nextStep: () => void;
   prevStep: () => void;
@@ -45,11 +31,6 @@ export interface BuyerOnboardingState {
 
   resetOnboarding: () => void;
 }
-
-const DEFAULT_ABOUT_YOU: BuyerAboutYouData = {
-  countryCode: "+91",
-  phone: "",
-};
 
 const DEFAULT_COMPLETED_SECTIONS: Record<
   BuyerProfileSection,
@@ -72,21 +53,9 @@ export const useBuyerOnboardingStore =
 
         onboardingInProgress: true,
 
-        aboutYou: {
-          ...DEFAULT_ABOUT_YOU,
-        },
-
         completedSections: {
           ...DEFAULT_COMPLETED_SECTIONS,
         },
-
-        setAboutYou: (data) =>
-          set((state) => ({
-            aboutYou: {
-              ...state.aboutYou,
-              ...data,
-            },
-          })),
 
         nextStep: () =>
           set((state) => ({
@@ -125,10 +94,6 @@ export const useBuyerOnboardingStore =
 
             onboardingInProgress: true,
 
-            aboutYou: {
-              ...DEFAULT_ABOUT_YOU,
-            },
-
             completedSections: {
               ...DEFAULT_COMPLETED_SECTIONS,
             },
@@ -136,6 +101,34 @@ export const useBuyerOnboardingStore =
       }),
       {
         name: "matchbook:buyer-onboarding",
+
+        // Version the persisted store so old `aboutYou`
+        // data can be migrated away cleanly.
+        version: 2,
+
+        migrate: (persistedState) => {
+          if (!persistedState) {
+            return persistedState;
+          }
+
+          const state =
+            persistedState as Partial<BuyerOnboardingState>;
+
+          return {
+            currentStep:
+              state.currentStep ?? 1,
+
+            totalSteps:
+              state.totalSteps ?? 10,
+
+            onboardingInProgress:
+              state.onboardingInProgress ?? true,
+
+            completedSections:
+              state.completedSections ??
+              DEFAULT_COMPLETED_SECTIONS,
+          };
+        },
       }
     )
   );
