@@ -9,7 +9,7 @@ export type NdaStatus =
 export interface ApiNda {
   id: string;
   match_id: string;
-  document_id: string;
+  document_id: string | null;
   status: NdaStatus;
   version: string;
   buyer_signed_at: string | null;

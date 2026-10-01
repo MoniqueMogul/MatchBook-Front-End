@@ -24,6 +24,41 @@ export async function getNdaForMatch(
   }
 }
 
+export async function getOrInitializeNdaForMatch(
+  matchId: string,
+): Promise<NdaAccessResponse> {
+  try {
+    const response = await api.get<NdaAccessResponse>(
+      `/nda/matches/${matchId}`,
+    );
+
+    return response.data;
+  } catch (error) {
+    if (
+      !axios.isAxiosError(error) ||
+      error.response?.status !== 404
+    ) {
+      throw createNdaError(
+        error,
+        "Unable to load the NDA for this match.",
+      );
+    }
+  }
+
+  try {
+    const response = await api.post<NdaAccessResponse>(
+      `/nda/matches/${matchId}`,
+    );
+
+    return response.data;
+  } catch (error) {
+    throw createNdaError(
+      error,
+      "Unable to initialize the NDA for this match.",
+    );
+  }
+}
+
 export async function createNdaSigningSession(
   ndaId: string,
 ): Promise<NdaSigningSessionResponse> {
