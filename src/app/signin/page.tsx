@@ -68,7 +68,7 @@ export default function SigninPage() {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout variant="brand">
       <h1 className="page-title">Welcome back</h1>
 
       <p className="page-subtitle">
