@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+
 import Sidebar from '@/components/dashboard/Sidebar';
 import StepTrackerCard from '@/components/dashboard/StepTrackerCard';
 import EmptyMatchesState from '@/components/dashboard/EmptyMatchesState';
@@ -10,40 +11,15 @@ import type { MatchListing } from '@/components/dashboard/TopMatchCard';
 import { getBuyerMatches } from '@/lib/api/matching/matching';
 import type { ApiMatchResponse } from '@/lib/api/matching/matching.types';
 import { useBuyerOnboardingStore } from '@/store/useBuyerOnboardingStore';
-import type { StepData } from '@/components/dashboard/StepTrackerCard';
+import type {
+  StepData,
+} from '@/components/dashboard/StepTrackerCard';
+
 import { supabase } from '@/lib/supabase';
 
 /* ------------------------------------------------------------------ */
-/*  Default Onboarding Steps                                           */
+/*  Match helpers                                                     */
 /* ------------------------------------------------------------------ */
-
-const DEFAULT_STEPS: StepData[] = [
-  {
-    number: 1,
-    label: 'Overview',
-    status: 'current',
-  },
-  {
-    number: 2,
-    label: 'Experience & Credentials',
-    status: 'upcoming',
-  },
-  {
-    number: 3,
-    label: 'Acquisition Preferences',
-    status: 'upcoming',
-  },
-  {
-    number: 4,
-    label: 'Finances',
-    status: 'upcoming',
-  },
-  {
-    number: 5,
-    label: 'Verification',
-    status: 'upcoming',
-  },
-];
 
 const MATCH_IMAGE_PATHS = [
   '/images/listings/coffee-roastery.jpg',
@@ -129,21 +105,138 @@ function mapMatchToListing(
 
 export default function BuyerDashboardNewUser() {
   const router = useRouter();
+
   const completedSections =
     useBuyerOnboardingStore(
       (state) => state.completedSections
     );
-    const totalSections = 5;
 
-    const completedCount = Object.values(
-      completedSections
-    ).filter(Boolean).length;
-
-    const percentage = Math.round(
-      (completedCount / totalSections) * 100
+  const initializeForUser =
+    useBuyerOnboardingStore(
+      (state) => state.initializeForUser
     );
 
-  const [firstName, setFirstName] = React.useState('');
+  const totalSections = 5;
+
+  const completedCount =
+    Object.values(completedSections).filter(Boolean).length;
+
+  const percentage = Math.round(
+    (completedCount / totalSections) * 100
+  );
+
+  /* ---------------------------------------------------------------- */
+  /*  Initialize user-specific onboarding state                       */
+  /* ---------------------------------------------------------------- */
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const initializeOnboarding = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error) {
+        console.error(
+          'Failed to get authenticated user:',
+          error
+        );
+        return;
+      }
+
+      if (!user || cancelled) {
+        return;
+      }
+
+      try {
+        await initializeForUser(user.id);
+      } catch (error) {
+        console.error(
+          'Failed to initialize buyer onboarding:',
+          error
+        );
+      }
+    };
+
+    initializeOnboarding();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initializeForUser]);
+
+  /* ---------------------------------------------------------------- */
+  /*  Build dynamic onboarding steps                                  */
+  /* ---------------------------------------------------------------- */
+
+  const sectionDefinitions: {
+    key: keyof typeof completedSections;
+    number: number;
+    label: string;
+  }[] = [
+    {
+      key: 'overview',
+      number: 1,
+      label: 'Overview',
+    },
+    {
+      key: 'experience',
+      number: 2,
+      label: 'Experience & Credentials',
+    },
+    {
+      key: 'acquisition',
+      number: 3,
+      label: 'Acquisition Preferences',
+    },
+    {
+      key: 'finances',
+      number: 4,
+      label: 'Finances',
+    },
+    {
+      key: 'verification',
+      number: 5,
+      label: 'Verification',
+    },
+  ];
+
+  const firstIncompleteIndex =
+    sectionDefinitions.findIndex(
+      (section) =>
+        !completedSections[section.key]
+    );
+
+  const steps: StepData[] =
+    sectionDefinitions.map(
+      (section, index) => {
+        const isCompleted =
+          completedSections[section.key];
+
+        const isCurrent =
+          !isCompleted &&
+          index === firstIncompleteIndex;
+
+        return {
+          number: section.number,
+          label: section.label,
+          status: isCompleted
+            ? 'completed'
+            : isCurrent
+              ? 'current'
+              : 'upcoming',
+        };
+      }
+    );
+
+  /* ---------------------------------------------------------------- */
+  /*  User name                                                       */
+  /* ---------------------------------------------------------------- */
+
+  const [firstName, setFirstName] =
+    React.useState('');
   const [matches, setMatches] = React.useState<
     MatchListing[]
   >([]);
@@ -166,7 +259,8 @@ export default function BuyerDashboardNewUser() {
         return;
       }
 
-      const metadata = user.user_metadata ?? {};
+      const metadata =
+        user.user_metadata ?? {};
 
       const firstNameFromMetadata =
         typeof metadata.first_name === 'string'
@@ -175,7 +269,9 @@ export default function BuyerDashboardNewUser() {
 
 
       if (firstNameFromMetadata) {
-        setFirstName(firstNameFromMetadata);
+        setFirstName(
+          firstNameFromMetadata
+        );
         return;
       }
 
@@ -189,7 +285,9 @@ export default function BuyerDashboardNewUser() {
           : '';
 
       if (fullNameFromMetadata) {
-        setFirstName(fullNameFromMetadata.split(' ')[0]);
+        setFirstName(
+          fullNameFromMetadata.split(' ')[0]
+        );
         return;
       }
 
@@ -198,7 +296,9 @@ export default function BuyerDashboardNewUser() {
        * This avoids displaying a hardcoded person's name.
        */
       if (user.email) {
-        setFirstName(user.email.split('@')[0]);
+        setFirstName(
+          user.email.split('@')[0]
+        );
       }
     };
 
@@ -254,7 +354,9 @@ export default function BuyerDashboardNewUser() {
   /* ---------------------------------------------------------------- */
 
   const handleContinueProfile = () => {
-    router.push('/buyer-onboarding/profile');
+    router.push(
+      '/buyer-onboarding/profile'
+    );
   };
 
   const handleViewMatch = (matchId: string) => {
@@ -271,14 +373,22 @@ export default function BuyerDashboardNewUser() {
   /*  Sidebar Navigation                                              */
   /* ---------------------------------------------------------------- */
 
-  const handleNavigation = (id: string) => {
+  const handleNavigation = (
+    id: string
+  ) => {
     if (id === 'home') {
       router.push('/buyer-dashboard');
       return;
     }
 
-    console.log(`Navigate to: ${id}`);
+    console.log(
+      `Navigate to: ${id}`
+    );
   };
+
+  /* ---------------------------------------------------------------- */
+  /*  Render                                                           */
+  /* ---------------------------------------------------------------- */
 
   return (
     <div className="dashboard-shell">
@@ -293,7 +403,10 @@ export default function BuyerDashboardNewUser() {
         <div className="dashboard-main__inner">
           {/* Heading */}
           <h1 className="dashboard-heading">
-            Welcome In{firstName ? `, ${firstName}` : ''}
+            Welcome In
+            {firstName
+              ? `, ${firstName}`
+              : ''}
           </h1>
 
           {/* Step Tracker Card */}
@@ -301,9 +414,11 @@ export default function BuyerDashboardNewUser() {
             percentage={percentage}
             completedSections={completedCount}
             totalSections={totalSections}
-            steps={DEFAULT_STEPS}
+            steps={steps}
             ctaLabel="Continue your profile"
-            onCtaClick={handleContinueProfile}
+            onCtaClick={
+              handleContinueProfile
+            }
           />
 
           {/* Your matches section */}

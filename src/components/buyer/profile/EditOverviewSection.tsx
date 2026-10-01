@@ -1,30 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
-
+import { isValidPhoneNumber } from "libphonenumber-js";
+import PhoneInputField from "@/components/onboarding/PhoneInputField";
 import "./EditOverviewSection.css";
 
 interface EditOverviewSectionProps {
   mode?: "edit" | "onboarding";
+
   initialAbout?: string;
+
+  initialPhoneCountryCode?: string;
+  initialPhone?: string;
+
+  onPhoneChange?: (phone: string) => void;
+
+  onDataChange?: (data: {
+    about: string;
+    phoneCountryCode: string;
+    phone: string;
+  }) => void;
+
   onContinue?: (data: {
     about: string;
+    phoneCountryCode: string;
+    phone: string;
   }) => void;
+
   disabled?: boolean;
 }
 
 export default function EditOverviewSection({
   mode = "edit",
   initialAbout = "",
+  initialPhoneCountryCode = "+91",
+  initialPhone = "",
+  onPhoneChange,
+  onDataChange,
   onContinue,
   disabled = false,
 }: EditOverviewSectionProps) {
   const [about, setAbout] = useState(initialAbout);
 
+  const [phoneCountryCode, setPhoneCountryCode] =
+    useState(initialPhoneCountryCode);
+
+  const [phone, setPhone] = useState(initialPhone);
+  const [phoneError, setPhoneError] = useState<string>("");
+
+  useEffect(() => {
+    setAbout(initialAbout);
+  }, [initialAbout]);
+
+  useEffect(() => {
+    setPhoneCountryCode(initialPhoneCountryCode);
+  }, [initialPhoneCountryCode]);
+
+  useEffect(() => {
+    setPhone(initialPhone);
+  }, [initialPhone]);
+
+  useEffect(() => {
+    onDataChange?.({
+      about,
+      phoneCountryCode,
+      phone,
+    });
+  }, [
+    about,
+    phoneCountryCode,
+    phone,
+    onDataChange,
+  ]);
+
   const handleContinue = () => {
+    const trimmedPhone = phone.trim();
+    const fullPhoneNumber = `${phoneCountryCode}${trimmedPhone.replace(/\D/g, "")}`;
+
+    if (!trimmedPhone) {
+      setPhoneError("Please enter your phone number.");
+      return;
+    }
+
+    if (!isValidPhoneNumber(fullPhoneNumber)) {
+      setPhoneError("Please enter a valid phone number.");
+      return;
+    }
+
+    setPhoneError("");
+
     onContinue?.({
       about: about.trim(),
+      phoneCountryCode,
+      phone: trimmedPhone,
     });
   };
 
@@ -52,6 +121,41 @@ export default function EditOverviewSection({
           />
         </div>
 
+        {/* Contact / Phone */}
+        <div className="edit-overview-section__field">
+          <PhoneInputField
+          label="Contact"
+          countryCodeValue={phoneCountryCode}
+          error={phoneError}
+          onCountryCodeChange={(countryCode) => {
+            setPhoneCountryCode(countryCode);
+
+             if (phoneError) {
+              setPhoneError("");
+            }
+
+            onPhoneChange?.(
+              `${countryCode}${phone.replace(/\D/g, "")}`,
+            );
+          }}
+          value={phone}
+          onChange={(event) => {
+            const value = event.target.value;
+
+            setPhone(value);
+
+            if (phoneError) {
+              setPhoneError("");
+            }
+
+            onPhoneChange?.(
+              `${phoneCountryCode}${value.replace(/\D/g, "")}`,
+            );
+          }}
+          name="phone"
+        />
+        </div>
+
       </div>
 
       {/* Continue */}
@@ -62,11 +166,11 @@ export default function EditOverviewSection({
           onClick={handleContinue}
           disabled={disabled}
           aria-label={
-             mode === "onboarding"
-            ? "Save and continue"
-            : "Continue to next profile section"
+            mode === "onboarding"
+              ? "Save and continue"
+              : "Continue to next profile section"
           }
-          >
+        >
           {mode === "onboarding" ? (
             "Save & Continue"
           ) : (

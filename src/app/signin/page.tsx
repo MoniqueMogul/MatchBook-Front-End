@@ -68,7 +68,7 @@ export default function SigninPage() {
   };
 
   return (
-    <AuthLayout progress={5}>
+    <AuthLayout>
       <h1 className="page-title">Welcome back</h1>
 
       <p className="page-subtitle">

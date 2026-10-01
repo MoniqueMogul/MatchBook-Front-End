@@ -14,7 +14,7 @@ import {
 import WarmIntroductionTrigger from "@/components/buyer/introduction/WarmIntroductionTrigger";
 import {
   createNdaSigningSession,
-  getNdaForMatch,
+  getOrInitializeNdaForMatch,
 } from "@/lib/api/nda/nda";
 import type { NdaAccessResponse } from "@/lib/api/nda/nda.types";
 
@@ -168,7 +168,7 @@ export default function MatchDetail({
   const refreshNda = useCallback(
     async (): Promise<NdaAccessResponse | null> => {
       try {
-        const access = await getNdaForMatch(matchId);
+        const access = await getOrInitializeNdaForMatch(matchId);
         setNdaAccess(access);
         setNdaError("");
         return access;
@@ -190,7 +190,7 @@ export default function MatchDetail({
   useEffect(() => {
     let isActive = true;
 
-    getNdaForMatch(matchId)
+    getOrInitializeNdaForMatch(matchId)
       .then((access) => {
         if (!isActive) {
           return;

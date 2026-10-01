@@ -605,3 +605,26 @@
     width: 150px;
   }
 }
+
+/* ------------------------------------------------
+ * Inline field validation
+ * ------------------------------------------------ */
+
+.acquisition-preferences-section__field-error {
+  margin: 0;
+  color: #c0392b;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.acquisition-preferences-section__select-trigger--error {
+  border-color: #c0392b;
+  box-shadow: 0 0 0 1px #c0392b;
+}
+
+.acquisition-preferences-section__input[aria-invalid="true"] {
+  border-color: #c0392b;
+  box-shadow: 0 0 0 1px #c0392b;
+}

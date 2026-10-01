@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import DashboardSidebar from "@/components/buyer/profile/DashboardSidebar";
 import AccountDetails from "@/components/buyer/account/AccountDetails";
 import { supabase } from "@/lib/supabase";
-import { getBuyerProfile, type BuyerProfile } from "@/lib/api/buyer";
+import { getBuyerProfile } from "@/lib/api/buyer";
+import { getCurrentUser } from "@/lib/api/user";
 
 import "./page.css";
 
@@ -21,9 +22,14 @@ interface AccountData {
 export default function BuyerAccountPage() {
   const router = useRouter();
 
-  const [account, setAccount] = useState<AccountData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [account, setAccount] =
+    useState<AccountData | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,9 +45,11 @@ export default function BuyerAccountPage() {
             error: userError,
           },
           profile,
+          currentUser,
         ] = await Promise.all([
           supabase.auth.getUser(),
           getBuyerProfile(),
+          getCurrentUser(),
         ]);
 
         if (userError) {
@@ -74,8 +82,7 @@ export default function BuyerAccountPage() {
           lastName,
           email: user.email ?? "",
           region: region || "Not available",
-          // Phone will be connected to Tim's User API.
-          phone: "Not available yet",
+          phone: currentUser.phone ?? "",
         });
       } catch (err) {
         if (!cancelled) {
@@ -104,7 +111,9 @@ export default function BuyerAccountPage() {
       <DashboardSidebar />
 
       <div className="buyer-account-page__main">
-        {loading && <p>Loading account details...</p>}
+        {loading && (
+          <p>Loading account details...</p>
+        )}
 
         {error && (
           <div
