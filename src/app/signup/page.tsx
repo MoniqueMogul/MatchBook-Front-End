@@ -79,7 +79,7 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout variant="brand">
       <h1 className="page-title">Create your account</h1>
 
       <p className="page-subtitle">
