@@ -628,3 +628,33 @@
   border-color: #c0392b;
   box-shadow: 0 0 0 1px #c0392b;
 }
+/* Full selected-pill text fix */
+.acquisition-preferences-section__pills {
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.acquisition-preferences-section__pill,
+.acquisition-preferences-section__location-pill {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 28px;
+  overflow: visible;
+  white-space: normal;
+}
+
+.acquisition-preferences-section__pill > span {
+  min-width: 0;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.acquisition-preferences-section__pill button {
+  flex: 0 0 auto;
+}

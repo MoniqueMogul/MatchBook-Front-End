@@ -385,37 +385,7 @@ export default function BuyerProfileEdit({
     };
   }, [isOnboarding, initializeForUser]);
 
-  const completedSections = useBuyerOnboardingStore(
-      (state) => state.completedSections,
-    );
-  
-  useEffect(() => {
-    if (!isOnboarding) {
-      return;
-    }
-
-    if (!completedSections.overview) {
-      setActiveTab("overview");
-      return;
-    }
-
-    if (!completedSections.experience) {
-      setActiveTab("industry-experience");
-      return;
-    }
-
-    if (!completedSections.acquisition) {
-      setActiveTab("acquisition-preferences");
-      return;
-    }
-
-    if (!completedSections.finances) {
-      setActiveTab("finances");
-      return;
-    }
-  }, [isOnboarding, completedSections]);
-
-  useEffect(() => {
+useEffect(() => {
     const loadUserName = async () => {
       const {
         data: { user },

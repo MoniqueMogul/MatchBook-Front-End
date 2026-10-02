@@ -1503,14 +1503,13 @@ useEffect(() => {
     }
 
     if (
-      !isValidNonNegativeNumber(
-        maximumPurchasePrice,
-      )
+      !isValidNonNegativeNumber(maximumPurchasePrice) ||
+      Number(maximumPurchasePrice) <= 0
     ) {
       errors.maximumPurchasePrice =
         maximumPurchasePrice.trim() === ""
           ? "Enter your maximum purchase budget."
-          : "Enter a valid maximum purchase budget.";
+          : "Enter a maximum purchase budget greater than zero.";
     }
 
     if (!isValidNonNegativeNumber(preferredARR)) {

@@ -39,33 +39,14 @@ const tabs: Array<{
 export default function ProfileTabs({
   activeTab = "overview",
   onTabChange,
-  onboarding = false,
 }: ProfileTabsProps) {
-  const activeIndex = tabs.findIndex(
-    (tab) => tab.id === activeTab,
-  );
-
   return (
     <nav
       className="profile-tabs"
       aria-label="Profile sections"
     >
-      {tabs.map((tab, index) => {
+      {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
-
-        /*
-         * During onboarding, users can only access:
-         * - the current section
-         * - sections they have already completed
-         *
-         * Future sections remain disabled.
-         *
-         * In normal edit mode, every tab remains clickable.
-         */
-        const isFutureTab =
-          onboarding && index > activeIndex;
-
-        const isDisabled = isFutureTab;
 
         return (
           <button
@@ -73,22 +54,10 @@ export default function ProfileTabs({
             type="button"
             className={`profile-tab ${
               isActive ? "profile-tab--active" : ""
-            } ${
-              isDisabled
-                ? "profile-tab--disabled"
-                : ""
             }`}
-            onClick={() => {
-              if (!isDisabled) {
-                onTabChange?.(tab.id);
-              }
-            }}
-            disabled={isDisabled}
+            onClick={() => onTabChange?.(tab.id)}
             aria-current={
               isActive ? "page" : undefined
-            }
-            aria-disabled={
-              isDisabled ? true : undefined
             }
           >
             <span className="profile-tab__label">

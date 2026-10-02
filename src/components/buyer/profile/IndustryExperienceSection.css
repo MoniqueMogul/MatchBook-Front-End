@@ -393,3 +393,32 @@
     width: 100%;
   }
 }
+/* Full selected-pill text fix */
+.industry-experience-section__pills {
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.industry-experience-section__pill {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 32px;
+  overflow: visible;
+  white-space: normal;
+}
+
+.industry-experience-section__pill > span {
+  min-width: 0;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.industry-experience-section__pill button {
+  flex: 0 0 auto;
+}
