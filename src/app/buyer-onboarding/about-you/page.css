@@ -1,0 +1,75 @@
+.about-you-page .auth-layout__header {
+  margin-bottom: 0;
+}
+.about-you-page .auth-layout__content {
+  justify-content: flex-start;
+  max-width: 440px;
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+.about-you-title {
+  margin: 0 0 32px;
+  font-size: 32px;
+  font-weight: 650;
+  color: #354052;
+}
+.about-you-form {
+  max-width: 360px;
+}
+.about-you-field {
+  margin-bottom: 20px;
+}
+.about-you-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #43516a;
+}
+.about-you-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #cbd3df;
+  border-radius: 6px;
+  background: #f7f8fa;
+  color: #354052;
+  font: inherit;
+  font-size: 14px;
+}
+.about-you-input:focus-visible {
+  outline: 2px solid #539b49;
+  outline-offset: 2px;
+}
+.about-you-group {
+  min-width: 0;
+  margin: 24px 0 0;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid #d9dee5;
+}
+.about-you-group legend {
+  padding: 0 12px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #354052;
+}
+.about-you-phone {
+  display: flex;
+  gap: 8px;
+}
+.about-you-phone__code {
+  flex: 0 0 76px;
+  width: 76px;
+  text-align: center;
+}
+.about-you-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 24px;
+}
+.about-you-actions .btn {
+  flex: 1;
+  padding: 11px 16px;
+  font-size: 14px;
+}

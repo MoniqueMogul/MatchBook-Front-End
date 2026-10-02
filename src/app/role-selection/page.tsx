@@ -24,7 +24,7 @@ export default function RoleSelectionPage() {
     setStep(3);
 
     if (selected === 'buyer') {
-      router.push('/buyer-onboarding/profile');
+      router.push('/buyer-onboarding/about-you');
       return;
     }
 

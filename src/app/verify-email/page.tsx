@@ -8,6 +8,8 @@ import { OtpInput } from "@/components/common/OtpInput";
 import { Button } from "@/components/common/Button";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
+import axios from "axios";
+import { getBuyerProfile } from "@/lib/api/buyer";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -59,7 +61,32 @@ export default function VerifyEmailPage() {
       // OTP verification is successful.
       // Supabase has now established the authenticated session.
       setStep(2);
-      router.push("/role-selection");
+      try {
+        const buyerProfile = await getBuyerProfile();
+
+        if (!buyerProfile?.id) {
+          setErrorMessage(
+            "Could not load your buyer profile. Please try again.",
+          );
+          return;
+        }
+
+        useAuthStore.getState().setRole("buyer");
+        router.replace("/buyer-dashboard");
+        return;
+      } catch (profileError: unknown) {
+        if (
+          !axios.isAxiosError(profileError) ||
+          profileError.response?.status !== 404
+        ) {
+          setErrorMessage(
+            "Your email is verified, but we could not load your profile. Please try again.",
+          );
+          return;
+        }
+      }
+
+      router.replace("/role-selection");
     } catch (err) {
       setErrorMessage("Could not verify the code. Please try again.");
       console.error(err);
