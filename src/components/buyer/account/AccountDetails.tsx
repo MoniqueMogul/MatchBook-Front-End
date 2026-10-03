@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 
 import "./AccountDetails.css";
+import AccountSecurity from "@/components/common/AccountSecurity";
+import LogoutButton from "@/components/common/LogoutButton";
 
 interface AccountDetailsProps {
   firstName: string;
@@ -137,8 +139,10 @@ export default function AccountDetails({
             </span>
           </div>
         </section>
+        <AccountSecurity />
       </div>
 
+      <div className="account-details__actions">
       <button
         type="button"
         className="account-details__edit"
@@ -152,6 +156,8 @@ export default function AccountDetails({
 
         <span>Edit</span>
       </button>
+      <LogoutButton />
+      </div>
     </main>
   );
 }

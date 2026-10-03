@@ -283,6 +283,7 @@ const MAIN_NAV: NavItem[] = [
     id: "messages",
     label: "Messages",
     icon: <MessagesIcon />,
+    path: "/buyer/messages",
   },
   {
     id: "profile",
@@ -299,6 +300,7 @@ const MAIN_NAV: NavItem[] = [
     id: "documents",
     label: "Documents",
     icon: <DocumentsIcon />,
+    path: "/buyer/documents",
   },
 ];
 
@@ -338,11 +340,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       return activeItem;
     }
 
-    if (pathname === "/buyer-dashboard") {
+    if (pathname === "/buyer-dashboard" || pathname.startsWith("/buyer-dashboard/")) {
       return "home";
     }
 
     if (
+      pathname === "/buyer/profile" || pathname.startsWith("/buyer/profile/") ||
       pathname === "/buyer-onboarding/profile" ||
       pathname.startsWith("/buyer-onboarding/profile/")
     ) {
@@ -356,7 +359,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       return "account";
     }
 
-    return undefined;
+    return MAIN_NAV.find((item) => item.path &&
+      (pathname === item.path || pathname.startsWith(`${item.path}/`)))?.id;
   };
 
   const currentActiveItem = getActiveItem();

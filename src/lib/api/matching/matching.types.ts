@@ -121,6 +121,7 @@ export type ApiMatchStatus =
 
 export interface ApiBusinessMatchSummary {
   id: string;
+  profile_image_url?: string | null;
   legal_name: string | null;
   dba: string | null;
   industry: string;

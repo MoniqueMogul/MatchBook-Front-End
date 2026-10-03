@@ -10,6 +10,7 @@ export interface ApiConversationParticipant {
 
 export interface ApiConversationBusiness {
   id: string;
+  profile_image_url?: string | null;
   legal_name: string | null;
   dba: string | null;
   industry: string;

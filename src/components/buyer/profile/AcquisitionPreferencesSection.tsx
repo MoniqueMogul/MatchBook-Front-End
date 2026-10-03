@@ -557,13 +557,17 @@ function SingleSelect({
  * Main Component
  * ------------------------------------------------ */
 
+const EMPTY_INDUSTRIES: TargetIndustryPreference[] = [];
+const EMPTY_STRINGS: string[] = [];
+const EMPTY_LOCATIONS: ApiTargetLocation[] = [];
+
 export default function AcquisitionPreferencesSection({
   mode = "edit",
 
-  initialTargetIndustryPreferences = [],
-  initialTargetBusinessModels = [],
-  initialTargetBusinessTypes = [],
-  initialTargetLocations = [],
+  initialTargetIndustryPreferences = EMPTY_INDUSTRIES,
+  initialTargetBusinessModels = EMPTY_STRINGS,
+  initialTargetBusinessTypes = EMPTY_STRINGS,
+  initialTargetLocations = EMPTY_LOCATIONS,
 
   initialMinimumYearsInOperation = null,
   initialMinimumARR = null,

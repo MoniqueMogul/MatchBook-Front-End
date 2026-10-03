@@ -1,6 +1,10 @@
 import api from "./client";
 
 export interface UserPersonal {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
   phone: string | null;
   profile_image_key: string | null;
 }

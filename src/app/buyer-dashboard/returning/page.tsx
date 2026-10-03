@@ -174,7 +174,7 @@ export default function BuyerDashboardReturningUser() {
         <div className="dashboard-main__inner">
           {/* Header */}
           <h1 className="dashboard-heading dashboard-heading--compact">
-            Welcome In{firstName ? `, ${firstName}` : ''}
+            Welcome in{firstName ? `, ${firstName}` : ''}
           </h1>
 
           <p className="dashboard-subtitle">

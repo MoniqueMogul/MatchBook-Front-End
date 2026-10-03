@@ -181,6 +181,7 @@ function mapApiConversation(
     },
     business: {
       id: conversation.business.id,
+      imageUrl: conversation.business.profile_image_url ?? undefined,
       name: getBusinessName(conversation),
       city: conversation.business.city,
       state: conversation.business.state,

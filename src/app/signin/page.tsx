@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 
 import AuthLayout from '@/components/common/AuthLayout';
 import { Input } from '@/components/common/Input';
+import { PasswordInput } from '@/components/common/PasswordInput';
+import { getPostSignInPath } from '@/lib/auth/postSignIn';
 import { Button } from '@/components/common/Button';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
@@ -33,6 +35,8 @@ export default function SigninPage() {
     resolver: yupResolver(schema),
   });
 
+  const [method, setMethod] = useState<'otp' | 'password'>('otp');
+  const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -41,6 +45,14 @@ export default function SigninPage() {
     setErrorMessage(null);
 
     try {
+      if (method === 'password') {
+        const { error } = await supabase.auth.signInWithPassword({ email: data.email, password });
+        if (error) { setErrorMessage(error.message); return; }
+        setEmail(data.email);
+        setPassword('');
+        router.replace(await getPostSignInPath());
+        return;
+      }
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
@@ -60,7 +72,7 @@ export default function SigninPage() {
       setEmail(data.email);
       router.push('/verify-email');
     } catch (err) {
-      setErrorMessage('Something went wrong. Please try again.');
+      setErrorMessage(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -72,7 +84,7 @@ export default function SigninPage() {
       <h1 className="page-title">Welcome back</h1>
 
       <p className="page-subtitle">
-        Enter your email and we&apos;ll send you a one-time password.
+        {method === 'otp' ? "Enter your email and we'll send you a one-time password." : 'Enter your email and password.'}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -85,6 +97,11 @@ export default function SigninPage() {
           error={errors.email?.message}
         />
 
+        {method === 'password' && (
+          <PasswordInput label="Password" aria-label="Password" autoComplete="current-password"
+            required value={password} onChange={(event) => setPassword(event.target.value)} />
+        )}
+
         {errorMessage && (
           <p className="form-group__error" style={{ marginTop: 12 }}>
             {errorMessage}
@@ -96,9 +113,19 @@ export default function SigninPage() {
           disabled={submitting}
           style={{ marginTop: '20px', width: '100%' }}
         >
-          {submitting ? 'Sending…' : 'Continue'}
+          {submitting ? (method === 'otp' ? 'Sending…' : 'Signing in…') : (method === 'otp' ? 'Continue' : 'Sign in')}
         </Button>
       </form>
+
+      <Button type="button" variant="secondary" disabled={submitting}
+        style={{ marginTop: 16, width: '100%' }} onClick={() => {
+          setMethod(method === 'otp' ? 'password' : 'otp');
+          setPassword('');
+          setErrorMessage(null);
+        }}>
+        {method === 'otp' ? 'Use a password instead' : 'Use an email code instead'}
+      </Button>
+      <p className="resend-text">To set or reset a password, sign in with an email code and open Account.</p>
 
       <p className="resend-text" style={{ marginTop: 16 }}>
         Don&apos;t have an account? <a href="/signup">Sign up</a>
