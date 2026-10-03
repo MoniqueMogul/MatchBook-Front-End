@@ -35,6 +35,7 @@ import "./MessagesDashboard.css";
 
 interface MessagesDashboardProps {
   data: MessagesViewData;
+  sellerView?: boolean;
 }
 
 interface ApiErrorLike {
@@ -91,6 +92,7 @@ const categoryOptions: Array<{
 
 export default function MessagesDashboard({
   data,
+  sellerView = false,
 }: MessagesDashboardProps) {
   const [conversations, setConversations] = useState(
     data.conversations,
@@ -420,8 +422,9 @@ export default function MessagesDashboard({
     setActiveCategory("open");
   }
 
+  const Container = sellerView ? "section" : "main";
   return (
-    <main className="messages-dashboard">
+    <Container className="messages-dashboard">
       {selectedConversation ? (
         <section className="messages-dashboard__detail">
           <button
@@ -487,7 +490,7 @@ export default function MessagesDashboard({
 
           <div className="messages-dashboard__thread">
             <div className="messages-dashboard__date">
-              9/26/26
+              {sellerView ? "Conversation" : "9/26/26"}
             </div>
 
             {selectedConversation.messages.map(
@@ -616,7 +619,7 @@ export default function MessagesDashboard({
         </section>
       ) : (
         <>
-          <h1>Messages</h1>
+          {!sellerView && <h1>Messages</h1>}
 
           <div className="messages-dashboard__workspace">
             <nav
@@ -679,8 +682,7 @@ export default function MessagesDashboard({
                     No conversations yet
                   </h2>
                   <p>
-                    Messages in this category will
-                    appear here.
+                    {sellerView ? "Buyers will appear here after completing verification, signing the NDA, and sending you a message." : "Messages in this category will appear here."}
                   </p>
                 </div>
               ) : (
@@ -778,6 +780,6 @@ export default function MessagesDashboard({
           }
         />
       )}
-    </main>
+    </Container>
   );
 }

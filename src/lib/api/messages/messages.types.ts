@@ -26,6 +26,8 @@ export interface ApiLatestMessage {
 }
 
 export interface ApiConversation {
+  nda_completed?: boolean;
+  seller_inbox_eligible?: boolean;
   id: string;
   match_id: string;
   participant: ApiConversationParticipant;

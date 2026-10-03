@@ -9,6 +9,8 @@ import { getSellerProfile, listSellerBusinesses, getSellerBusiness, sellerErrorM
 import { Button } from "@/components/common/Button";
 import LogoutButton from "@/components/common/LogoutButton";
 import AccountSecurity from "@/components/common/AccountSecurity";
+import Sidebar from "@/components/dashboard/Sidebar";
+import SellerMessages from "@/components/seller/SellerMessages";
 import BusinessEditor from "@/components/seller/BusinessEditor";
 import BusinessProfile from "@/components/seller/BusinessProfile";
 import BusinessImage from "@/components/seller/BusinessImage";
@@ -17,7 +19,9 @@ import "./page.css";
 
 export default function SellerPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"listings" | "account">("listings");
+  const [navigationMessage, setNavigationMessage] = useState<string | null>(null);
+  const [activeNavigation, setActiveNavigation] = useState("profile");
+  const [tab, setTab] = useState<"listings" | "account" | "messages">("listings");
   const [user, setUser] = useState<UserPersonal | null>(null);
   const [businesses, setBusinesses] = useState<SellerBusiness[]>([]);
   const [selected, setSelected] = useState<SellerBusiness | null>(null);
@@ -68,21 +72,30 @@ export default function SellerPage() {
   };
   const savedBusiness = (business: SellerBusiness) => {
     setBusinesses((current) => [business, ...current.filter((item) => item.id !== business.id)]);
-    setSelected(business); setEditingBusiness(false);
+    setSelected(business); setEditingBusiness(false); setTab("listings"); setActiveNavigation("profile");
   };
 
-  return <div className="seller-page">
-    <header><img src="/logo.png" alt="MatchBook" /><nav aria-label="Seller navigation">
-      <button type="button" disabled={busy || editingBusiness || editingAccount} aria-current={tab === "listings" ? "page" : undefined} onClick={() => setTab("listings")}>Listings</button>
-      <button type="button" disabled={busy || editingBusiness || editingAccount} aria-current={tab === "account" ? "page" : undefined} onClick={() => setTab("account")}>Account</button>
-    </nav></header>
-    <main>
-      <h1>{tab === "account" ? "Account" : "Listings"}</h1>
+  const navigateSeller = (id: string) => {
+    if (["home", "profile", "account", "settings", "messages"].includes(id)) {
+      setNavigationMessage(null);
+      setTab(id === "messages" ? "messages" : id === "account" || id === "settings" ? "account" : "listings");
+      setActiveNavigation(id === "settings" ? "account" : id);
+    } else {
+      setNavigationMessage(`${id.charAt(0).toUpperCase()}${id.slice(1)} is not yet available for seller accounts.`);
+    }
+    return false;
+  };
+
+  return <div className="seller-page dashboard-shell">
+    <Sidebar profileLabel="Listings" activeItem={tab === "listings" && (selected || editingBusiness) ? "profile" : activeNavigation} onNavigate={navigateSeller} />
+    <main className={`seller-content${tab === "messages" ? " seller-content--messages" : ""}`}>
+      {navigationMessage && <p role="status">{navigationMessage}</p>}
+      <h1>{tab === "messages" ? "Messages" : tab === "account" ? "Account" : "Listings"}</h1>
       {loading && <p role="status">Loading your account…</p>}
       {error && <div role="alert"><p>{error}</p><Button type="button" disabled={busy} onClick={() => {
         setError(null); setLoading(true); setRetry((value) => value + 1);
       }}>Retry</Button></div>}
-      {!loading && user && tab === "account" && <>
+      {!loading && user && <div hidden={tab !== "account"}>
         <section aria-label="Personal information">
           <h2>Personal information</h2>
           <dl><dt>Name</dt><dd>{user.first_name} {user.last_name}</dd>
@@ -95,8 +108,8 @@ export default function SellerPage() {
           </form> : <div className="seller-actions"><Button type="button" onClick={() => setEditingAccount(true)}>Edit</Button><LogoutButton /></div>}
         </section>
         <AccountSecurity />
-      </>}
-      {!loading && user && tab === "listings" && <>
+      </div>}
+      {!loading && user && <div hidden={tab !== "listings"}>
         {editingBusiness ? <BusinessEditor key={selected?.id ?? "new"} business={selected} onSaved={savedBusiness} onCancel={() => setEditingBusiness(false)} />
           : selected ? <BusinessProfile key={selected.id} business={selected} onBack={() => setSelected(null)}
             onEdit={() => setEditingBusiness(true)} onUpdated={savedBusiness} onBusyChange={setBusy} /> : <>
@@ -111,7 +124,8 @@ export default function SellerPage() {
             </li>)}</ul>
             {busy && <p role="status">Loading business…</p>}
           </>}
-      </>}
+      </div>}
+      {!loading && user && tab === "messages" && <SellerMessages user={user} />}
       {!loading && !user && <LogoutButton />}
     </main>
   </div>;

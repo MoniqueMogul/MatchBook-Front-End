@@ -22,8 +22,9 @@ import {
 interface SidebarProps {
   /** Optional manual override for the active nav item */
   activeItem?: string;
+  profileLabel?: string;
   /** Optional callback when a nav item is clicked */
-  onNavigate?: (id: string) => void;
+  onNavigate?: (id: string) => void | boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -324,6 +325,7 @@ const FOOTER_NAV: NavItem[] = [
 
 const Sidebar: React.FC<SidebarProps> = ({
   activeItem,
+  profileLabel = "Profile",
   onNavigate,
 }) => {
   const router = useRouter();
@@ -370,7 +372,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   /* ---------------------------------------------------------------- */
 
   const handleNavigation = (item: NavItem) => {
-    onNavigate?.(item.id);
+    // A page can handle navigation itself without falling through to buyer routes.
+    if (onNavigate?.(item.id) === false) return;
 
     if (item.id === "profile") {
       const profilePath =
@@ -406,7 +409,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           aria-current={isActive ? "page" : undefined}
         >
           {item.icon}
-          {item.label}
+          {item.id === "profile" ? profileLabel : item.label}
         </button>
       </li>
     );
