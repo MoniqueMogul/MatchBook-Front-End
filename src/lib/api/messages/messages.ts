@@ -181,6 +181,7 @@ function mapApiConversation(
     },
     business: {
       id: conversation.business.id,
+      imageUrl: conversation.business.profile_image_url ?? undefined,
       name: getBusinessName(conversation),
       city: conversation.business.city,
       state: conversation.business.state,
@@ -209,7 +210,7 @@ function mapApiConversation(
     relativeTime: formatRelativeTime(latestTimestamp),
     unreadCount: conversation.unread_count,
     ndaRequired: true,
-    ndaSigned: true,
+    ndaSigned: conversation.nda_completed ?? true,
     messages: messages.map((message) => ({
       id: message.id,
       sender:
@@ -227,11 +228,14 @@ function mapApiConversation(
 
 export async function getMessagesViewData(
   currentUser: MessageParticipant,
+  sellerInbox = false,
 ): Promise<MessagesViewData> {
   const apiConversations = await getConversations();
 
   const conversations = await Promise.all(
-    apiConversations.map(async (conversation) => {
+    apiConversations.filter((conversation) => !sellerInbox ||
+      (conversation.seller_inbox_eligible === true && conversation.nda_completed === true))
+    .map(async (conversation) => {
       const messages = await getConversationMessages(
         conversation.id,
       );

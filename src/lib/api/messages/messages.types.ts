@@ -10,6 +10,7 @@ export interface ApiConversationParticipant {
 
 export interface ApiConversationBusiness {
   id: string;
+  profile_image_url?: string | null;
   legal_name: string | null;
   dba: string | null;
   industry: string;
@@ -25,6 +26,8 @@ export interface ApiLatestMessage {
 }
 
 export interface ApiConversation {
+  nda_completed?: boolean;
+  seller_inbox_eligible?: boolean;
   id: string;
   match_id: string;
   participant: ApiConversationParticipant;

@@ -17,3 +17,9 @@ export async function searchLocations(
 
   return response.data;
 }
+/** The same structured values are used for buyer preferences and seller businesses. */
+export function toStructuredLocation(location: Pick<ApiTargetLocation, "city" | "state" | "county" | "zip_code" | "country_code">) {
+  const clean = (value?: string | null) => value?.trim() || null;
+  return { city: clean(location.city), state: clean(location.state), county: clean(location.county),
+    zip_code: clean(location.zip_code), country_code: clean(location.country_code)?.toUpperCase() ?? null };
+}

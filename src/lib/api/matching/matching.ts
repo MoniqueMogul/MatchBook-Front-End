@@ -142,6 +142,7 @@ function mapMatchDetail(
 
   const business: MatchBusinessDetails = {
     id: response.business.id,
+    imageUrl: response.business.profile_image_url ?? undefined,
     name:
       response.business.dba ??
       response.business.legal_name ??

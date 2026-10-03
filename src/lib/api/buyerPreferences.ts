@@ -1,3 +1,6 @@
+import type { ApiTargetLocation } from "./buyerPreferences.types";
+export type { ApiTargetLocation } from "./buyerPreferences.types";
+import { toStructuredLocation } from "./locations";
 import api from "./client";
 
 export type DealPreference =
@@ -24,23 +27,13 @@ export interface TargetIndustryPreference {
   sub_industries: string[];
 }
 
-export interface ApiTargetLocation {
-  provider: "locationiq";
-  place_id: string;
-  display_name: string;
-  latitude: number;
-  longitude: number;
-  city?: string | null;
-  county?: string | null;
-  state?: string | null;
-  country?: string | null;
-  country_code?: string | null;
-}
+
 
 interface BackendTargetLocation {
   state?: string | null;
   city?: string | null;
   county?: string | null;
+  zip_code?: string | null;
   country_code?: string | null;
 }
 
@@ -157,7 +150,7 @@ export interface BuyerPreferencesPayload {
   preferred_acquisition_timeline?: string | null;
 }
 
-function normalizeBackendLocation(
+export function normalizeBackendLocation(
   location: BackendTargetLocation,
   index: number,
 ): ApiTargetLocation {
@@ -165,6 +158,7 @@ function normalizeBackendLocation(
     location.city,
     location.county,
     location.state,
+    location.zip_code,
     location.country_code,
   ]
     .filter(Boolean)
@@ -177,6 +171,7 @@ function normalizeBackendLocation(
         location.city,
         location.county,
         location.state,
+        location.zip_code,
         location.country_code,
       ]
         .filter(Boolean)
@@ -186,6 +181,7 @@ function normalizeBackendLocation(
     longitude: 0,
     city: location.city ?? null,
     county: location.county ?? null,
+    zip_code: location.zip_code ?? null,
     state: location.state ?? null,
     country_code: location.country_code ?? null,
   };
@@ -212,13 +208,7 @@ function buildBackendPayload(
     ...(payload.target_locations !== undefined && {
       target_locations:
         payload.target_locations?.map(
-          (location) => ({
-            state: location.state ?? null,
-            city: location.city ?? null,
-            county: location.county ?? null,
-            country_code:
-              location.country_code ?? null,
-          }),
+          toStructuredLocation,
         ),
     }),
   };

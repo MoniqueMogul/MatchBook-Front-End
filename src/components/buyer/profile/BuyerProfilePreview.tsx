@@ -16,6 +16,18 @@ type PreviewTab =
   | "acquisition-preferences"
   | "finances";
 
+const BUYER_TYPE_LABELS: Record<string, string> = {
+  first_time_owner: "First-time Owner",
+  existing_business_owner: "Existing Business Owner",
+  investor_group: "Investor Group",
+  family_office: "Family Office",
+  private_equity: "Private Equity",
+};
+
+function formatBuyerType(value: string): string {
+  return BUYER_TYPE_LABELS[value] ?? value;
+}
+
 interface BuyerProfilePreviewProps {
   name?: string;
   location?: string;
@@ -92,7 +104,7 @@ export default function BuyerProfilePreview({
                   •
                 </span>
 
-                <span>{memberType}</span>
+                <span>{formatBuyerType(memberType)}</span>
               </div>
 
             </div>

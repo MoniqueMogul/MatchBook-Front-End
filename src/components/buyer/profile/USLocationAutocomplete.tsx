@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 import type { ApiTargetLocation as TargetLocation } from "@/lib/api/buyerPreferences.types";
@@ -9,6 +9,8 @@ import { searchLocations } from "@/lib/api/locations";
 import "./USLocationAutocomplete.css";
 
 interface USLocationAutocompleteProps {
+  label?: string;
+  countryCode?: string | null;
   value: string;
   selectedLocations: TargetLocation[];
   onChange: (value: string) => void;
@@ -30,6 +32,8 @@ function formatLocationDetails(
 }
 
 export default function USLocationAutocomplete({
+  label = "Preferred Regions",
+  countryCode = "us",
   value,
   selectedLocations,
   onChange,
@@ -37,6 +41,8 @@ export default function USLocationAutocomplete({
   onRemove,
   disabled = false,
 }: USLocationAutocompleteProps) {
+  const inputId = useId();
+  const suggestionsId = `${inputId}-suggestions`;
   const [suggestions, setSuggestions] =
     useState<TargetLocation[]>([]);
 
@@ -90,8 +96,7 @@ export default function USLocationAutocomplete({
           const usResults =
             results.filter(
               (location) =>
-                location.country_code?.toLowerCase() ===
-                "us",
+                !countryCode || location.country_code?.toLowerCase() === countryCode.toLowerCase(),
             );
 
           /*
@@ -145,6 +150,7 @@ export default function USLocationAutocomplete({
     value,
     disabled,
     selectedLocations,
+    countryCode,
   ]);
 
   /*
@@ -213,8 +219,8 @@ export default function USLocationAutocomplete({
       ref={containerRef}
       className="us-location-autocomplete"
     >
-      <label className="us-location-autocomplete__label">
-        Preferred Regions
+      <label htmlFor={inputId} className="us-location-autocomplete__label">
+        {label}
       </label>
 
       <div className="us-location-autocomplete__details">
@@ -226,6 +232,7 @@ export default function USLocationAutocomplete({
           }`}
         >
           <input
+            id={inputId}
             type="text"
             value={value}
             onChange={(event) => {
@@ -253,13 +260,13 @@ export default function USLocationAutocomplete({
             autoComplete="off"
             aria-autocomplete="list"
             aria-expanded={open}
-            aria-controls="buyer-location-suggestions"
+            aria-controls={suggestionsId}
           />
         </div>
 
         {open && (
           <div
-            id="buyer-location-suggestions"
+            id={suggestionsId}
             className="us-location-autocomplete__dropdown"
             role="listbox"
           >
@@ -282,7 +289,7 @@ export default function USLocationAutocomplete({
                 0 &&
               value.trim().length >= 3 && (
                 <div className="us-location-autocomplete__status">
-                  No US locations found.
+                  No locations found.
                 </div>
               )}
 
@@ -347,9 +354,7 @@ export default function USLocationAutocomplete({
                 }
               >
                 <span>
-                  {location.city ??
-                    location.state ??
-                    location.display_name}
+                  {location.display_name}
                 </span>
 
                 <button

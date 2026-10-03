@@ -14,7 +14,7 @@ export interface MatchListing {
   askingPrice: string;
   revenue: string;
   profitSde: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 interface TopMatchCardProps {
@@ -38,12 +38,12 @@ const TopMatchCard: React.FC<TopMatchCardProps> = ({
     <article className="match-card" aria-label={`Match: ${match.title}`}>
       {/* Thumbnail */}
       <div className="match-card__thumbnail">
-        <img
+        {match.imageUrl ? <img
           className="match-card__image"
           src={match.imageUrl}
           alt={match.title}
           loading="lazy"
-        />
+        /> : <span>Business image not available</span>}
       </div>
 
       {/* Content Panel */}

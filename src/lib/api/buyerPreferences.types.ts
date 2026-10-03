@@ -10,6 +10,7 @@ export interface ApiTargetLocation {
   longitude: number;
   city?: string | null;
   county?: string | null;
+  zip_code?: string | null;
   state?: string | null;
   country?: string | null;
   country_code?: string | null;

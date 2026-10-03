@@ -21,12 +21,6 @@ import { supabase } from '@/lib/supabase';
 /*  Match helpers                                                     */
 /* ------------------------------------------------------------------ */
 
-const MATCH_IMAGE_PATHS = [
-  '/images/listings/coffee-roastery.jpg',
-  '/images/listings/coffee-cart.jpg',
-  '/images/listings/coffee-subscription.jpg',
-] as const;
-
 function formatCurrency(value: string | null): string {
   if (value === null) {
     return 'Not provided';
@@ -57,8 +51,7 @@ function formatIndustry(value: string): string {
 }
 
 function mapMatchToListing(
-  match: ApiMatchResponse,
-  index: number
+  match: ApiMatchResponse
 ): MatchListing {
   const numericScore = Number(match.score);
 
@@ -92,10 +85,7 @@ function mapMatchToListing(
     ),
     revenue: formatCurrency(match.business.arr),
     profitSde: formatCurrency(match.business.sde),
-    imageUrl:
-      MATCH_IMAGE_PATHS[
-        index % MATCH_IMAGE_PATHS.length
-      ],
+    imageUrl: match.business.profile_image_url ?? undefined,
   };
 }
 
@@ -403,7 +393,7 @@ export default function BuyerDashboardNewUser() {
         <div className="dashboard-main__inner">
           {/* Heading */}
           <h1 className="dashboard-heading">
-            Welcome In
+            Welcome in
             {firstName
               ? `, ${firstName}`
               : ''}

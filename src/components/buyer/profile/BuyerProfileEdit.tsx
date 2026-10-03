@@ -51,6 +51,10 @@ import {
 
 import "./BuyerProfileEdit.css";
 
+const EMPTY_INDUSTRIES: TargetIndustryPreference[] = [];
+const EMPTY_STRINGS: string[] = [];
+const EMPTY_LOCATIONS: ApiTargetLocation[] = [];
+
 interface BuyerProfileEditProps {
   mode?: "edit" | "onboarding";
 }
@@ -1311,19 +1315,19 @@ useEffect(() => {
           <AcquisitionPreferencesSection
             mode={mode}
             initialTargetIndustryPreferences={
-              preferences?.target_industry_preferences ?? []
+              preferences?.target_industry_preferences ?? EMPTY_INDUSTRIES
             }
 
             initialTargetBusinessModels={
-              preferences?.target_business_models ?? []
+              preferences?.target_business_models ?? EMPTY_STRINGS
             }
 
             initialTargetBusinessTypes={
-              preferences?.target_business_types ?? []
+              preferences?.target_business_types ?? EMPTY_STRINGS
             }
 
             initialTargetLocations={
-              preferences?.target_locations ?? []
+              preferences?.target_locations ?? EMPTY_LOCATIONS
             }
 
             initialMinimumYearsInOperation={

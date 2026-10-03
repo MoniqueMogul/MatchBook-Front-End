@@ -22,8 +22,9 @@ import {
 interface SidebarProps {
   /** Optional manual override for the active nav item */
   activeItem?: string;
+  profileLabel?: string;
   /** Optional callback when a nav item is clicked */
-  onNavigate?: (id: string) => void;
+  onNavigate?: (id: string) => void | boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -283,6 +284,7 @@ const MAIN_NAV: NavItem[] = [
     id: "messages",
     label: "Messages",
     icon: <MessagesIcon />,
+    path: "/buyer/messages",
   },
   {
     id: "profile",
@@ -299,6 +301,7 @@ const MAIN_NAV: NavItem[] = [
     id: "documents",
     label: "Documents",
     icon: <DocumentsIcon />,
+    path: "/buyer/documents",
   },
 ];
 
@@ -322,6 +325,7 @@ const FOOTER_NAV: NavItem[] = [
 
 const Sidebar: React.FC<SidebarProps> = ({
   activeItem,
+  profileLabel = "Profile",
   onNavigate,
 }) => {
   const router = useRouter();
@@ -338,11 +342,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       return activeItem;
     }
 
-    if (pathname === "/buyer-dashboard") {
+    if (pathname === "/buyer-dashboard" || pathname.startsWith("/buyer-dashboard/")) {
       return "home";
     }
 
     if (
+      pathname === "/buyer/profile" || pathname.startsWith("/buyer/profile/") ||
       pathname === "/buyer-onboarding/profile" ||
       pathname.startsWith("/buyer-onboarding/profile/")
     ) {
@@ -356,7 +361,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       return "account";
     }
 
-    return undefined;
+    return MAIN_NAV.find((item) => item.path &&
+      (pathname === item.path || pathname.startsWith(`${item.path}/`)))?.id;
   };
 
   const currentActiveItem = getActiveItem();
@@ -366,7 +372,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   /* ---------------------------------------------------------------- */
 
   const handleNavigation = (item: NavItem) => {
-    onNavigate?.(item.id);
+    // A page can handle navigation itself without falling through to buyer routes.
+    if (onNavigate?.(item.id) === false) return;
 
     if (item.id === "profile") {
       const profilePath =
@@ -402,7 +409,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           aria-current={isActive ? "page" : undefined}
         >
           {item.icon}
-          {item.label}
+          {item.id === "profile" ? profileLabel : item.label}
         </button>
       </li>
     );
