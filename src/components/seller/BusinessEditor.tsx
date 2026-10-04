@@ -1,5 +1,6 @@
 "use client";
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import axios from "axios";
 import USLocationAutocomplete from "@/components/buyer/profile/USLocationAutocomplete";
@@ -194,7 +195,7 @@ export default function BusinessEditor({ business, onSaved, onCancel }: {
     {!loading && (!industries.length || !models.length) && <Button type="button" onClick={() => {
       setLoading(true); setRetry((value) => value + 1);
     }}>Retry loading options</Button>}
-    {loading && <p role="status">Loading business options…</p>}
+    {loading && <ContentSkeleton shape="options" label="Loading business options" />}
     <form noValidate onSubmit={save} aria-busy={saving}>
       <fieldset disabled={saving || loading || !industries.length || !models.length}>
         <label>Business photo{!business ? " *" : ""}

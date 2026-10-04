@@ -27,9 +27,14 @@ export function setCacheUser(userId: string | null) {
   useApiCache.setState({ userId, entries: {} });
 }
 async function scope() {
+  const observedEpoch = epoch;
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
-  setCacheUser(data.session?.user.id ?? null);
+  const userId = data.session?.user.id ?? null;
+  if (epoch !== observedEpoch && useApiCache.getState().userId !== userId) {
+    throw new Error("Your session changed. Please try again.");
+  }
+  setCacheUser(userId);
   if (!data.session) throw new Error("You are not authenticated.");
   return epoch;
 }

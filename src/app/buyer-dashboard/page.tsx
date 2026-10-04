@@ -1,5 +1,6 @@
 'use client';
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import React from 'react';
 import axios from 'axios';
 import { getBuyerProfile } from '@/lib/api/buyer';
@@ -405,7 +406,7 @@ export default function BuyerDashboardNewUser() {
 
           {/* Step Tracker Card */}
           {readinessError ? <p role="alert">{readinessError}</p> : preferencesReady === null ? (
-            <p role="status">Loading your saved preferences...</p>
+            <ContentSkeleton shape="progress" label="Loading your saved preferences" />
           ) : !preferencesReady ? <StepTrackerCard
             percentage={percentage}
             completedSections={completedCount}
@@ -423,9 +424,7 @@ export default function BuyerDashboardNewUser() {
           </h2>
 
           {isLoadingMatches ? (
-            <p role="status">
-              Loading your matches...
-            </p>
+            <ContentSkeleton shape="matches" label="Loading your matches" />
           ) : matchesError ? (
             <p role="alert">
               {matchesError}

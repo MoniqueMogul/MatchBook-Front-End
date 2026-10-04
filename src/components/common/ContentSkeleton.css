@@ -1,0 +1,30 @@
+.content-skeleton { width: 100%; min-width: 0; box-sizing: border-box; margin-block: 20px; }
+.content-skeleton *, .content-skeleton *::before { box-sizing: border-box; }
+.content-skeleton__panel, .content-skeleton__card, .content-skeleton__match, .content-skeleton__inbox { border: 1px solid #e5e7eb; border-radius: 10px; padding: 24px; }
+.content-skeleton__row { padding-block: 12px; border-bottom: 1px solid #eef0f2; }
+.content-skeleton__row:last-child { border-bottom: 0; }
+.content-skeleton__photo { height: 160px; background: #f0f2f0; border-radius: 8px; }
+.content-skeleton__action { width: 160px; height: 36px; background: #f0f2f0; border-radius: 6px; margin-block: 16px; }
+.content-skeleton__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 20px; }
+.content-skeleton__card { padding: 12px; }
+.content-skeleton__match { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr) minmax(100px, 1fr); gap: 24px; align-items: center; }
+.content-skeleton__steps { display: flex; justify-content: space-between; margin-block: 28px; gap: 12px; }
+.content-skeleton__steps span { width: 32px; height: 32px; border-radius: 50%; background: #f0f2f0; }
+.content-skeleton__inbox { display: grid; grid-template-columns: minmax(200px, 32%) minmax(0, 1fr); padding: 0; min-height: 480px; overflow: hidden; }
+.content-skeleton__inbox > div { padding: 24px; min-width: 0; }
+.content-skeleton__conversation { border-left: 1px solid #e5e7eb; }
+.content-skeleton__bubble { width: 70%; margin-top: 48px; }
+.content-skeleton__bubble--reply { margin-left: auto; }
+.content-skeleton--business > div > .content-skeleton__photo { height: 260px; margin-bottom: 24px; }
+.content-skeleton--photo { margin: 0; height: 100%; }
+.content-skeleton--photo > div, .content-skeleton--photo .content-skeleton__photo { height: 100%; min-height: 100%; width: 100%; }
+.content-skeleton--options { max-width: 280px; margin-block: 12px; }
+.content-skeleton--options .profile-skeleton__line { height: 12px; }
+@media (max-width: 700px) {
+  .content-skeleton__match { grid-template-columns: 1fr; gap: 12px; }
+  .content-skeleton__match > div:last-child { display: none; }
+  .content-skeleton__inbox { grid-template-columns: 1fr; min-height: 360px; }
+  .content-skeleton__conversation { display: none; }
+  .content-skeleton__panel { padding: 20px; }
+  .content-skeleton--business > div > .content-skeleton__photo { height: 200px; }
+}

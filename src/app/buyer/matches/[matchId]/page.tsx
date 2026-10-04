@@ -1,5 +1,6 @@
 "use client";
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
@@ -70,15 +71,7 @@ export default function BuyerMatchDetailPage() {
         ) : matchData?.matchId === matchId ? (
           <MatchDetail data={matchData} />
         ) : (
-          <div
-            className="buyer-match-page__state"
-            role="status"
-          >
-            <h1>Loading match</h1>
-            <p>
-              We are securely loading your match details.
-            </p>
-          </div>
+          <ContentSkeleton shape="business" label="Loading match details" />
         )}
       </div>
     </div>

@@ -7,3 +7,10 @@
 .profile-skeleton__tabs { display: flex; gap: 24px; padding-block: 16px; border-bottom: 1px solid #e5e7eb; }
 .profile-skeleton__tabs span { width: 100px; height: 14px; background: #f0f2f0; border-radius: 4px; }
 .profile-skeleton__body { padding: 28px; margin-top: 24px; border: 1px solid #e5e7eb; border-radius: 10px; }
+
+/* One quiet pulse per loading region; honor reduced-motion preferences. */
+@keyframes matchbook-skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
+.profile-skeleton, .content-skeleton > div { animation: matchbook-skeleton-pulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .profile-skeleton, .content-skeleton > div { animation: none; }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import {
   useEffect,
   useState,
@@ -131,9 +132,7 @@ export default function BuyerMessagesPage() {
           <main className="messages-dashboard">
             <h1>Messages</h1>
 
-            <p role={loadError ? "alert" : "status"}>
-              {loadError ?? "Loading your messages..."}
-            </p>
+            <>{loadError ? <p role="alert">{loadError}</p> : <ContentSkeleton shape="messages" label="Loading your messages" />}</>
           </main>
         )}
       </div>
