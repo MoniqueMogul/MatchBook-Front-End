@@ -3,12 +3,12 @@
 import ContentSkeleton from "@/components/common/ContentSkeleton";
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react";
 import axios from "axios";
+
 import USLocationAutocomplete from "@/components/buyer/profile/USLocationAutocomplete";
 import { toStructuredLocation } from "@/lib/api/locations";
 import { normalizeBackendLocation } from "@/lib/api/buyerPreferences";
@@ -24,7 +24,6 @@ import {
   BUSINESS_TYPES,
   createSellerBusiness,
   updateSellerBusiness,
-  getSellerBusiness,
   saveBusinessImage,
   validateBusinessImage,
   sellerErrorMessage,
@@ -32,9 +31,20 @@ import {
   type SellerBusiness,
 } from "@/lib/api/seller";
 
+const locationFields = [
+  "city",
+  "state",
+  "county",
+  "zip_code",
+] as const;
+
 const textFields = [
   ["legal_name", "Legal business name", 255],
   ["dba", "Doing business as", 255],
+  ["city", "City", 100],
+  ["state", "State", 100],
+  ["county", "County", 100],
+  ["zip_code", "ZIP code", 20],
   ["preferred_sale_timeline", "Preferred sale timeline", 50],
 ] as const;
 
@@ -68,13 +78,6 @@ const numericFields = [
   ],
 ] as const;
 
-type StructuredBusinessLocation = {
-  city: string;
-  state: string;
-  county: string;
-  zip_code: string;
-};
-
 export default function BusinessEditor({
   business,
   onSaved,
@@ -86,45 +89,108 @@ export default function BusinessEditor({
 }) {
   const [locationQuery, setLocationQuery] = useState("");
 
-  const [location, setLocation] = useState<StructuredBusinessLocation>({
+  const [location, setLocation] = useState({
     city: business?.city ?? "",
     state: business?.state ?? "",
     county: business?.county ?? "",
     zip_code: business?.zip_code ?? "",
   });
 
-  const selectedLocations = useMemo(
-    () =>
-      location.city || location.state || location.county || location.zip_code
-        ? [normalizeBackendLocation(location, 0)]
-        : [],
-    [location],
-  );
+  /*
+   * Keep the actual autocomplete result instead of rebuilding it
+   * immediately from the structured business fields.
+   *
+   * Existing businesses do not have the original LocationIQ object,
+   * so reconstruct one only for the initial saved location.
+   */
+  const [selectedLocation, setSelectedLocation] =
+    useState<ApiTargetLocation | null>(() => {
+      if (
+        !business?.city &&
+        !business?.state &&
+        !business?.county &&
+        !business?.zip_code
+      ) {
+        return null;
+      }
 
-  const selectLocation = (selected: ApiTargetLocation) => {
-    const structured = toStructuredLocation(selected);
+      return normalizeBackendLocation(
+        {
+          city: business?.city ?? null,
+          state: business?.state ?? null,
+          county: business?.county ?? null,
+          zip_code: business?.zip_code ?? null,
+          country_code: "US",
+        },
+        0,
+      );
+    });
 
+  const selectedLocations = selectedLocation
+    ? [selectedLocation]
+    : [];
+
+  /*
+   * Autocomplete acceptance rule:
+   *
+   * A suggestion only needs a state to be accepted.
+   *
+   * City, county and ZIP completeness belong to the business
+   * form validation, not to autocomplete selection.
+   */
+  const selectLocation = (
+    selected: ApiTargetLocation,
+  ) => {
+    const value = toStructuredLocation(selected);
+
+    if (!value.state) {
+      setError(
+        "Please select a location that includes a state.",
+      );
+
+      setFieldErrors((current) => ({
+        ...current,
+        state:
+          "The selected location does not include a state.",
+      }));
+
+      return;
+    }
+
+    /*
+     * Preserve the real autocomplete object.
+     *
+     * This keeps the original place_id, display_name,
+     * coordinates and provider information intact.
+     */
+    setSelectedLocation(selected);
+
+    /*
+     * Separately populate the structured business fields.
+     * Missing city/county/ZIP values are allowed here.
+     */
     setLocation({
-      city: structured.city ?? "",
-      state: structured.state ?? "",
-      county: structured.county ?? "",
-      zip_code: structured.zip_code ?? "",
+      city: value.city ?? "",
+      state: value.state,
+      county: value.county ?? "",
+      zip_code: value.zip_code ?? "",
     });
 
-    setLocationQuery("");
+    setError(null);
 
-    setFieldErrors((current) => {
-      const next = { ...current };
-      delete next.location;
-      delete next.city;
-      delete next.state;
-      delete next.county;
-      delete next.zip_code;
-      return next;
-    });
+    setFieldErrors((current) => ({
+      ...current,
+      city: "",
+      state: "",
+      county: "",
+      zip_code: "",
+    }));
   };
 
   const removeLocation = () => {
+    setSelectedLocation(null);
+    setLocationQuery("");
+
     setLocation({
       city: "",
       state: "",
@@ -132,79 +198,136 @@ export default function BusinessEditor({
       zip_code: "",
     });
 
-    setLocationQuery("");
+    setFieldErrors((current) => ({
+      ...current,
+      city: "",
+      state: "",
+      county: "",
+      zip_code: "",
+    }));
   };
 
-  const [industry, setIndustry] = useState(business?.industry ?? "");
+  const updateLocationField = (
+    key: (typeof locationFields)[number],
+    value: string,
+  ) => {
+    /*
+     * Manual edits change the structured business data but do not
+     * invalidate the fact that the user selected a real suggestion.
+     *
+     * The selected pill therefore remains visible while the user
+     * fills missing city/ZIP/county information.
+     */
+    setLocation((current) => ({
+      ...current,
+      [key]: value,
+    }));
+
+    setFieldErrors((current) => ({
+      ...current,
+      [key]: "",
+    }));
+  };
+
+  const [industry, setIndustry] = useState(
+    business?.industry ?? "",
+  );
+
   const [businessModel, setBusinessModel] = useState(
     business?.business_model ?? "",
   );
+
   const [subIndustry, setSubIndustry] = useState(
     business?.sub_industry ?? "",
   );
 
-  const [industries, setIndustries] = useState<IndustryOption[]>([]);
-  const [models, setModels] = useState<BusinessModelOption[]>([]);
+  const [industries, setIndustries] = useState<
+    IndustryOption[]
+  >([]);
+
+  const [models, setModels] = useState<
+    BusinessModelOption[]
+  >([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState("");
 
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [retry, setRetry] = useState(0);
-
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<string, string>
+  >({});
 
   const submitting = useRef(false);
-  const errorSummary = useRef<HTMLDivElement>(null);
-  const previewUrl = useRef<string | null>(null);
 
-  /*
-   * If the business details were created successfully but the photo upload
-   * failed, keep the created business here so a retry updates the same
-   * business instead of creating a duplicate.
-   */
-  const savedDraft = useRef<SellerBusiness | null>(null);
-
-  /*
-   * Reuse the same idempotency key across retries of the initial create.
-   */
-  const creationKey = useRef<string | null>(null);
+  const errorSummary =
+    useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (errorSummary.current) {
       errorSummary.current.focus();
+
       errorSummary.current.scrollIntoView({
         block: "center",
-        behavior: "smooth",
       });
     }
-  }, [fieldErrors, error]);
+  }, [fieldErrors]);
 
-  useEffect(() => {
-    return () => {
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [retry, setRetry] = useState(0);
+
+  const [photo, setPhoto] =
+    useState<File | null>(null);
+
+  const [preview, setPreview] =
+    useState<string | null>(null);
+
+  const previewUrl =
+    useRef<string | null>(null);
+
+  const savedDraft =
+    useRef<SellerBusiness | null>(null);
+
+  /*
+   * Reuse across network retries:
+   * the server returns the original business.
+   */
+  const creationKey =
+    useRef<string | null>(null);
+
+  useEffect(
+    () => () => {
       if (previewUrl.current) {
-        URL.revokeObjectURL(previewUrl.current);
+        URL.revokeObjectURL(
+          previewUrl.current,
+        );
       }
-    };
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getIndustryOptions(), getBusinessModelOptions()])
-      .then(([industryOptions, modelOptions]) => {
-        if (cancelled) return;
+    Promise.all([
+      getIndustryOptions(),
+      getBusinessModelOptions(),
+    ])
+      .then(([industries, models]) => {
+        if (cancelled) {
+          return;
+        }
 
-        setIndustries(industryOptions);
-        setModels(modelOptions);
+        setIndustries(industries);
+        setModels(models);
         setError(null);
       })
-      .catch((loadError) => {
+      .catch((error) => {
         if (!cancelled) {
-          setError(sellerErrorMessage(loadError));
+          setError(
+            sellerErrorMessage(error),
+          );
         }
       })
       .finally(() => {
@@ -218,7 +341,9 @@ export default function BusinessEditor({
     };
   }, [retry]);
 
-  const save = async (event: FormEvent<HTMLFormElement>) => {
+  const save = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     if (submitting.current) {
@@ -226,19 +351,20 @@ export default function BusinessEditor({
     }
 
     const form = event.currentTarget;
-    const invalid: Record<string, string> = {};
+
+    const invalid: Record<string, string> =
+      {};
 
     /*
-     * Location is controlled by the autocomplete instead of free-text
-     * city/state inputs. City and state are still required by the business
-     * API, so validate the structured location directly.
+     * Normal HTML validation remains responsible for
+     * business-form requirements.
+     *
+     * Autocomplete selection itself does not require city,
+     * county or ZIP.
      */
-    if (!location.city.trim() || !location.state.trim()) {
-      invalid.location =
-        "Please select a valid business location from the suggestions.";
-    }
-
-    for (const control of Array.from(form.elements)) {
+    for (const control of Array.from(
+      form.elements,
+    )) {
       if (
         !(
           control instanceof HTMLInputElement ||
@@ -250,72 +376,138 @@ export default function BusinessEditor({
       }
 
       if (!control.validity.valid) {
-        invalid[control.name] = control.validationMessage;
+        invalid[control.name] =
+          control.validationMessage;
       } else if (
         control.required &&
         control.type !== "file" &&
         !control.value.trim()
       ) {
-        invalid[control.name] = "Please enter a value.";
+        invalid[control.name] =
+          "Please enter a value.";
       }
     }
 
-    if (!business && !savedDraft.current && !photo) {
-      invalid.photo = "Please choose a business photo.";
+    /*
+     * State is the highest-level requirement for a selected
+     * autocomplete location.
+     */
+    if (!location.state.trim()) {
+      invalid.state =
+        "Please select or enter a state.";
+    }
+
+    /*
+     * The current business contract/form requires city when
+     * the business is saved.
+     *
+     * A suggestion without a city can still be selected.
+     * The user can then enter the city manually.
+     */
+    if (!location.city.trim()) {
+      invalid.city =
+        "Please enter the business city.";
+    }
+
+    /*
+     * County and ZIP remain optional.
+     */
+    if (!business && !photo) {
+      invalid.photo =
+        "Please choose a business photo.";
     }
 
     if (Object.keys(invalid).length) {
-      setError("Please correct the highlighted fields before saving.");
+      setError(
+        "Please correct the highlighted fields before saving.",
+      );
+
       setFieldErrors(invalid);
+
       return;
     }
 
-    const data = new FormData(form);
+    const data = new FormData(
+      event.currentTarget,
+    );
 
     const text = (key: string) =>
       String(data.get(key) ?? "").trim();
 
     const integer = (key: string) =>
-      text(key) === "" ? null : Number(text(key));
+      text(key) === ""
+        ? null
+        : Number(text(key));
 
     const fields: BusinessFields = {
-      legal_name: text("legal_name") || null,
-      dba: text("dba") || null,
+      legal_name:
+        text("legal_name") || null,
+
+      dba:
+        text("dba") || null,
 
       /*
-       * Structured values come directly from the selected autocomplete
-       * result rather than duplicated free-text inputs.
+       * Use the structured location state directly.
        */
       city: location.city.trim(),
-      state: location.state.trim(),
-      county: location.county.trim() || null,
-      zip_code: location.zip_code.trim() || null,
 
-      business_type: text("business_type"),
+      state: location.state.trim(),
+
+      county:
+        location.county.trim() || null,
+
+      zip_code:
+        location.zip_code.trim() || null,
+
+      business_type:
+        text("business_type"),
+
       industry,
+
       sub_industry: subIndustry,
+
       business_model: businessModel,
 
-      years_in_operation: integer("years_in_operation"),
-      number_of_locations: integer("number_of_locations"),
-      number_of_routes: integer("number_of_routes"),
+      years_in_operation:
+        integer("years_in_operation"),
 
-      arr: text("arr") || null,
-      sde: text("sde") || null,
-      asking_price: text("asking_price") || null,
-      customer_concentration: text("customer_concentration") || null,
+      number_of_locations:
+        integer("number_of_locations"),
 
-      owner_involvement_hours_per_week: integer(
-        "owner_involvement_hours_per_week",
-      ),
+      number_of_routes:
+        integer("number_of_routes"),
 
-      transition_training_days: integer("transition_training_days"),
+      arr:
+        text("arr") || null,
 
-      deal_preference: (text("deal_preference") ||
-        null) as BusinessFields["deal_preference"],
+      sde:
+        text("sde") || null,
+
+      asking_price:
+        text("asking_price") || null,
+
+      customer_concentration:
+        text("customer_concentration") ||
+        null,
+
+      owner_involvement_hours_per_week:
+        integer(
+          "owner_involvement_hours_per_week",
+        ),
+
+      transition_training_days:
+        integer(
+          "transition_training_days",
+        ),
+
+      deal_preference:
+        (text("deal_preference") ||
+          null) as BusinessFields["deal_preference"],
 
       preferred_sale_timeline:
-        text("preferred_sale_timeline") || null,
+        text(
+          "preferred_sale_timeline",
+        ) || null,
     };
 
     submitting.current = true;
@@ -324,70 +516,90 @@ export default function BusinessEditor({
     setError(null);
     setFieldErrors({});
 
-    let stage: "details" | "photo" | "refresh" = "details";
+    let stage:
+      | "details"
+      | "photo"
+      | "refresh" = "details";
 
     setProgress(
-      business || savedDraft.current ? "Saving…" : "Creating…",
+      business || savedDraft.current
+        ? "Saving…"
+        : "Creating…",
     );
 
     try {
-      creationKey.current ??= crypto.randomUUID();
+      creationKey.current ??=
+        crypto.randomUUID();
 
-      const existing = business ?? savedDraft.current;
+      const existing =
+        business ?? savedDraft.current;
 
       let saved = existing
-        ? await updateSellerBusiness(existing.id, fields)
-        : await createSellerBusiness(fields, creationKey.current);
+        ? await updateSellerBusiness(
+            existing.id,
+            fields,
+          )
+        : await createSellerBusiness(
+            fields,
+            creationKey.current,
+          );
 
       if (!saved?.id) {
-        throw new Error("Missing business confirmation");
+        throw new Error(
+          "Missing business confirmation",
+        );
       }
 
-      /*
-       * Remember the persisted business immediately. If the image upload
-       * fails, retrying will update this business instead of creating
-       * another one.
-       */
       savedDraft.current = saved;
 
       if (photo) {
         stage = "photo";
-        setProgress("Uploading photo…");
 
-        const imageResult = await saveBusinessImage(saved.id, photo);
+        setProgress(
+          "Uploading photo…",
+        );
 
-        if (!imageResult?.id) {
-          throw new Error("Missing photo confirmation");
+        saved =
+          await saveBusinessImage(
+            saved.id,
+            photo,
+          );
+
+        if (!saved?.id) {
+          throw new Error(
+            "Missing photo confirmation",
+          );
         }
+
+        savedDraft.current = saved;
       }
 
       /*
-       * Do not trust a potentially partial POST/PUT/image response as the
-       * final frontend state. Read the business back from the backend so
-       * the profile/edit screen receives the canonical persisted record.
+       * Preserve the canonical server response.
+       *
+       * The API response is the source of truth after save.
        */
       stage = "refresh";
-      setProgress("Confirming saved business…");
+      setProgress(
+        "Confirming saved business…",
+      );
 
-      const persisted = await getSellerBusiness(saved.id);
+      onSaved(saved);
+    } catch (error) {
+      const status =
+        axios.isAxiosError(error)
+          ? error.response?.status
+          : undefined;
 
-      if (!persisted?.id) {
-        throw new Error("Could not confirm the saved business");
-      }
+      const validation: Record<
+        string,
+        string
+      > = {};
 
-      savedDraft.current = persisted;
-
-      onSaved(persisted);
-    } catch (saveError) {
-      const status = axios.isAxiosError(saveError)
-        ? saveError.response?.status
-        : undefined;
-
-      const validation: Record<string, string> = {};
-
-      const detail = axios.isAxiosError(saveError)
-        ? saveError.response?.data?.detail
-        : undefined;
+      const detail =
+        axios.isAxiosError(error)
+          ? error.response?.data?.detail
+          : undefined;
 
       if (
         status === 422 &&
@@ -410,58 +622,51 @@ export default function BusinessEditor({
         }
       }
 
-      let message: string;
+      const message =
+        status === 401
+          ? "Your session has expired. Sign in again before retrying."
+          : status === 403
+            ? "Your account does not have permission to save this business."
+            : status === 422
+              ? "Some business details were not accepted. Check the highlighted fields and your industry/sub-industry selection."
+              : status === 409
+                ? "The business could not be saved because of a conflict. Review your details and retry."
+                : status === 429
+                  ? "Too many requests. Please wait a moment and retry."
+                  : status &&
+                      status >= 500
+                    ? "The service is temporarily unavailable. Please try again."
+                    : axios.isAxiosError(
+                          error,
+                        ) &&
+                        !error.response
+                      ? "We could not reach the service. Check your connection and retry."
+                      : "We could not save your business. Please try again.";
 
-      if (stage === "refresh") {
-        message =
-          "The business was saved, but MatchBook could not reload the saved record. Retry to confirm the saved information.";
-      } else if (status === 401) {
-        message =
-          "Your session has expired. Sign in again before retrying.";
-      } else if (status === 403) {
-        message =
-          "Your account does not have permission to save this business.";
-      } else if (status === 422) {
-        message =
-          "Some business details were not accepted. Check the highlighted fields and your industry/sub-industry selection.";
-      } else if (status === 409) {
-        message =
-          "The business could not be saved because of a conflict. Review your details and retry.";
-      } else if (status === 429) {
-        message =
-          "Too many requests. Please wait a moment and retry.";
-      } else if (status && status >= 500) {
-        message =
-          "The service is temporarily unavailable. Please try again.";
-      } else if (
-        axios.isAxiosError(saveError) &&
-        !saveError.response
-      ) {
-        message =
-          "We could not reach the service. Check your connection and retry.";
-      } else {
-        message =
-          "We could not save your business. Please try again.";
-      }
+      setError(
+        (stage === "photo"
+          ? "Business details were saved, but the photo upload did not finish. Retry saving to finish without creating another business. "
+          : "") + message,
+      );
 
-      if (stage === "photo") {
-        message =
-          "Business details were saved, but the photo upload did not finish. Retry saving to finish without creating another business. " +
-          message;
-      }
-
-      setError(message);
       setFieldErrors(validation);
 
-      if (process.env.NODE_ENV === "development") {
-        console.warn("Business save failed", {
-          stage,
-          status,
-          code: axios.isAxiosError(saveError)
-            ? saveError.code
-            : "INVALID_RESPONSE",
-          detail,
-        });
+      if (
+        process.env.NODE_ENV ===
+        "development"
+      ) {
+        console.warn(
+          "Business save failed",
+          {
+            stage,
+            status,
+            code: axios.isAxiosError(
+              error,
+            )
+              ? error.code
+              : "INVALID_RESPONSE",
+          },
+        );
       }
     } finally {
       submitting.current = false;
@@ -473,45 +678,60 @@ export default function BusinessEditor({
   const label = (value: string) =>
     value.replaceAll("_", " ");
 
-  const fieldFeedback = (key: string) =>
-    fieldErrors[key] ? (
+  const fieldFeedback = (
+    key: string,
+  ) =>
+    fieldErrors[key] && (
       <span
         id={`business-${key}-error`}
         className="business-editor__field-error"
       >
         {fieldErrors[key]}
       </span>
-    ) : null;
+    );
 
-  const accessibility = (key: string) => ({
-    "aria-invalid": !!fieldErrors[key],
-    "aria-describedby": fieldErrors[key]
-      ? `business-${key}-error`
-      : undefined,
+  const accessibility = (
+    key: string,
+  ) => ({
+    "aria-invalid":
+      !!fieldErrors[key],
+
+    "aria-describedby":
+      fieldErrors[key]
+        ? `business-${key}-error`
+        : undefined,
   });
 
   return (
     <section className="business-editor">
       <h2>
-        {business ? "Edit Business Profile" : "Create New Business"}
+        {business
+          ? "Edit Business Profile"
+          : "Create New Business"}
       </h2>
 
       <p>
-        Business details only. Your personal information is managed in
+        Business details only. Your
+        personal information is managed in
         Account.
       </p>
 
-      {!loading && (!industries.length || !models.length) && (
-        <Button
-          type="button"
-          onClick={() => {
-            setLoading(true);
-            setRetry((value) => value + 1);
-          }}
-        >
-          Retry loading options
-        </Button>
-      )}
+      {!loading &&
+        (!industries.length ||
+          !models.length) && (
+          <Button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+
+              setRetry(
+                (value) => value + 1,
+              );
+            }}
+          >
+            Retry loading options
+          </Button>
+        )}
 
       {loading && (
         <ContentSkeleton
@@ -535,7 +755,7 @@ export default function BusinessEditor({
         >
           <label>
             Business photo
-            {!business && !savedDraft.current ? " *" : ""}
+            {!business ? " *" : ""}
 
             <input
               name="photo"
@@ -543,65 +763,85 @@ export default function BusinessEditor({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               required={
-                !business &&
-                !savedDraft.current &&
-                !photo
+                !business && !photo
               }
               onChange={(event) => {
-                const file = event.target.files?.[0];
+                const file =
+                  event.target.files?.[0];
 
                 if (!file) {
                   return;
                 }
 
                 try {
-                  validateBusinessImage(file);
+                  validateBusinessImage(
+                    file,
+                  );
 
-                  if (previewUrl.current) {
-                    URL.revokeObjectURL(previewUrl.current);
-                  }
-
-                  previewUrl.current =
-                    URL.createObjectURL(file);
-
-                  setPreview(previewUrl.current);
-                  setPhoto(file);
-                  setError(null);
-
-                  setFieldErrors((current) => ({
-                    ...current,
-                    photo: "",
-                  }));
-                } catch (imageError) {
-                  event.target.value = "";
-
-                  setPhoto(null);
-                  setPreview(null);
-
-                  if (previewUrl.current) {
+                  if (
+                    previewUrl.current
+                  ) {
                     URL.revokeObjectURL(
                       previewUrl.current,
                     );
                   }
 
-                  previewUrl.current = null;
+                  previewUrl.current =
+                    URL.createObjectURL(
+                      file,
+                    );
+
+                  setPreview(
+                    previewUrl.current,
+                  );
+
+                  setPhoto(file);
+                  setError(null);
+
+                  setFieldErrors(
+                    (current) => ({
+                      ...current,
+                      photo: "",
+                    }),
+                  );
+                } catch (error) {
+                  event.target.value = "";
+
+                  setPhoto(null);
+                  setPreview(null);
+
+                  if (
+                    previewUrl.current
+                  ) {
+                    URL.revokeObjectURL(
+                      previewUrl.current,
+                    );
+                  }
+
+                  previewUrl.current =
+                    null;
 
                   setError(
                     "Please choose a supported business photo.",
                   );
 
-                  setFieldErrors((current) => ({
-                    ...current,
-                    photo:
-                      sellerErrorMessage(imageError),
-                  }));
+                  setFieldErrors(
+                    (current) => ({
+                      ...current,
+                      photo:
+                        sellerErrorMessage(
+                          error,
+                        ),
+                    }),
+                  );
                 }
               }}
             />
 
             <span>
-              JPG, PNG, or WebP up to 10MB. Use a photo of
-              your business.
+              JPG, PNG, or WebP up to
+              10MB. Use a photo of your
+              business.
             </span>
 
             {fieldFeedback("photo")}
@@ -615,114 +855,113 @@ export default function BusinessEditor({
             />
           )}
 
-          <div
-            className={
-              fieldErrors.location
-                ? "business-editor__location business-editor__location--error"
-                : "business-editor__location"
+          <USLocationAutocomplete
+            label="Business location"
+            value={locationQuery}
+            countryCode={null}
+            selectedLocations={
+              selectedLocations
             }
-          >
-            <USLocationAutocomplete
-              label="Business location"
-              value={locationQuery}
-              countryCode="US"
-              selectedLocations={selectedLocations}
-              onChange={setLocationQuery}
-              onSelect={selectLocation}
-              onRemove={removeLocation}
-              disabled={saving || loading}
-            />
+            onChange={setLocationQuery}
+            onSelect={selectLocation}
+            onRemove={removeLocation}
+            disabled={
+              saving || loading
+            }
+          />
 
-            {fieldFeedback("location")}
-
-            <p className="business-editor__location-help">
-              Search for your business location and select it
-              from the suggestions.
-            </p>
-
-            {location.city && location.state && (
-              <div className="business-editor__selected-location">
-                <div>
-                  <span>City</span>
-                  <strong>{location.city}</strong>
-                </div>
-
-                <div>
-                  <span>State</span>
-                  <strong>{location.state}</strong>
-                </div>
-
-                {location.county && (
-                  <div>
-                    <span>County</span>
-                    <strong>{location.county}</strong>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <label className="business-editor__zip">
-              ZIP code
-              <input
-                name="zip_code_display"
-                type="text"
-                maxLength={20}
-                value={location.zip_code}
-                disabled={saving || loading}
-                onChange={(event) =>
-                  setLocation((current) => ({
-                    ...current,
-                    zip_code: event.target.value,
-                  }))
-                }
-              />
-              <span>
-                Add or correct the ZIP code if the selected
-                location does not provide one.
-              </span>
-            </label>
-          </div>
+          <p className="business-editor__location-help">
+            Select any location that
+            includes a state. If the
+            selected result does not
+            include all business location
+            details, complete the missing
+            fields below.
+          </p>
 
           <div className="seller-fields">
-            {textFields.map(([key, title, max]) => (
-              <label key={key}>
-                {title}
+            {textFields.map(
+              ([key, title, max]) => (
+                <label key={key}>
+                  {title}
+                  {key === "city" ||
+                  key === "state"
+                    ? " *"
+                    : ""}
 
-                <input
-                  name={key}
-                  {...accessibility(key)}
-                  defaultValue={business?.[key] ?? ""}
-                  maxLength={max}
-                />
+                  <input
+                    name={key}
+                    {...accessibility(key)}
+                    {...(locationFields.some(
+                      (field) =>
+                        field === key,
+                    )
+                      ? {
+                          value:
+                            location[
+                              key as keyof typeof location
+                            ],
 
-                {fieldFeedback(key)}
-              </label>
-            ))}
+                          onChange: (
+                            event: React.ChangeEvent<HTMLInputElement>,
+                          ) =>
+                            updateLocationField(
+                              key as (typeof locationFields)[number],
+                              event.target
+                                .value,
+                            ),
+                        }
+                      : {
+                          defaultValue:
+                            business?.[
+                              key
+                            ] ?? "",
+                        })}
+                    maxLength={max}
+                    required={
+                      key === "city" ||
+                      key === "state"
+                    }
+                  />
+
+                  {fieldFeedback(key)}
+                </label>
+              ),
+            )}
 
             <label>
               Business type *
 
               <select
                 name="business_type"
-                {...accessibility("business_type")}
+                {...accessibility(
+                  "business_type",
+                )}
                 required
-                defaultValue={business?.business_type ?? ""}
+                defaultValue={
+                  business?.business_type ??
+                  ""
+                }
               >
                 <option value="">
                   Select business type
                 </option>
 
-                {BUSINESS_TYPES.map((value) => (
-                  <option
-                    key={value}
-                    value={value}
-                  >
-                    {label(value)}
-                  </option>
-                ))}
+                {BUSINESS_TYPES.map(
+                  (value) => (
+                    <option
+                      key={value}
+                      value={value}
+                    >
+                      {label(value)}
+                    </option>
+                  ),
+                )}
               </select>
 
-              {fieldFeedback("business_type")}
+              {fieldFeedback(
+                "business_type",
+              )}
             </label>
 
             <label>
@@ -730,32 +969,33 @@ export default function BusinessEditor({
 
               <select
                 name="industry"
-                {...accessibility("industry")}
+                {...accessibility(
+                  "industry",
+                )}
                 required
                 value={industry}
                 onChange={(event) => {
-                  setIndustry(event.target.value);
-                  setSubIndustry("");
+                  setIndustry(
+                    event.target.value,
+                  );
 
-                  setFieldErrors((current) => ({
-                    ...current,
-                    industry: "",
-                    sub_industry: "",
-                  }));
+                  setSubIndustry("");
                 }}
               >
                 <option value="">
                   Select industry
                 </option>
 
-                {industries.map((option) => (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                  >
-                    {option.label}
-                  </option>
-                ))}
+                {industries.map(
+                  (option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </option>
+                  ),
+                )}
               </select>
 
               {fieldFeedback("industry")}
@@ -766,18 +1006,17 @@ export default function BusinessEditor({
 
               <select
                 name="sub_industry"
-                {...accessibility("sub_industry")}
+                {...accessibility(
+                  "sub_industry",
+                )}
                 required
                 disabled={!industry}
                 value={subIndustry}
-                onChange={(event) => {
-                  setSubIndustry(event.target.value);
-
-                  setFieldErrors((current) => ({
-                    ...current,
-                    sub_industry: "",
-                  }));
-                }}
+                onChange={(event) =>
+                  setSubIndustry(
+                    event.target.value,
+                  )
+                }
               >
                 <option value="">
                   Select sub-industry
@@ -786,19 +1025,28 @@ export default function BusinessEditor({
                 {industries
                   .find(
                     (option) =>
-                      option.value === industry,
+                      option.value ===
+                      industry,
                   )
-                  ?.sub_industries.map((option) => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </option>
-                  ))}
+                  ?.sub_industries.map(
+                    (option) => (
+                      <option
+                        key={
+                          option.value
+                        }
+                        value={
+                          option.value
+                        }
+                      >
+                        {option.label}
+                      </option>
+                    ),
+                  )}
               </select>
 
-              {fieldFeedback("sub_industry")}
+              {fieldFeedback(
+                "sub_industry",
+              )}
             </label>
 
             <label>
@@ -806,37 +1054,46 @@ export default function BusinessEditor({
 
               <select
                 name="business_model"
-                {...accessibility("business_model")}
+                {...accessibility(
+                  "business_model",
+                )}
                 required
                 value={businessModel}
-                onChange={(event) => {
-                  setBusinessModel(event.target.value);
-
-                  setFieldErrors((current) => ({
-                    ...current,
-                    business_model: "",
-                  }));
-                }}
+                onChange={(event) =>
+                  setBusinessModel(
+                    event.target.value,
+                  )
+                }
               >
                 <option value="">
                   Select business model
                 </option>
 
-                {models.map((option) => (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                  >
-                    {option.label}
-                  </option>
-                ))}
+                {models.map(
+                  (option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </option>
+                  ),
+                )}
               </select>
 
-              {fieldFeedback("business_model")}
+              {fieldFeedback(
+                "business_model",
+              )}
             </label>
 
             {numericFields.map(
-              ([key, title, min, max, step]) => (
+              ([
+                key,
+                title,
+                min,
+                max,
+                step,
+              ]) => (
                 <label key={key}>
                   {title}
 
@@ -847,7 +1104,10 @@ export default function BusinessEditor({
                     min={min}
                     max={max}
                     step={step}
-                    defaultValue={business?.[key] ?? ""}
+                    defaultValue={
+                      business?.[key] ??
+                      ""
+                    }
                   />
 
                   {fieldFeedback(key)}
@@ -860,48 +1120,48 @@ export default function BusinessEditor({
 
               <select
                 name="deal_preference"
-                {...accessibility("deal_preference")}
+                {...accessibility(
+                  "deal_preference",
+                )}
                 defaultValue={
-                  business?.deal_preference ?? ""
+                  business?.deal_preference ??
+                  ""
                 }
               >
                 <option value="">
                   Not specified
                 </option>
+
                 <option value="cash">
                   Cash
                 </option>
+
                 <option value="financing">
                   Financing
                 </option>
+
                 <option value="either">
                   Either
                 </option>
               </select>
 
-              {fieldFeedback("deal_preference")}
+              {fieldFeedback(
+                "deal_preference",
+              )}
             </label>
           </div>
 
-          <div className="seller-actions">
-            <Button
-              type="submit"
-              disabled={saving}
-            >
-              {saving
-                ? "Saving…"
-                : business
-                  ? "Save Business"
-                  : "Create Business"}
-            </Button>
-          </div>
+          <Button type="submit">
+            {saving
+              ? "Saving…"
+              : business
+                ? "Save Business"
+                : "Create Business"}
+          </Button>
         </fieldset>
 
         {saving && (
-          <p
-            className="business-editor__progress"
-            role="status"
-          >
+          <p role="status">
             {progress}
           </p>
         )}
@@ -915,34 +1175,28 @@ export default function BusinessEditor({
           >
             <p>{error}</p>
 
-            {Object.entries(fieldErrors)
-              .filter(([, message]) => message)
+            {Object.entries(
+              fieldErrors,
+            )
+              .filter(
+                ([, message]) => message,
+              )
               .map(([key]) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => {
-                    if (key === "location") {
-                      const input =
-                        errorSummary.current
-                          ?.closest("form")
-                          ?.querySelector(
-                            ".us-location-autocomplete__input-wrapper input",
-                          );
-
-                      if (input instanceof HTMLElement) {
-                        input.focus();
-                      }
-
-                      return;
-                    }
-
                     const field =
                       errorSummary.current
                         ?.closest("form")
-                        ?.elements.namedItem(key);
+                        ?.elements.namedItem(
+                          key,
+                        );
 
-                    if (field instanceof HTMLElement) {
+                    if (
+                      field instanceof
+                      HTMLElement
+                    ) {
                       field.focus();
                     }
                   }}
@@ -950,9 +1204,7 @@ export default function BusinessEditor({
                   Review{" "}
                   {key === "photo"
                     ? "business photo"
-                    : key === "location"
-                      ? "business location"
-                      : label(key)}
+                    : label(key)}
                 </button>
               ))}
           </div>
@@ -964,7 +1216,9 @@ export default function BusinessEditor({
           disabled={saving}
           onClick={() => {
             if (savedDraft.current) {
-              onSaved(savedDraft.current);
+              onSaved(
+                savedDraft.current,
+              );
             } else {
               onCancel();
             }
