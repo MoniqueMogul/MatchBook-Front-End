@@ -12,6 +12,7 @@ import AcquisitionPreferencesSection, {
 } from "./AcquisitionPreferencesSection";
 import FinanceEdit from "./FinanceEdit";
 import ProfileEditHeader from "./ProfileEditHeader";
+import ProfileSkeleton from "./ProfileSkeleton";
 import ProfileImageModal from "./ProfileImageModal";
 import ProfileTabs, {
   type ProfileTab,
@@ -1171,7 +1172,7 @@ useEffect(() => {
     return (
       <main className="buyer-profile-edit">
         <div className="buyer-profile-edit__content">
-          <p>Loading profile...</p>
+          <ProfileSkeleton />
         </div>
       </main>
     );

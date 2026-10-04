@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  forwardRef,
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
   type KeyboardEvent,
@@ -72,8 +74,13 @@ export type AcquisitionPreferenceData = {
   timeline?: TimelineOption;
 };
 
+export interface AcquisitionPreferencesSectionHandle {
+  submit: () => Promise<boolean>;
+}
+
 interface AcquisitionPreferencesSectionProps {
   mode?: "edit" | "onboarding";
+  showActions?: boolean;
 
   initialTargetIndustryPreferences?: TargetIndustryPreference[];
   initialTargetBusinessModels?: string[];
@@ -98,7 +105,7 @@ interface AcquisitionPreferencesSectionProps {
   initialTimeline?: TimelineOption;
 
   onBack?: () => void;
-  onContinue?: (data: AcquisitionPreferenceData) => void;
+  onContinue?: (data: AcquisitionPreferenceData) => void | Promise<void>;
   onDataChange?: (data: AcquisitionPreferenceData) => void;
   disabled?: boolean;
 }
@@ -554,6 +561,261 @@ function SingleSelect({
 }
 
 /* ------------------------------------------------
+ * Financial amount input
+ * ------------------------------------------------
+ *
+ * The exact number input remains the source value.
+ * The slider is only a faster way to move through
+ * a very large financial range.
+ *
+ * Slider position is logarithmic rather than linear,
+ * so users can move precisely through smaller values
+ * while still reaching $100M quickly.
+ */
+
+const FINANCIAL_SLIDER_STEPS = 1000;
+const FINANCIAL_SLIDER_MIN_NONZERO = 1_000;
+const FINANCIAL_SLIDER_MAX_AMOUNT = 100_000_000;
+
+function financialAmountToSlider(
+  value: string,
+): number {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return 0;
+  }
+
+  const clampedAmount = Math.min(
+    Math.max(
+      amount,
+      FINANCIAL_SLIDER_MIN_NONZERO,
+    ),
+    FINANCIAL_SLIDER_MAX_AMOUNT,
+  );
+
+  const minLog = Math.log(
+    FINANCIAL_SLIDER_MIN_NONZERO,
+  );
+  const maxLog = Math.log(
+    FINANCIAL_SLIDER_MAX_AMOUNT,
+  );
+
+  const ratio =
+    (Math.log(clampedAmount) - minLog) /
+    (maxLog - minLog);
+
+  return Math.max(
+    1,
+    Math.round(
+      ratio *
+        (FINANCIAL_SLIDER_STEPS - 1) +
+        1,
+    ),
+  );
+}
+
+function sliderToFinancialAmount(
+  sliderValue: number,
+): number {
+  if (sliderValue <= 0) {
+    return 0;
+  }
+
+  const ratio =
+    (sliderValue - 1) /
+    (FINANCIAL_SLIDER_STEPS - 1);
+
+  const minLog = Math.log(
+    FINANCIAL_SLIDER_MIN_NONZERO,
+  );
+  const maxLog = Math.log(
+    FINANCIAL_SLIDER_MAX_AMOUNT,
+  );
+
+  const rawAmount = Math.exp(
+    minLog + ratio * (maxLog - minLog),
+  );
+
+  let increment = 1_000;
+
+  if (rawAmount >= 50_000_000) {
+    increment = 1_000_000;
+  } else if (rawAmount >= 10_000_000) {
+    increment = 500_000;
+  } else if (rawAmount >= 1_000_000) {
+    increment = 100_000;
+  } else if (rawAmount >= 100_000) {
+    increment = 10_000;
+  }
+
+  return Math.min(
+    FINANCIAL_SLIDER_MAX_AMOUNT,
+    Math.round(rawAmount / increment) *
+      increment,
+  );
+}
+
+function formatCompactCurrency(
+  value: string | number,
+): string {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) {
+    return "$0";
+  }
+
+  if (amount >= 1_000_000_000) {
+    return `$${(
+      amount / 1_000_000_000
+    ).toLocaleString(undefined, {
+      maximumFractionDigits: 1,
+    })}B`;
+  }
+
+  if (amount >= 1_000_000) {
+    return `$${(
+      amount / 1_000_000
+    ).toLocaleString(undefined, {
+      maximumFractionDigits: 1,
+    })}M`;
+  }
+
+  if (amount >= 1_000) {
+    return `$${(
+      amount / 1_000
+    ).toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    })}K`;
+  }
+
+  return `$${amount.toLocaleString()}`;
+}
+
+interface FinancialAmountFieldProps {
+  id: string;
+  label: string;
+  value: string;
+  error?: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  required?: boolean;
+  helperText?: string;
+}
+
+function FinancialAmountField({
+  id,
+  label,
+  value,
+  error,
+  onChange,
+  disabled = false,
+  required = false,
+  helperText,
+}: FinancialAmountFieldProps) {
+  const sliderValue =
+    financialAmountToSlider(value);
+
+  return (
+    <div className="acquisition-preferences-section__field acquisition-preferences-section__financial-field">
+      <label
+        htmlFor={id}
+        className="acquisition-preferences-section__label"
+      >
+        {label}
+
+        {required && (
+          <span
+            className="acquisition-preferences-section__required"
+            aria-hidden="true"
+          >
+            *
+          </span>
+        )}
+      </label>
+
+      {helperText && (
+        <p className="acquisition-preferences-section__financial-helper">
+          {helperText}
+        </p>
+      )}
+
+      <div className="acquisition-preferences-section__financial-input-wrap">
+        <span
+          className="acquisition-preferences-section__currency-prefix"
+          aria-hidden="true"
+        >
+          $
+        </span>
+
+        <input
+          id={id}
+          type="number"
+          min="0"
+          step="1"
+          value={value}
+          onChange={(event) =>
+            onChange(event.target.value)
+          }
+          placeholder="Enter exact amount"
+          disabled={disabled}
+          className="acquisition-preferences-section__input acquisition-preferences-section__financial-input"
+          aria-invalid={Boolean(error)}
+        />
+      </div>
+
+      <div className="acquisition-preferences-section__slider-wrap">
+        <input
+          type="range"
+          min="0"
+          max={FINANCIAL_SLIDER_STEPS}
+          step="1"
+          value={sliderValue}
+          onChange={(event) =>
+            onChange(
+              String(
+                sliderToFinancialAmount(
+                  Number(event.target.value),
+                ),
+              ),
+            )
+          }
+          disabled={disabled}
+          className="acquisition-preferences-section__financial-slider"
+          aria-label={`${label} quick amount selector`}
+        />
+
+        <div
+          className="acquisition-preferences-section__slider-labels"
+          aria-hidden="true"
+        >
+          <span>$0</span>
+          <span>$100K</span>
+          <span>$1M</span>
+          <span>$10M</span>
+          <span>$100M</span>
+        </div>
+      </div>
+
+      <div className="acquisition-preferences-section__financial-value">
+        {value.trim() === ""
+          ? "No amount selected"
+          : formatCompactCurrency(value)}
+      </div>
+
+      {error && (
+        <p
+          className="acquisition-preferences-section__field-error"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------
  * Main Component
  * ------------------------------------------------ */
 
@@ -561,8 +823,12 @@ const EMPTY_INDUSTRIES: TargetIndustryPreference[] = [];
 const EMPTY_STRINGS: string[] = [];
 const EMPTY_LOCATIONS: ApiTargetLocation[] = [];
 
-export default function AcquisitionPreferencesSection({
+const AcquisitionPreferencesSection = forwardRef<
+  AcquisitionPreferencesSectionHandle,
+  AcquisitionPreferencesSectionProps
+>(function AcquisitionPreferencesSection({
   mode = "edit",
+  showActions = true,
 
   initialTargetIndustryPreferences = EMPTY_INDUSTRIES,
   initialTargetBusinessModels = EMPTY_STRINGS,
@@ -590,7 +856,7 @@ export default function AcquisitionPreferencesSection({
   onContinue,
   onDataChange,
   disabled = false,
-}: AcquisitionPreferencesSectionProps) {
+}: AcquisitionPreferencesSectionProps, ref) {
   /* ------------------------------------------------
    * State
    * ------------------------------------------------ */
@@ -857,6 +1123,10 @@ export default function AcquisitionPreferencesSection({
  *   this effect hydrates the form
  */
 useEffect(() => {
+  if (mode === "onboarding") {
+    return;
+  }
+
   setTargetIndustryPreferences(
     initialTargetIndustryPreferences,
   );
@@ -957,6 +1227,7 @@ useEffect(() => {
 
   setFieldErrors({});
 }, [
+  mode,
   initialTargetIndustryPreferences,
   initialTargetBusinessModels,
   initialTargetBusinessTypes,
@@ -1469,7 +1740,7 @@ useEffect(() => {
    * - sub-industries
    * ------------------------------------------------ */
 
-  const handleContinue = () => {
+  const handleContinue = async (): Promise<boolean> => {
     const errors: Partial<Record<FieldErrorKey, string>> = {};
 
     if (targetIndustryPreferences.length === 0) {
@@ -1605,7 +1876,7 @@ useEffect(() => {
     setFieldErrors(errors);
 
     if (Object.keys(errors).length > 0) {
-      return;
+      return false;
     }
 
     const trainingDays = Number.parseInt(
@@ -1616,7 +1887,7 @@ useEffect(() => {
     const customerConcentrationValue =
       customerConcentration === "yes";
 
-    onContinue?.({
+    await onContinue?.({
       targetIndustryPreferences,
       targetBusinessModels,
       targetBusinessTypes,
@@ -1670,7 +1941,16 @@ useEffect(() => {
           ? undefined
           : timeline,
     });
+
+    return true;
   };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      submit: handleContinue,
+    }),
+  );
 
   /* ------------------------------------------------
    * Render
@@ -2036,234 +2316,84 @@ useEffect(() => {
         </div>
 
         {/* ------------------------------------------------
-         * Minimum ARR
-         * ------------------------------------------------ */}
-
-        <div className="acquisition-preferences-section__field">
-          <label
-            htmlFor="minimum-arr"
-            className="acquisition-preferences-section__label"
-          >
-            Minimum ARR
-
-            <span
-              className="acquisition-preferences-section__required"
-              aria-hidden="true"
-            >
-              *
-            </span>
-          </label>
-
-          <input
-            id="minimum-arr"
-            type="number"
-            min="0"
-            value={minimumARR}
-            onChange={(event) => {
-              setMinimumARR(event.target.value);
-              clearFieldError("minimumARR");
-              clearFieldError("preferredARR");
-            }}
-            placeholder="Value"
-            disabled={disabled}
-            className="acquisition-preferences-section__input"
-            aria-invalid={Boolean(fieldErrors.minimumARR)}
-          />
-
-          {fieldErrors.minimumARR && (
-            <p
-              className="acquisition-preferences-section__field-error"
-              role="alert"
-            >
-              {fieldErrors.minimumARR}
-            </p>
-          )}
-        </div>
-
-        {/* ------------------------------------------------
-         * Minimum SDE
-         * ------------------------------------------------ */}
-
-        <div className="acquisition-preferences-section__field">
-          <label
-            htmlFor="minimum-sde"
-            className="acquisition-preferences-section__label"
-          >
-            Minimum SDE
-
-            <span
-              className="acquisition-preferences-section__required"
-              aria-hidden="true"
-            >
-              *
-            </span>
-          </label>
-
-          <input
-            id="minimum-sde"
-            type="number"
-            min="0"
-            value={minimumSDE}
-            onChange={(event) => {
-              setMinimumSDE(event.target.value);
-              clearFieldError("minimumSDE");
-              clearFieldError("preferredSDE");
-            }}
-            placeholder="Value"
-            disabled={disabled}
-            className="acquisition-preferences-section__input"
-            aria-invalid={Boolean(fieldErrors.minimumSDE)}
-          />
-
-          {fieldErrors.minimumSDE && (
-            <p
-              className="acquisition-preferences-section__field-error"
-              role="alert"
-            >
-              {fieldErrors.minimumSDE}
-            </p>
-          )}
-        </div>
-
-        {/* ------------------------------------------------
+         * Financial targets
+         *
+         * Ordered as natural pairs:
+         * Minimum ARR -> Preferred ARR
+         * Minimum SDE -> Preferred SDE
          * Maximum Purchase Budget
          * ------------------------------------------------ */}
 
-        <div className="acquisition-preferences-section__field">
-          <label
-            htmlFor="maximum-purchase-price"
-            className="acquisition-preferences-section__label"
-          >
-            Maximum Purchase Budget
+        <FinancialAmountField
+          id="minimum-arr"
+          label="Minimum ARR"
+          required
+          value={minimumARR}
+          error={fieldErrors.minimumARR}
+          onChange={(value) => {
+            setMinimumARR(value);
+            clearFieldError("minimumARR");
+            clearFieldError("preferredARR");
+          }}
+          disabled={disabled}
+        />
 
-            <span
-              className="acquisition-preferences-section__required"
-              aria-hidden="true"
-            >
-              *
-            </span>
-          </label>
+        <FinancialAmountField
+          id="preferred-arr"
+          label="Preferred ARR"
+          required
+          helperText="Must be greater than Minimum ARR"
+          value={preferredARR}
+          error={fieldErrors.preferredARR}
+          onChange={(value) => {
+            setPreferredARR(value);
+            clearFieldError("preferredARR");
+          }}
+          disabled={disabled}
+        />
 
-          <input
-            id="maximum-purchase-price"
-            type="number"
-            min="0"
-            value={maximumPurchasePrice}
-            onChange={(event) => {
-              setMaximumPurchasePrice(
-                event.target.value,
-              );
-              clearFieldError("maximumPurchasePrice");
-            }}
-            placeholder="Value"
-            disabled={disabled}
-            className="acquisition-preferences-section__input"
-            aria-invalid={Boolean(
-              fieldErrors.maximumPurchasePrice,
-            )}
-          />
+        <FinancialAmountField
+          id="minimum-sde"
+          label="Minimum SDE"
+          required
+          value={minimumSDE}
+          error={fieldErrors.minimumSDE}
+          onChange={(value) => {
+            setMinimumSDE(value);
+            clearFieldError("minimumSDE");
+            clearFieldError("preferredSDE");
+          }}
+          disabled={disabled}
+        />
 
-          {fieldErrors.maximumPurchasePrice && (
-            <p
-              className="acquisition-preferences-section__field-error"
-              role="alert"
-            >
-              {fieldErrors.maximumPurchasePrice}
-            </p>
-          )}
-        </div>
+        <FinancialAmountField
+          id="preferred-sde"
+          label="Preferred SDE"
+          required
+          helperText="Must be greater than Minimum SDE"
+          value={preferredSDE}
+          error={fieldErrors.preferredSDE}
+          onChange={(value) => {
+            setPreferredSDE(value);
+            clearFieldError("preferredSDE");
+          }}
+          disabled={disabled}
+        />
 
-        {/* ------------------------------------------------
-         * Preferred ARR
-         * ------------------------------------------------ */}
-
-        <div className="acquisition-preferences-section__field">
-          <label
-            htmlFor="preferred-arr"
-            className="acquisition-preferences-section__label"
-          >
-            Preferred ARR (Must be greater than Minimum ARR)
-
-            <span
-              className="acquisition-preferences-section__required"
-              aria-hidden="true"
-            >
-              *
-            </span>
-          </label>
-
-          <input
-            id="preferred-arr"
-            type="number"
-            min="0"
-            value={preferredARR}
-            onChange={(event) => {
-              setPreferredARR(event.target.value);
-              clearFieldError("preferredARR");
-            }}
-            placeholder="Value"
-            disabled={disabled}
-            className="acquisition-preferences-section__input"
-            aria-invalid={Boolean(
-              fieldErrors.preferredARR,
-            )}
-          />
-
-          {fieldErrors.preferredARR && (
-            <p
-              className="acquisition-preferences-section__field-error"
-              role="alert"
-            >
-              {fieldErrors.preferredARR}
-            </p>
-          )}
-        </div>
-
-        {/* ------------------------------------------------
-         * Preferred SDE
-         * ------------------------------------------------ */}
-
-        <div className="acquisition-preferences-section__field">
-          <label
-            htmlFor="preferred-sde"
-            className="acquisition-preferences-section__label"
-          >
-            Preferred SDE (Must be greater than Minimum SDE)
-
-            <span
-              className="acquisition-preferences-section__required"
-              aria-hidden="true"
-            >
-              *
-            </span>
-          </label>
-
-          <input
-            id="preferred-sde"
-            type="number"
-            min="0"
-            value={preferredSDE}
-            onChange={(event) => {
-              setPreferredSDE(event.target.value);
-              clearFieldError("preferredSDE");
-            }}
-            placeholder="Value"
-            disabled={disabled}
-            className="acquisition-preferences-section__input"
-            aria-invalid={Boolean(
-              fieldErrors.preferredSDE,
-            )}
-          />
-
-          {fieldErrors.preferredSDE && (
-            <p
-              className="acquisition-preferences-section__field-error"
-              role="alert"
-            >
-              {fieldErrors.preferredSDE}
-            </p>
-          )}
-        </div>
+        <FinancialAmountField
+          id="maximum-purchase-price"
+          label="Maximum Purchase Budget"
+          required
+          value={maximumPurchasePrice}
+          error={fieldErrors.maximumPurchasePrice}
+          onChange={(value) => {
+            setMaximumPurchasePrice(value);
+            clearFieldError(
+              "maximumPurchasePrice",
+            );
+          }}
+          disabled={disabled}
+        />
 
         {/* ------------------------------------------------
          * Preferred Owner Hours
@@ -2535,45 +2665,49 @@ useEffect(() => {
        * Navigation
        * ------------------------------------------------ */}
 
-      <div className="acquisition-preferences-section__navigation">
-        <button
-          type="button"
-          className="acquisition-preferences-section__navigation-button"
-          onClick={onBack}
-          disabled={disabled}
-          aria-label="Go back to industry experience"
-        >
-          <ChevronLeft
-            size={32}
-            strokeWidth={1.5}
-          />
-        </button>
-
-        {mode ===
-        "onboarding" ? (
-          <button
-            type="button"
-            className="acquisition-preferences-section__navigation-button acquisition-preferences-section__navigation-button--save"
-            onClick={handleContinue}
-            disabled={disabled}
-          >
-            Save &amp; Continue
-          </button>
-        ) : (
+      {showActions && (
+        <div className="acquisition-preferences-section__navigation">
           <button
             type="button"
             className="acquisition-preferences-section__navigation-button"
-            onClick={handleContinue}
+            onClick={onBack}
             disabled={disabled}
-            aria-label="Continue to finances"
+            aria-label="Go back to industry experience"
           >
-            <ChevronRight
+            <ChevronLeft
               size={32}
               strokeWidth={1.5}
             />
           </button>
-        )}
-      </div>
+
+          {mode ===
+          "onboarding" ? (
+            <button
+              type="button"
+              className="acquisition-preferences-section__navigation-button acquisition-preferences-section__navigation-button--save"
+              onClick={handleContinue}
+              disabled={disabled}
+            >
+              Save &amp; Continue
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="acquisition-preferences-section__navigation-button"
+              onClick={handleContinue}
+              disabled={disabled}
+              aria-label="Continue to finances"
+            >
+              <ChevronRight
+                size={32}
+                strokeWidth={1.5}
+              />
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
-}
+});
+
+export default AcquisitionPreferencesSection;

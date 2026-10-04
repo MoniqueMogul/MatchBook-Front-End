@@ -1,6 +1,11 @@
 'use client';
 
 import React from 'react';
+import axios from 'axios';
+import { getBuyerProfile } from '@/lib/api/buyer';
+import { getCurrentUser, getProfileImage } from '@/lib/api/user';
+import { getBuyerPreferences } from '@/lib/api/buyerPreferences';
+import { getBuyerReadiness } from '@/lib/api/buyerPreferences';
 import { useRouter } from 'next/navigation';
 
 import Sidebar from '@/components/dashboard/Sidebar';
@@ -95,6 +100,9 @@ function mapMatchToListing(
 
 export default function BuyerDashboardNewUser() {
   const router = useRouter();
+  React.useEffect(() => {
+    void Promise.allSettled([getCurrentUser(), getBuyerProfile(), getBuyerPreferences(), getProfileImage()]);
+  }, []);
 
   const completedSections =
     useBuyerOnboardingStore(
@@ -105,6 +113,9 @@ export default function BuyerDashboardNewUser() {
     useBuyerOnboardingStore(
       (state) => state.initializeForUser
     );
+
+  const [preferencesReady, setPreferencesReady] = React.useState<boolean | null>(null);
+  const [readinessError, setReadinessError] = React.useState('');
 
   const totalSections = 5;
 
@@ -124,9 +135,10 @@ export default function BuyerDashboardNewUser() {
 
     const initializeOnboarding = async () => {
       const {
-        data: { user },
+        data: { session },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+      const user = session?.user;
 
       if (error) {
         console.error(
@@ -142,11 +154,16 @@ export default function BuyerDashboardNewUser() {
 
       try {
         await initializeForUser(user.id);
+        const readiness = await getBuyerReadiness();
+        if (!cancelled) setPreferencesReady(readiness.ready);
       } catch (error) {
-        console.error(
-          'Failed to initialize buyer onboarding:',
-          error
-        );
+        if (!cancelled) {
+          if (axios.isAxiosError(error) && error.response?.status === 404) {
+            setPreferencesReady(false);
+          } else {
+            setReadinessError('Unable to check your saved preferences. Please refresh to try again.');
+          }
+        }
       }
     };
 
@@ -242,8 +259,9 @@ export default function BuyerDashboardNewUser() {
   React.useEffect(() => {
     const getUserName = async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user;
 
       if (!user) {
         return;
@@ -345,7 +363,7 @@ export default function BuyerDashboardNewUser() {
 
   const handleContinueProfile = () => {
     router.push(
-      '/buyer-onboarding/profile'
+      preferencesReady ? '/buyer/profile' : '/buyer-onboarding/profile'
     );
   };
 
@@ -363,19 +381,6 @@ export default function BuyerDashboardNewUser() {
   /*  Sidebar Navigation                                              */
   /* ---------------------------------------------------------------- */
 
-  const handleNavigation = (
-    id: string
-  ) => {
-    if (id === 'home') {
-      router.push('/buyer-dashboard');
-      return;
-    }
-
-    console.log(
-      `Navigate to: ${id}`
-    );
-  };
-
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */
   /* ---------------------------------------------------------------- */
@@ -385,7 +390,6 @@ export default function BuyerDashboardNewUser() {
       {/* Sidebar */}
       <Sidebar
         activeItem="home"
-        onNavigate={handleNavigation}
       />
 
       {/* Main Content */}
@@ -400,7 +404,9 @@ export default function BuyerDashboardNewUser() {
           </h1>
 
           {/* Step Tracker Card */}
-          <StepTrackerCard
+          {readinessError ? <p role="alert">{readinessError}</p> : preferencesReady === null ? (
+            <p role="status">Loading your saved preferences...</p>
+          ) : !preferencesReady ? <StepTrackerCard
             percentage={percentage}
             completedSections={completedCount}
             totalSections={totalSections}
@@ -409,7 +415,7 @@ export default function BuyerDashboardNewUser() {
             onCtaClick={
               handleContinueProfile
             }
-          />
+          /> : null}
 
           {/* Your matches section */}
           <h2 className="dashboard-section-heading">
@@ -437,12 +443,13 @@ export default function BuyerDashboardNewUser() {
                 />
               ))}
             </div>
-          ) : (
+          ) : preferencesReady !== null && !readinessError ? (
             <EmptyMatchesState
-              buttonLabel="Finish your profile"
+              profileReady={preferencesReady}
+              buttonLabel={preferencesReady ? 'View your profile' : 'Finish your profile'}
               onButtonClick={handleContinueProfile}
             />
-          )}
+          ) : null}
         </div>
       </main>
     </div>
