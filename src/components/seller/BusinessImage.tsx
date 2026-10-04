@@ -1,5 +1,6 @@
 "use client";
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { ImagePlus, Building2 } from "lucide-react";
 import { getBusinessImage, saveBusinessImage, sellerErrorMessage, type SellerBusiness } from "@/lib/api/seller";
@@ -45,8 +46,7 @@ export default function BusinessImage({ business, onUpdated, onBusyChange, thumb
   return <div className={thumbnail ? "business-photo business-photo--thumbnail" : "business-photo"}>
     {url ? <img src={url} alt={`${business.dba || business.legal_name || "Business"} photo`}
       onError={() => { setUrl(null); setError("The business photo could not be loaded."); }} />
-      : <div className="business-photo__placeholder"><Building2 size={thumbnail ? 28 : 44} aria-hidden="true" />
-        <span>{loading ? "Loading photo…" : "Add a business photo"}</span></div>}
+      : <div className="business-photo__placeholder">{loading ? <ContentSkeleton shape="photo" label="Loading business photo" /> : <><Building2 size={thumbnail ? 28 : 44} aria-hidden="true" /><span>Add a business photo</span></>}</div>}
     {!thumbnail && <>
       {onUpdated && <>
         <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden

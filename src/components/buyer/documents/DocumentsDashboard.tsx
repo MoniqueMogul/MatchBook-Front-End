@@ -1,5 +1,6 @@
 "use client";
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import { useEffect, useState } from "react";
 import {
   Banknote,
@@ -114,21 +115,6 @@ export default function DocumentsDashboard({
     <main className="documents-dashboard">
       <h1>Documents</h1>
 
-      {isLoadingDocuments && (
-        <div
-          className="documents-dashboard__pending-banner"
-          role="status"
-        >
-          <Clock3 size={20} />
-          <div>
-            <strong>Loading Documents</strong>
-            <span>
-              We are securely loading your existing documents.
-            </span>
-          </div>
-        </div>
-      )}
-
       {!isLoadingDocuments && loadError && (
         <div
           className="documents-dashboard__pending-banner"
@@ -189,7 +175,7 @@ export default function DocumentsDashboard({
         </div>
       )}
 
-      {isLoadingDocuments ? null : isVerified ? (
+      {isLoadingDocuments ? <ContentSkeleton shape="documents" label="Loading documents" /> : isVerified ? (
         <section className="documents-dashboard__table-section">
           <div className="documents-dashboard__table-header">
             <div>

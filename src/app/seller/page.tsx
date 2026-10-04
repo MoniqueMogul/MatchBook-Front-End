@@ -1,5 +1,6 @@
 "use client";
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -91,7 +92,7 @@ export default function SellerPage() {
     <main className={`seller-content${tab === "messages" ? " seller-content--messages" : ""}`}>
       {navigationMessage && <p role="status">{navigationMessage}</p>}
       <h1>{tab === "messages" ? "Messages" : tab === "account" ? "Account" : "Listings"}</h1>
-      {loading && <p role="status">Loading your account…</p>}
+      {loading && <ContentSkeleton shape={tab === "messages" ? "messages" : tab === "account" ? "account" : "listings"} label="Loading your seller account" />}
       {error && <div role="alert"><p>{error}</p><Button type="button" disabled={busy} onClick={() => {
         setError(null); setLoading(true); setRetry((value) => value + 1);
       }}>Retry</Button></div>}
@@ -103,7 +104,7 @@ export default function SellerPage() {
             <dt>Phone</dt><dd>{user.phone || "Not provided"}</dd></dl>
           {editingAccount ? <form onSubmit={saveAccount}>
             <label>Phone<input name="phone" type="tel" required maxLength={30} defaultValue={user.phone ?? ""} disabled={busy} /></label>
-            <div className="seller-actions"><Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
+            <div className="seller-actions"><Button type="submit" disabled={busy}>{busy ? "Savingâ€¦" : "Save"}</Button>
               <Button type="button" variant="secondary" disabled={busy} onClick={() => setEditingAccount(false)}>Cancel</Button></div>
           </form> : <div className="seller-actions"><Button type="button" onClick={() => setEditingAccount(true)}>Edit</Button><LogoutButton /></div>}
         </section>
@@ -122,7 +123,7 @@ export default function SellerPage() {
                 <span>{business.city}, {business.state}</span><span>{business.status}</span>
               </button>
             </li>)}</ul>
-            {busy && <p role="status">Loading business…</p>}
+            {busy && <ContentSkeleton shape="options" label="Loading business" />}
           </>}
       </div>}
       {!loading && user && tab === "messages" && <SellerMessages user={user} />}

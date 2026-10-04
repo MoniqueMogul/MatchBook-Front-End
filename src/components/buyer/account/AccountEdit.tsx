@@ -1,5 +1,6 @@
 "use client";
 
+import ContentSkeleton from "@/components/common/ContentSkeleton";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
@@ -272,7 +273,7 @@ export default function AccountEdit() {
     return (
       <main className="account-edit">
         <div className="account-edit__content">
-          <p>Loading account details...</p>
+          <ContentSkeleton shape="account" label="Loading account details" />
         </div>
       </main>
     );
