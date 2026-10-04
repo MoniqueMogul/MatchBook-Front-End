@@ -198,7 +198,8 @@ export default function BusinessEditor({ business, onSaved, onCancel }: {
     {loading && <ContentSkeleton shape="options" label="Loading business options" />}
     <form noValidate onSubmit={save} aria-busy={saving}>
       <fieldset disabled={saving || loading || !industries.length || !models.length}>
-        <label>Business photo{!business ? " *" : ""}
+        <label>
+          Business photo{!business && <> <span className="required-star">*</span></>}
           <input name="photo" {...accessibility("photo")} type="file" accept="image/jpeg,image/png,image/webp" required={!business && !photo}
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -218,7 +219,9 @@ export default function BusinessEditor({ business, onSaved, onCancel }: {
                 setFieldErrors((current) => ({ ...current, photo: sellerErrorMessage(error) }));
               }
             }} />
-          <span>JPG, PNG, or WebP up to 10MB. Use a photo of your business.</span>
+          <span className="business-photo-help">
+            JPG, PNG, or WebP up to 10MB. Use a photo of your business.
+          </span>
           {fieldFeedback("photo")}
         </label>
         {preview && <img className="business-photo-preview" src={preview} alt="Selected business photo" />}
@@ -227,33 +230,49 @@ export default function BusinessEditor({ business, onSaved, onCancel }: {
           onSelect={selectLocation} onRemove={() => setLocation({ city: "", state: "", county: "", zip_code: "" })} disabled={saving || loading} />
         <p className="business-editor__location-help">Search to select a location, then check the structured fields below. Add a ZIP/postal code if the selected result does not provide one.</p>
         <div className="seller-fields">
-          {textFields.map(([key, title, max]) => <label key={key}>{title}{key === "city" || key === "state" ? " *" : ""}
+          {textFields.map(([key, title, max]) => <label key={key}>{title}{key === "city" || key === "state" ? <> <span className="required-star">*</span></> : ""}
             <input name={key} {...accessibility(key)} {...(locationFields.some((field) => field === key)
               ? { value: location[key as keyof typeof location], onChange: (event: React.ChangeEvent<HTMLInputElement>) => setLocation((current) => ({ ...current, [key]: event.target.value })) }
               : { defaultValue: business?.[key] ?? "" })} maxLength={max} required={key === "city" || key === "state"} />
             {fieldFeedback(key)}
           </label>)}
-          <label>Business type *<select name="business_type" {...accessibility("business_type")} required defaultValue={business?.business_type ?? ""}>
+          <label>Business type <span className="required-star">*</span><select name="business_type" {...accessibility("business_type")} required defaultValue={business?.business_type ?? ""}>
             <option value="">Select business type</option>{BUSINESS_TYPES.map((value) => <option key={value} value={value}>{label(value)}</option>)}
           </select>{fieldFeedback("business_type")}</label>
-          <label>Industry *<select name="industry" {...accessibility("industry")} required value={industry} onChange={(event) => { setIndustry(event.target.value); setSubIndustry(""); }}>
+          <label>Industry <span className="required-star">*</span><select name="industry" {...accessibility("industry")} required value={industry} onChange={(event) => { setIndustry(event.target.value); setSubIndustry(""); }}>
             <option value="">Select industry</option>{industries.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>{fieldFeedback("industry")}</label>
-          <label>Sub-industry *<select name="sub_industry" {...accessibility("sub_industry")} required disabled={!industry} value={subIndustry} onChange={(event) => setSubIndustry(event.target.value)}>
+          <label>Sub-industry <span className="required-star">*</span><select name="sub_industry" {...accessibility("sub_industry")} required disabled={!industry} value={subIndustry} onChange={(event) => setSubIndustry(event.target.value)}>
             <option value="">Select sub-industry</option>{industries.find((option) => option.value === industry)?.sub_industries.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>{fieldFeedback("sub_industry")}</label>
-          <label>Business model *<select name="business_model" {...accessibility("business_model")} required value={businessModel} onChange={(event) => setBusinessModel(event.target.value)}>
+          <label>Business model <span className="required-star">*</span><select name="business_model" {...accessibility("business_model")} required value={businessModel} onChange={(event) => setBusinessModel(event.target.value)}>
             <option value="">Select business model</option>{models.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>{fieldFeedback("business_model")}</label>
           {numericFields.map(([key, title, min, max, step]) => <label key={key}>{title}
             <input type="number" name={key} {...accessibility(key)} min={min} max={max} step={step} defaultValue={business?.[key] ?? ""} />
             {fieldFeedback(key)}
           </label>)}
-          <label>Deal preference<select name="deal_preference" {...accessibility("deal_preference")} defaultValue={business?.deal_preference ?? ""}>
+          <label>Deal preference <select name="deal_preference" {...accessibility("deal_preference")} defaultValue={business?.deal_preference ?? ""}>
             <option value="">Not specified</option><option value="cash">Cash</option><option value="financing">Financing</option><option value="either">Either</option>
           </select>{fieldFeedback("deal_preference")}</label>
         </div>
-        <Button type="submit">{saving ? "Saving…" : business ? "Save Business" : "Create Business"}</Button>
+        <div className="business-editor__actions">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={saving}
+            onClick={() => {
+              if (savedDraft.current) onSaved(savedDraft.current);
+              else onCancel();
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button type="submit">
+            {saving ? "Saving…" : business ? "Save Business" : "Create Business"}
+          </Button>
+        </div>
       </fieldset>
       {saving && <p role="status">{progress}</p>}
       {error && <div ref={errorSummary} className="business-editor__error" role="alert" tabIndex={-1}>
@@ -263,10 +282,6 @@ export default function BusinessEditor({ business, onSaved, onCancel }: {
           if (field instanceof HTMLElement) field.focus();
         }}>Review {key === "photo" ? "business photo" : label(key)}</button>)}
       </div>}
-      <Button type="button" variant="secondary" disabled={saving} onClick={() => {
-        if (savedDraft.current) onSaved(savedDraft.current);
-        else onCancel();
-      }}>Cancel</Button>
     </form>
   </section>;
 }

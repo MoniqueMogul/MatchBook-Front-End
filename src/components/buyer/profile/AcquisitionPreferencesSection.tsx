@@ -2333,7 +2333,28 @@ useEffect(() => {
           onChange={(value) => {
             setMinimumARR(value);
             clearFieldError("minimumARR");
-            clearFieldError("preferredARR");
+
+            setFieldErrors((current) => {
+              const next = { ...current };
+
+              const minimumValue = Number(value);
+              const preferredValue = Number(preferredARR);
+
+              if (
+                value.trim() !== "" &&
+                preferredARR.trim() !== "" &&
+                Number.isFinite(minimumValue) &&
+                Number.isFinite(preferredValue) &&
+                preferredValue <= minimumValue
+              ) {
+                next.preferredARR =
+                  "Preferred ARR must be greater than Minimum ARR.";
+              } else {
+                delete next.preferredARR;
+              }
+
+              return next;
+            });
           }}
           disabled={disabled}
         />
@@ -2347,7 +2368,28 @@ useEffect(() => {
           error={fieldErrors.preferredARR}
           onChange={(value) => {
             setPreferredARR(value);
-            clearFieldError("preferredARR");
+
+            setFieldErrors((current) => {
+              const next = { ...current };
+
+              const minimumValue = Number(minimumARR);
+              const preferredValue = Number(value);
+
+              if (
+                minimumARR.trim() !== "" &&
+                value.trim() !== "" &&
+                Number.isFinite(minimumValue) &&
+                Number.isFinite(preferredValue) &&
+                preferredValue <= minimumValue
+              ) {
+                next.preferredARR =
+                  "Preferred ARR must be greater than Minimum ARR.";
+              } else {
+                delete next.preferredARR;
+              }
+
+              return next;
+            });
           }}
           disabled={disabled}
         />
@@ -2361,7 +2403,28 @@ useEffect(() => {
           onChange={(value) => {
             setMinimumSDE(value);
             clearFieldError("minimumSDE");
-            clearFieldError("preferredSDE");
+
+            setFieldErrors((current) => {
+              const next = { ...current };
+
+              const minimumValue = Number(value);
+              const preferredValue = Number(preferredSDE);
+
+              if (
+                value.trim() !== "" &&
+                preferredSDE.trim() !== "" &&
+                Number.isFinite(minimumValue) &&
+                Number.isFinite(preferredValue) &&
+                preferredValue <= minimumValue
+              ) {
+                next.preferredSDE =
+                  "Preferred SDE must be greater than Minimum SDE.";
+              } else {
+                delete next.preferredSDE;
+              }
+
+              return next;
+            });
           }}
           disabled={disabled}
         />
@@ -2375,7 +2438,28 @@ useEffect(() => {
           error={fieldErrors.preferredSDE}
           onChange={(value) => {
             setPreferredSDE(value);
-            clearFieldError("preferredSDE");
+
+            setFieldErrors((current) => {
+              const next = { ...current };
+
+              const minimumValue = Number(minimumSDE);
+              const preferredValue = Number(value);
+
+              if (
+                minimumSDE.trim() !== "" &&
+                value.trim() !== "" &&
+                Number.isFinite(minimumValue) &&
+                Number.isFinite(preferredValue) &&
+                preferredValue <= minimumValue
+              ) {
+                next.preferredSDE =
+                  "Preferred SDE must be greater than Minimum SDE.";
+              } else {
+                delete next.preferredSDE;
+              }
+
+              return next;
+            });
           }}
           disabled={disabled}
         />

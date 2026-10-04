@@ -1064,6 +1064,56 @@ useEffect(() => {
       return;
     }
 
+    /*
+    * ----------------------------------------------
+    * VALIDATE ACQUISITION PREFERENCES
+    * Prevent invalid ARR/SDE values from reaching
+    * the backend and causing a 422 response.
+    * ----------------------------------------------
+    */
+
+    const minimumARR =
+      acquisitionDraft?.minimumARR ??
+      preferences?.minimum_required_arr ??
+      undefined;
+
+    const preferredARR =
+      acquisitionDraft?.preferredARR ??
+      preferences?.preferred_arr ??
+      undefined;
+
+    if (
+      minimumARR !== undefined &&
+      preferredARR !== undefined &&
+      preferredARR <= minimumARR
+    ) {
+      setError(
+        "Preferred ARR must be greater than Minimum ARR.",
+      );
+      return;
+    }
+
+    const minimumSDE =
+      acquisitionDraft?.minimumSDE ??
+      preferences?.minimum_required_sde ??
+      undefined;
+
+    const preferredSDE =
+      acquisitionDraft?.preferredSDE ??
+      preferences?.preferred_sde ??
+      undefined;
+
+    if (
+      minimumSDE !== undefined &&
+      preferredSDE !== undefined &&
+      preferredSDE <= minimumSDE
+    ) {
+      setError(
+        "Preferred SDE must be greater than Minimum SDE.",
+      );
+      return;
+    }
+
     setSaving(true);
     setError(null);
 

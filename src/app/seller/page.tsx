@@ -91,7 +91,26 @@ export default function SellerPage() {
     <Sidebar profileLabel="Listings" activeItem={tab === "listings" && (selected || editingBusiness) ? "profile" : activeNavigation} onNavigate={navigateSeller} />
     <main className={`seller-content${tab === "messages" ? " seller-content--messages" : ""}`}>
       {navigationMessage && <p role="status">{navigationMessage}</p>}
-      <h1>{tab === "messages" ? "Messages" : tab === "account" ? "Account" : "Listings"}</h1>
+      <div className="seller-listings-header">
+      {!editingBusiness && (
+        <h1>
+          {tab === "messages" ? "Messages" : tab === "account" ? "Account" : "Listings"}
+        </h1>
+      )}
+
+      {tab === "listings" && !editingBusiness && !selected && (
+        <Button
+          type="button"
+          disabled={busy || !!error}
+          onClick={() => {
+            setSelected(null);
+            setEditingBusiness(true);
+          }}
+        >
+          Create New Business
+        </Button>
+      )}
+    </div>
       {loading && <ContentSkeleton shape={tab === "messages" ? "messages" : tab === "account" ? "account" : "listings"} label="Loading your seller account" />}
       {error && <div role="alert"><p>{error}</p><Button type="button" disabled={busy} onClick={() => {
         setError(null); setLoading(true); setRetry((value) => value + 1);
@@ -114,7 +133,6 @@ export default function SellerPage() {
         {editingBusiness ? <BusinessEditor key={selected?.id ?? "new"} business={selected} onSaved={savedBusiness} onCancel={() => setEditingBusiness(false)} />
           : selected ? <BusinessProfile key={selected.id} business={selected} onBack={() => setSelected(null)}
             onEdit={() => setEditingBusiness(true)} onUpdated={savedBusiness} onBusyChange={setBusy} /> : <>
-            <Button type="button" disabled={busy || !!error} onClick={() => { setSelected(null); setEditingBusiness(true); }}>Create New Business</Button>
             {!error && !businesses.length && <p>You have no businesses yet. Create your first business to get started.</p>}
             <ul className="seller-listings">{businesses.map((business) => <li key={business.id}>
               <button type="button" disabled={busy} onClick={() => selectBusiness(business.id)}>
