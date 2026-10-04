@@ -1,0 +1,11 @@
+.seller-listings-page {
+  display: flex;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.seller-listings-page__main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}

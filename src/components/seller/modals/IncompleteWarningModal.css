@@ -1,0 +1,13 @@
+.modal-icon-info {
+  color: #e6a220;
+  margin-bottom: 12px;
+}
+
+.modal-btn--primary {
+  background: #498441;
+  color: #fff;
+}
+
+.modal-btn--primary:hover {
+  background: #3a6d35;
+}
