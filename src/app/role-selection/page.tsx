@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthLayout from '@/components/common/AuthLayout';
 import { Button } from '@/components/common/Button';
+import { selectRolePath } from '@/lib/auth/roleRouting';
 import { useAuthStore } from '@/store/authStore';
 import './RoleSelection.css';
 
@@ -12,26 +13,23 @@ import sellerIcon from '@/assets/seller-icon.png';
 
 export default function RoleSelectionPage() {
   const router = useRouter();
-  const { setRole, setStep } = useAuthStore();
+  const { setStep } = useAuthStore();
   const [selected, setSelected] = useState<'buyer' | 'seller' | null>(null);
 
-  const handleNext = () => {
-    if (!selected) {
-      return;
-    }
-
-    setRole(selected);
-    setStep(3);
-
-    if (selected === 'buyer') {
-      router.push('/buyer-onboarding');
-      return;
-    }
-
-    if (selected === 'seller') {
-      router.push('/seller');
-      return;
-    }
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submitting = useRef(false);
+  const handleNext = async () => {
+    if (!selected || submitting.current) return;
+    submitting.current = true;
+    setSaving(true); setError(null);
+    try {
+      const destination = await selectRolePath(selected);
+      setStep(3);
+      router.push(destination);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not save your role. Please try again.');
+    } finally { submitting.current = false; setSaving(false); }
   };
 
   return (
@@ -41,7 +39,7 @@ export default function RoleSelectionPage() {
       <div className="role-cards">
         <div 
           className={`role-card ${selected === 'buyer' ? 'role-card--selected' : ''}`} 
-          onClick={() => setSelected('buyer')}
+          onClick={() => { if (!saving) setSelected('buyer'); }}
         >
           <div className="role-card__icon">
             <img src={buyerIcon.src} alt="Buyer Icon" className="role-card__icon-image" />
@@ -52,7 +50,7 @@ export default function RoleSelectionPage() {
 
         <div 
           className={`role-card ${selected === 'seller' ? 'role-card--selected' : ''}`} 
-          onClick={() => setSelected('seller')}
+          onClick={() => { if (!saving) setSelected('seller'); }}
         >
           <div className="role-card__icon">
             <img src={sellerIcon.src} alt="Seller Icon" className="role-card__icon-image" />
@@ -62,9 +60,10 @@ export default function RoleSelectionPage() {
         </div>
       </div>
 
+      {error && <p role="alert">{error}</p>}
       <div className="role-actions">
-        <Button variant="secondary" onClick={() => router.back()}>Back</Button>
-        <Button variant="primary" onClick={handleNext} disabled={!selected}>Next</Button>
+        <Button variant="secondary" disabled={saving} onClick={() => router.back()}>Back</Button>
+        <Button variant="primary" onClick={handleNext} disabled={!selected || saving}>{saving ? 'Saving…' : 'Next'}</Button>
       </div>
     </AuthLayout>
   );

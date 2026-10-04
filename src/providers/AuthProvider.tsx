@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useAuthStore } from "@/store/authStore";
 import { setCacheUser } from "@/store/apiCache";
 import { supabase } from "@/lib/supabase";
 
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setCacheUser(session?.user.id ?? null);
+      useAuthStore.getState().setUser(session?.user.id ?? null);
     });
 
     return () => subscription.unsubscribe();
