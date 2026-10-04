@@ -438,6 +438,94 @@
 }
 
 /* ------------------------------------------------
+ * Financial amount fields
+ * ------------------------------------------------ */
+
+.acquisition-preferences-section__financial-field {
+  width: 420px;
+  max-width: 100%;
+  gap: 6px;
+  padding: 2px 0 5px;
+}
+
+.acquisition-preferences-section__financial-helper {
+  margin: -2px 0 0;
+  color: #687385;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.acquisition-preferences-section__financial-input-wrap {
+  position: relative;
+  width: 220px;
+  max-width: 100%;
+}
+
+.acquisition-preferences-section__currency-prefix {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: #52677d;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.acquisition-preferences-section__financial-input {
+  width: 220px;
+  max-width: 100%;
+  padding-left: 25px;
+}
+
+.acquisition-preferences-section__slider-wrap {
+  width: 420px;
+  max-width: 100%;
+  margin-top: 2px;
+}
+
+.acquisition-preferences-section__financial-slider {
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  accent-color: #498441;
+  cursor: pointer;
+}
+
+.acquisition-preferences-section__financial-slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.acquisition-preferences-section__slider-labels {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-top: -1px;
+  color: #8a939f;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 9px;
+  line-height: 13px;
+}
+
+.acquisition-preferences-section__financial-value {
+  width: fit-content;
+  min-height: 18px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #edf5eb;
+  color: #355f30;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* ------------------------------------------------
  * Timeline
  * ------------------------------------------------ */
 
@@ -588,6 +676,18 @@
   .acquisition-preferences-section__location-dropdown,
   .acquisition-preferences-section__location-error {
     width: 100%;
+  }
+
+  .acquisition-preferences-section__financial-field,
+  .acquisition-preferences-section__slider-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .acquisition-preferences-section__financial-input-wrap,
+  .acquisition-preferences-section__financial-input {
+    width: 100%;
+    max-width: 100%;
   }
 
   .acquisition-preferences-section__group,

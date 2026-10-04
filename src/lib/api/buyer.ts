@@ -1,3 +1,4 @@
+import { cachedRead, cachedWrite } from "@/store/apiCache";
 import api from "./client";
 
 export type BuyerType =
@@ -54,11 +55,13 @@ export interface BuyerProfilePayload {
  * authenticated user.
  */
 export async function getBuyerProfile(): Promise<BuyerProfile> {
-  const response = await api.get<BuyerProfile>(
-    "/intake/buyers/profile",
-  );
+  return cachedRead("buyerProfile", async () => {
+    const response = await api.get<BuyerProfile>(
+      "/intake/buyers/profile",
+    );
 
-  return response.data;
+    return response.data;
+  });
 }
 
 /**
@@ -75,10 +78,12 @@ export async function getBuyerProfile(): Promise<BuyerProfile> {
 export async function upsertBuyerProfile(
   payload: BuyerProfilePayload,
 ): Promise<BuyerProfile> {
-  const response = await api.put<BuyerProfile>(
-    "/intake/buyers/profile",
-    payload,
-  );
+  return cachedWrite("buyerProfile", async () => {
+    const response = await api.put<BuyerProfile>(
+      "/intake/buyers/profile",
+      payload,
+    );
 
-  return response.data;
+    return response.data;
+  });
 }

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import { setCacheUser } from "@/store/apiCache";
 import { supabase } from "@/lib/supabase";
 
 /**
  * Mounts a global listener that keeps Supabase session state
  * in sync across the app (login, logout, token refresh, tab focus).
  *
- * No context value is exposed — components read directly from
+ * No context value is exposed â€” components read directly from
  * `getAccessToken()` in `src/lib/supabase.ts`.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -18,8 +19,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Subscribe to auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Hook for future listeners (e.g. redirect on sign-out)
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCacheUser(session?.user.id ?? null);
     });
 
     return () => subscription.unsubscribe();

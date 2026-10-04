@@ -1,3 +1,4 @@
+import { cachedRead, cachedWrite } from "@/store/apiCache";
 import type { ApiTargetLocation } from "./buyerPreferences.types";
 export type { ApiTargetLocation } from "./buyerPreferences.types";
 import { toStructuredLocation } from "./locations";
@@ -218,12 +219,14 @@ function buildBackendPayload(
  * GET /intake/buyers/preferences
  */
 export async function getBuyerPreferences(): Promise<BuyerPreferences> {
-  const response =
-    await api.get<BackendBuyerPreferences>(
-      "/intake/buyers/preferences",
-    );
+  return cachedRead("buyerPreferences", async () => {
+    const response =
+      await api.get<BackendBuyerPreferences>(
+        "/intake/buyers/preferences",
+      );
 
-  return normalizePreferences(response.data);
+    return normalizePreferences(response.data);
+  });
 }
 
 /**
@@ -232,21 +235,23 @@ export async function getBuyerPreferences(): Promise<BuyerPreferences> {
 export async function saveBuyerPreferences(
   payload: BuyerPreferencesPayload,
 ): Promise<BuyerPreferences> {
-  const response =
-    await api.put<BackendBuyerPreferences>(
-      "/intake/buyers/preferences",
-      buildBackendPayload(payload),
-    );
+  return cachedWrite("buyerPreferences", async () => {
+    const response =
+      await api.put<BackendBuyerPreferences>(
+        "/intake/buyers/preferences",
+        buildBackendPayload(payload),
+      );
 
-  return normalizePreferences(response.data);
+    return normalizePreferences(response.data);
+  });
 }
 
 export interface BuyerReadiness {
   ready: boolean;
+  completion_percentage: number;
+  completed_fields: number;
+  total_required_fields: number;
   missing_fields: string[];
-  completion_percentage?: number;
-  completed_fields?: number;
-  total_required_fields?: number;
 }
 
 /**

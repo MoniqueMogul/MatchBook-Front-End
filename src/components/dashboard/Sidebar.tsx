@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import "./dashboard.css";
@@ -397,6 +398,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const renderNavItem = (item: NavItem) => {
     const isActive = item.id === currentActiveItem;
+    const href = item.id === "profile" ? getBuyerProfilePath() : item.path;
+    if (!pathname.startsWith("/seller") && href) {
+      return <li key={item.id} className="sidebar__nav-item">
+        <Link href={href} className={`sidebar__nav-link${isActive ? " sidebar__nav-link--active" : ""}`}
+          style={{ textDecoration: "none" }} aria-current={isActive ? "page" : undefined}
+          onClick={(event) => { if (onNavigate?.(item.id) === false) event.preventDefault(); }}>
+          {item.icon}{item.id === "profile" ? profileLabel : item.label}
+        </Link>
+      </li>;
+    }
+
 
     return (
       <li key={item.id} className="sidebar__nav-item">

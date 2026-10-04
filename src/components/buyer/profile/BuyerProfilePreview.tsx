@@ -4,7 +4,6 @@ import type { BuyerPreferences } from "@/lib/api/buyerPreferences";
 import type { BuyerProfile } from "@/lib/api/buyer";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { UserRoundCog } from "lucide-react";
 import AcquisitionPreferencesPreview from "./AcquisitionPreferencesPreview";
 import ExperienceCredentialsPreview from "./ExperienceCredentialsPreview";
 import FinancePreview from "./FinancePreview";
@@ -122,17 +121,6 @@ export default function BuyerProfilePreview({
                 Edit
               </button>
 
-              <button
-                type="button"
-                className="buyer-profile-preview__settings-button"
-                aria-label="Profile settings"
-              >
-                <UserRoundCog
-                  size={22}
-                  strokeWidth={1.7}
-                  aria-hidden="true"
-                />
-              </button>
             </div>
 
           </div>

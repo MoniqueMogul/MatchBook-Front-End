@@ -1,13 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useState,
+} from "react";
 import { ChevronRight } from "lucide-react";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import PhoneInputField from "@/components/onboarding/PhoneInputField";
 import "./EditOverviewSection.css";
 
+export interface EditOverviewSectionHandle {
+  submit: () => Promise<boolean>;
+}
+
 interface EditOverviewSectionProps {
   mode?: "edit" | "onboarding";
+  showActions?: boolean;
 
   initialAbout?: string;
 
@@ -26,13 +36,17 @@ interface EditOverviewSectionProps {
     about: string;
     phoneCountryCode: string;
     phone: string;
-  }) => void;
+  }) => void | Promise<void>;
 
   disabled?: boolean;
 }
 
-export default function EditOverviewSection({
+const EditOverviewSection = forwardRef<
+  EditOverviewSectionHandle,
+  EditOverviewSectionProps
+>(function EditOverviewSection({
   mode = "edit",
+  showActions = true,
   initialAbout = "",
   initialPhoneCountryCode = "+91",
   initialPhone = "",
@@ -40,7 +54,7 @@ export default function EditOverviewSection({
   onDataChange,
   onContinue,
   disabled = false,
-}: EditOverviewSectionProps) {
+}: EditOverviewSectionProps, ref) {
   const [about, setAbout] = useState(initialAbout);
 
   const [phoneCountryCode, setPhoneCountryCode] =
@@ -74,28 +88,37 @@ export default function EditOverviewSection({
     onDataChange,
   ]);
 
-  const handleContinue = () => {
+  const handleContinue = async (): Promise<boolean> => {
     const trimmedPhone = phone.trim();
     const fullPhoneNumber = `${phoneCountryCode}${trimmedPhone.replace(/\D/g, "")}`;
 
     if (!trimmedPhone) {
       setPhoneError("Please enter your phone number.");
-      return;
+      return false;
     }
 
     if (!isValidPhoneNumber(fullPhoneNumber)) {
       setPhoneError("Please enter a valid phone number.");
-      return;
+      return false;
     }
 
     setPhoneError("");
 
-    onContinue?.({
+    await onContinue?.({
       about: about.trim(),
       phoneCountryCode,
       phone: trimmedPhone,
     });
+
+    return true;
   };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      submit: handleContinue,
+    }),
+  );
 
   return (
     <section className="edit-overview-section">
@@ -117,7 +140,7 @@ export default function EditOverviewSection({
             placeholder="Tell sellers a little about yourself..."
             disabled={disabled}
             className="edit-overview-section__textarea"
-            rows={6}
+            rows={2}
           />
         </div>
 
@@ -159,28 +182,32 @@ export default function EditOverviewSection({
       </div>
 
       {/* Continue */}
-      <div className="edit-overview-section__continue">
-        <button
-          type="button"
-          className="edit-overview-section__continue-button"
-          onClick={handleContinue}
-          disabled={disabled}
-          aria-label={
-            mode === "onboarding"
-              ? "Save and continue"
-              : "Continue to next profile section"
-          }
-        >
-          {mode === "onboarding" ? (
-            "Save & Continue"
-          ) : (
-            <ChevronRight
-              size={32}
-              strokeWidth={1.5}
-            />
-          )}
-        </button>
-      </div>
+      {showActions && (
+        <div className="edit-overview-section__continue">
+          <button
+            type="button"
+            className="edit-overview-section__continue-button"
+            onClick={handleContinue}
+            disabled={disabled}
+            aria-label={
+              mode === "onboarding"
+                ? "Save and continue"
+                : "Continue to next profile section"
+            }
+          >
+            {mode === "onboarding" ? (
+              "Save & Continue"
+            ) : (
+              <ChevronRight
+                size={32}
+                strokeWidth={1.5}
+              />
+            )}
+          </button>
+        </div>
+      )}
     </section>
   );
-}
+});
+
+export default EditOverviewSection;

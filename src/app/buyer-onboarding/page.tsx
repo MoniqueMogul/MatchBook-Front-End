@@ -1,11 +1,12 @@
 "use client";
 
 import BuyerOnboarding from "@/components/onboarding/BuyerOnboarding";
+
 import "./page.css";
 
-export default function BuyerProfileOnboardingPage() {
+export default function BuyerOnboardingPage() {
   return (
-    <main className="buyer-onboarding-page">
+    <main className="buyer-profile-onboarding-page">
       <BuyerOnboarding />
     </main>
   );

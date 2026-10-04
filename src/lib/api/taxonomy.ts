@@ -1,3 +1,4 @@
+import { cachedRead } from "@/store/apiCache";
 import api from "./client";
 
 export interface SubIndustryOption {
@@ -17,19 +18,23 @@ export interface BusinessModelOption {
 }
 
 export async function getIndustryOptions(): Promise<IndustryOption[]> {
-  const response =
-    await api.get<IndustryOption[]>("/intake/industries");
+  return cachedRead("industries", async () => {
+    const response =
+      await api.get<IndustryOption[]>("/intake/industries");
 
-  return response.data;
+    return response.data;
+  }, 3_600_000);
 }
 
 export async function getBusinessModelOptions(): Promise<
   BusinessModelOption[]
 > {
-  const response =
-    await api.get<BusinessModelOption[]>(
-      "/intake/business-models",
-    );
+  return cachedRead("businessModels", async () => {
+    const response =
+      await api.get<BusinessModelOption[]>(
+        "/intake/business-models",
+      );
 
-  return response.data;
+    return response.data;
+  }, 3_600_000);
 }

@@ -1,7 +1,17 @@
 "use client";
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
+
+import type { ApiTargetLocation } from "@/lib/api/buyerPreferences";
+import { searchLocations } from "@/lib/api/locations";
 
 import "./ExperienceCredentialsEdit.css";
 
@@ -25,18 +35,29 @@ export interface ExperienceCredentialsData {
   zipCode: string;
 }
 
+export interface ExperienceCredentialsEditHandle {
+  submit: () => Promise<boolean>;
+}
+
 interface ExperienceCredentialsEditProps {
   mode?: "edit" | "onboarding";
+  showActions?: boolean;
   initialData?: Partial<ExperienceCredentialsData>;
   onBack: () => void;
-  onContinue: (data: ExperienceCredentialsData) => void;
-  onDataChange?: (data: ExperienceCredentialsData) => void;
+  onContinue: (
+    data: ExperienceCredentialsData,
+  ) => void | Promise<void>;
+  onDataChange?: (
+    data: ExperienceCredentialsData,
+  ) => void;
   disabled?: boolean;
 }
 
 type FieldName = keyof ExperienceCredentialsData;
 
-type ValidationErrors = Partial<Record<FieldName, string>>;
+type ValidationErrors = Partial<
+  Record<FieldName, string>
+>;
 
 const DEFAULT_DATA: ExperienceCredentialsData = {
   buyerType: null,
@@ -79,14 +100,21 @@ const BUYER_TYPE_OPTIONS: Array<{
 
 const MAX_EXPERIENCE_LENGTH = 2000;
 
-export default function ExperienceCredentialsEdit({
-  mode = "edit",
-  initialData,
-  onBack,
-  onContinue,
-  onDataChange,
-  disabled = false,
-}: ExperienceCredentialsEditProps) {
+const ExperienceCredentialsEdit = forwardRef<
+  ExperienceCredentialsEditHandle,
+  ExperienceCredentialsEditProps
+>(function ExperienceCredentialsEdit(
+  {
+    mode = "edit",
+    showActions = true,
+    initialData,
+    onBack,
+    onContinue,
+    onDataChange,
+    disabled = false,
+  }: ExperienceCredentialsEditProps,
+  ref,
+) {
   const [data, setData] =
     useState<ExperienceCredentialsData>({
       ...DEFAULT_DATA,
@@ -96,18 +124,78 @@ export default function ExperienceCredentialsEdit({
   const [errors, setErrors] =
     useState<ValidationErrors>({});
 
+  const [locationSearch, setLocationSearch] =
+    useState("");
+
+  const [
+    locationSuggestions,
+    setLocationSuggestions,
+  ] = useState<ApiTargetLocation[]>([]);
+
+  const [
+    locationDropdownOpen,
+    setLocationDropdownOpen,
+  ] = useState(false);
+
+  const [
+    locationLoading,
+    setLocationLoading,
+  ] = useState(false);
+
+  const [locationError, setLocationError] =
+    useState<string | null>(null);
+
+  const [
+    highlightedLocationIndex,
+    setHighlightedLocationIndex,
+  ] = useState(-1);
+
+  const locationWrapperRef =
+    useRef<HTMLDivElement>(null);
+
   /*
    * Keep the form synchronized with backend data
-   * when Edit mode loads the profile.
+   * when Edit mode loads or refreshes the profile.
+   *
+   * During onboarding, initialData is used when this
+   * component first mounts. After that, the form owns
+   * its local state until the user submits it.
+   *
+   * BuyerOnboarding saves About You before Experience
+   * & Credentials. That save updates the parent profile
+   * and therefore changes initialData.
+   *
+   * Re-synchronizing here during onboarding would wipe
+   * the Experience values the user already entered.
    */
   useEffect(() => {
+    if (mode === "onboarding") {
+      return;
+    }
+
     setData({
       ...DEFAULT_DATA,
       ...initialData,
     });
 
     setErrors({});
+
+    const initialLocationLabel = [
+      initialData?.city,
+      initialData?.county,
+      initialData?.state,
+      initialData?.zipCode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setLocationSearch(initialLocationLabel);
+    setLocationSuggestions([]);
+    setLocationDropdownOpen(false);
+    setLocationError(null);
+    setHighlightedLocationIndex(-1);
   }, [
+    mode,
     initialData?.buyerType,
     initialData?.currentIndustry,
     initialData?.currentPosition,
@@ -122,10 +210,10 @@ export default function ExperienceCredentialsEdit({
 
   useEffect(() => {
     onDataChange?.(data);
-    }, [data, onDataChange]);
+  }, [data, onDataChange]);
 
   const updateField = <
-    K extends keyof ExperienceCredentialsData
+    K extends keyof ExperienceCredentialsData,
   >(
     field: K,
     value: ExperienceCredentialsData[K],
@@ -151,6 +239,197 @@ export default function ExperienceCredentialsEdit({
     });
   };
 
+  useEffect(() => {
+    const query = locationSearch.trim();
+
+    if (query.length < 3) {
+      setLocationSuggestions([]);
+      setLocationLoading(false);
+      setLocationError(null);
+      setLocationDropdownOpen(false);
+      setHighlightedLocationIndex(-1);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(
+      async () => {
+        try {
+          setLocationLoading(true);
+          setLocationError(null);
+          setLocationDropdownOpen(true);
+          setHighlightedLocationIndex(-1);
+
+          const results =
+            await searchLocations(query, 8);
+
+          setLocationSuggestions(results);
+        } catch (error) {
+          console.error(
+            "Location search failed:",
+            error,
+          );
+
+          setLocationSuggestions([]);
+
+          setLocationError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load locations. Please try again.",
+          );
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      250,
+    );
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [locationSearch]);
+
+  useEffect(() => {
+    const handleOutsideClick = (
+      event: MouseEvent,
+    ) => {
+      if (
+        locationWrapperRef.current &&
+        !locationWrapperRef.current.contains(
+          event.target as Node,
+        )
+      ) {
+        setLocationDropdownOpen(false);
+        setHighlightedLocationIndex(-1);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick,
+      );
+    };
+  }, []);
+
+  const handleLocationInputChange = (
+    value: string,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    setLocationSearch(value);
+
+    setLocationDropdownOpen(
+      value.trim().length >= 3,
+    );
+
+    setHighlightedLocationIndex(-1);
+    setLocationError(null);
+  };
+
+  const handleSelectLocation = (
+    suggestion: ApiTargetLocation,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    setData((current) => ({
+      ...current,
+      city: suggestion.city ?? "",
+      county: suggestion.county ?? "",
+      state: suggestion.state ?? "",
+      zipCode: suggestion.zip_code ?? "",
+    }));
+
+    setErrors((current) => {
+      const next = { ...current };
+
+      delete next.city;
+      delete next.county;
+      delete next.state;
+      delete next.zipCode;
+
+      return next;
+    });
+
+    setLocationSearch(
+      suggestion.display_name?.trim() ?? "",
+    );
+
+    setLocationSuggestions([]);
+    setLocationDropdownOpen(false);
+    setHighlightedLocationIndex(-1);
+    setLocationError(null);
+  };
+
+  const handleLocationKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (
+      !locationDropdownOpen ||
+      locationSuggestions.length === 0
+    ) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      setHighlightedLocationIndex(
+        (current) =>
+          current <
+          locationSuggestions.length - 1
+            ? current + 1
+            : 0,
+      );
+
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+
+      setHighlightedLocationIndex(
+        (current) =>
+          current > 0
+            ? current - 1
+            : locationSuggestions.length - 1,
+      );
+
+      return;
+    }
+
+    if (
+      event.key === "Enter" &&
+      highlightedLocationIndex >= 0
+    ) {
+      event.preventDefault();
+
+      const suggestion =
+        locationSuggestions[
+          highlightedLocationIndex
+        ];
+
+      if (suggestion) {
+        handleSelectLocation(suggestion);
+      }
+
+      return;
+    }
+
+    if (event.key === "Escape") {
+      setLocationDropdownOpen(false);
+      setHighlightedLocationIndex(-1);
+    }
+  };
+
   const validate = (): ValidationErrors => {
     const nextErrors: ValidationErrors = {};
 
@@ -165,7 +444,9 @@ export default function ExperienceCredentialsEdit({
     /*
      * Current Industry
      */
-    if (data.currentIndustry.trim().length > 150) {
+    if (
+      data.currentIndustry.trim().length > 150
+    ) {
       nextErrors.currentIndustry =
         "Current industry must be 150 characters or fewer.";
     }
@@ -173,7 +454,9 @@ export default function ExperienceCredentialsEdit({
     /*
      * Current Position
      */
-    if (data.currentPosition.trim().length > 150) {
+    if (
+      data.currentPosition.trim().length > 150
+    ) {
       nextErrors.currentPosition =
         "Current position must be 150 characters or fewer.";
     }
@@ -181,7 +464,8 @@ export default function ExperienceCredentialsEdit({
     /*
      * Years of Business Experience
      */
-    const years = data.businessExperienceYears.trim();
+    const years =
+      data.businessExperienceYears.trim();
 
     if (years !== "") {
       const numericYears = Number(years);
@@ -261,11 +545,16 @@ export default function ExperienceCredentialsEdit({
     const zip = data.zipCode.trim();
 
     if (zip !== "") {
-      if (zip.length < 3 || zip.length > 20) {
+      if (
+        zip.length < 3 ||
+        zip.length > 20
+      ) {
         nextErrors.zipCode =
           "ZIP / Postal Code must be between 3 and 20 characters.";
       } else if (
-        !/^[A-Za-z0-9][A-Za-z0-9 -]*$/.test(zip)
+        !/^[A-Za-z0-9][A-Za-z0-9 -]*$/.test(
+          zip,
+        )
       ) {
         nextErrors.zipCode =
           "ZIP / Postal Code can contain only letters, numbers, spaces, and hyphens.";
@@ -275,56 +564,65 @@ export default function ExperienceCredentialsEdit({
     return nextErrors;
   };
 
-  const handleContinue = () => {
-    if (disabled) {
-      return;
-    }
+  const handleContinue =
+    async (): Promise<boolean> => {
+      if (disabled) {
+        return false;
+      }
 
-    const validationErrors = validate();
+      const validationErrors = validate();
 
-    setErrors(validationErrors);
+      setErrors(validationErrors);
 
-    /*
-     * Stop here if validation failed.
-     */
-    if (Object.keys(validationErrors).length > 0) {
-      return;
-    }
+      /*
+       * Stop here if validation failed.
+       */
+      if (
+        Object.keys(validationErrors).length >
+        0
+      ) {
+        return false;
+      }
 
-    /*
-     * Only send cleaned data to BuyerProfileEdit.
-     */
-    onContinue({
-      ...data,
+      /*
+       * Only send cleaned data to BuyerProfileEdit.
+       */
+      await onContinue({
+        ...data,
 
-      currentIndustry:
-        data.currentIndustry.trim(),
+        currentIndustry:
+          data.currentIndustry.trim(),
 
-      currentPosition:
-        data.currentPosition.trim(),
+        currentPosition:
+          data.currentPosition.trim(),
 
-      businessExperienceYears:
-        data.businessExperienceYears.trim(),
+        businessExperienceYears:
+          data.businessExperienceYears.trim(),
 
-      relevantExperience:
-        data.relevantExperience.trim(),
+        relevantExperience:
+          data.relevantExperience.trim(),
 
-      availableHoursPerWeek:
-        data.availableHoursPerWeek.trim(),
+        availableHoursPerWeek:
+          data.availableHoursPerWeek.trim(),
 
-      city:
-        data.city.trim(),
+        city: data.city.trim(),
 
-      county:
-        data.county.trim(),
+        county: data.county.trim(),
 
-      state:
-        data.state.trim(),
+        state: data.state.trim(),
 
-      zipCode:
-        data.zipCode.trim(),
-    });
-  };
+        zipCode: data.zipCode.trim(),
+      });
+
+      return true;
+    };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      submit: handleContinue,
+    }),
+  );
 
   return (
     <section className="experience-credentials-section">
@@ -338,15 +636,16 @@ export default function ExperienceCredentialsEdit({
         </span>{" "}
         are required for matching.
       </p>
-      <div className="experience-credentials-section__fields">
 
+      <div className="experience-credentials-section__fields">
         {/* =================================================
             1. Buyer Type
            ================================================= */}
 
         <fieldset className="experience-credentials-section__group">
           <legend className="experience-credentials-section__label">
-            What best describes your buyer type? (Select one)
+            What best describes your buyer type?
+            (Select one)
             <span
               className="experience-credentials-section__required"
               aria-hidden="true"
@@ -356,52 +655,54 @@ export default function ExperienceCredentialsEdit({
           </legend>
 
           <div className="experience-credentials-section__radio-grid">
-            {BUYER_TYPE_OPTIONS.map((option) => {
-              const selected =
-                data.buyerType === option.value;
+            {BUYER_TYPE_OPTIONS.map(
+              (option) => {
+                const selected =
+                  data.buyerType === option.value;
 
-              return (
-                <label
-                  key={option.value}
-                  className="experience-credentials-section__radio-option"
-                >
-                  <input
-                    type="radio"
-                    name="buyer-type"
-                    value={option.value}
-                    checked={selected}
-                    disabled={disabled}
-                    onChange={() =>
-                      updateField(
-                        "buyerType",
-                        option.value,
-                      )
-                    }
-                    className="experience-credentials-section__radio-input"
-                    aria-invalid={Boolean(
-                      errors.buyerType,
-                    )}
-                  />
-
-                  <span
-                    className={`experience-credentials-section__radio ${
-                      selected
-                        ? "experience-credentials-section__radio--selected"
-                        : ""
-                    }`}
-                    aria-hidden="true"
+                return (
+                  <label
+                    key={option.value}
+                    className="experience-credentials-section__radio-option"
                   >
-                    {selected && (
-                      <span className="experience-credentials-section__radio-dot" />
-                    )}
-                  </span>
+                    <input
+                      type="radio"
+                      name="buyer-type"
+                      value={option.value}
+                      checked={selected}
+                      disabled={disabled}
+                      onChange={() =>
+                        updateField(
+                          "buyerType",
+                          option.value,
+                        )
+                      }
+                      className="experience-credentials-section__radio-input"
+                      aria-invalid={Boolean(
+                        errors.buyerType,
+                      )}
+                    />
 
-                  <span className="experience-credentials-section__radio-label">
-                    {option.label}
-                  </span>
-                </label>
-              );
-            })}
+                    <span
+                      className={`experience-credentials-section__radio ${
+                        selected
+                          ? "experience-credentials-section__radio--selected"
+                          : ""
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {selected && (
+                        <span className="experience-credentials-section__radio-dot" />
+                      )}
+                    </span>
+
+                    <span className="experience-credentials-section__radio-label">
+                      {option.label}
+                    </span>
+                  </label>
+                );
+              },
+            )}
           </div>
 
           {errors.buyerType && (
@@ -494,9 +795,9 @@ export default function ExperienceCredentialsEdit({
             htmlFor="business-experience-years"
             className="experience-credentials-section__label"
           >
-            How many years of business experience do you
-            have owning or operating a business? (Enter a
-            number)
+            How many years of business experience
+            do you have owning or operating a
+            business? (Enter a number)
           </label>
 
           <input
@@ -505,7 +806,9 @@ export default function ExperienceCredentialsEdit({
             min={0}
             max={100}
             step={1}
-            value={data.businessExperienceYears}
+            value={
+              data.businessExperienceYears
+            }
             disabled={disabled}
             onChange={(event) =>
               updateField(
@@ -521,7 +824,9 @@ export default function ExperienceCredentialsEdit({
 
           {errors.businessExperienceYears && (
             <p className="experience-credentials-section__error">
-              {errors.businessExperienceYears}
+              {
+                errors.businessExperienceYears
+              }
             </p>
           )}
         </div>
@@ -580,7 +885,9 @@ export default function ExperienceCredentialsEdit({
             min={0}
             max={168}
             step={1}
-            value={data.availableHoursPerWeek}
+            value={
+              data.availableHoursPerWeek
+            }
             disabled={disabled}
             onChange={(event) =>
               updateField(
@@ -596,7 +903,9 @@ export default function ExperienceCredentialsEdit({
 
           {errors.availableHoursPerWeek && (
             <p className="experience-credentials-section__error">
-              {errors.availableHoursPerWeek}
+              {
+                errors.availableHoursPerWeek
+              }
             </p>
           )}
         </div>
@@ -610,142 +919,131 @@ export default function ExperienceCredentialsEdit({
             Current Location
           </legend>
 
-          <div className="experience-credentials-section__location-grid">
-
-            {/* City */}
-            <div className="experience-credentials-section__field">
-              <label
-                htmlFor="current-city"
-                className="experience-credentials-section__label"
-              >
-                City
-              </label>
-
+          <div
+            ref={locationWrapperRef}
+            className="experience-credentials-section__location-field"
+          >
+            <div className="experience-credentials-section__location-input-wrap">
               <input
-                id="current-city"
+                id="current-location"
                 type="text"
-                maxLength={100}
-                value={data.city}
-                disabled={disabled}
+                value={locationSearch}
                 onChange={(event) =>
-                  updateField(
-                    "city",
+                  handleLocationInputChange(
                     event.target.value,
                   )
                 }
+                onKeyDown={
+                  handleLocationKeyDown
+                }
+                onFocus={() => {
+                  if (
+                    locationSearch.trim()
+                      .length >= 3
+                  ) {
+                    setLocationDropdownOpen(
+                      true,
+                    );
+                  }
+                }}
+                placeholder="Search for a city, state, or county"
+                disabled={disabled}
+                autoComplete="off"
                 className="experience-credentials-section__input"
-                aria-invalid={Boolean(errors.city)}
+                aria-expanded={
+                  locationDropdownOpen
+                }
+                aria-autocomplete="list"
+                aria-controls="current-location-list"
               />
 
-              {errors.city && (
-                <p className="experience-credentials-section__error">
-                  {errors.city}
-                </p>
+              {locationLoading && (
+                <span className="experience-credentials-section__location-loading">
+                  Searching...
+                </span>
               )}
-            </div>
 
-            {/* County */}
-            <div className="experience-credentials-section__field">
-              <label
-                htmlFor="current-county"
-                className="experience-credentials-section__label"
-              >
-                County
-              </label>
-
-              <input
-                id="current-county"
-                type="text"
-                maxLength={100}
-                value={data.county}
-                disabled={disabled}
-                onChange={(event) =>
-                  updateField(
-                    "county",
-                    event.target.value,
-                  )
-                }
-                className="experience-credentials-section__input"
-                aria-invalid={Boolean(
-                  errors.county,
+              {locationDropdownOpen &&
+                locationSearch.trim().length >=
+                  3 && (
+                  <div
+                    id="current-location-list"
+                    className="experience-credentials-section__location-dropdown"
+                    role="listbox"
+                  >
+                    {locationSuggestions.length >
+                    0 ? (
+                      locationSuggestions.map(
+                        (
+                          suggestion,
+                          index,
+                        ) => (
+                          <button
+                            key={
+                              suggestion.place_id
+                            }
+                            type="button"
+                            role="option"
+                            aria-selected={
+                              highlightedLocationIndex ===
+                              index
+                            }
+                            className={`experience-credentials-section__location-option ${
+                              highlightedLocationIndex ===
+                              index
+                                ? "experience-credentials-section__location-option--highlighted"
+                                : ""
+                            }`}
+                            onMouseDown={(
+                              event,
+                            ) =>
+                              event.preventDefault()
+                            }
+                            onClick={() =>
+                              handleSelectLocation(
+                                suggestion,
+                              )
+                            }
+                          >
+                            {
+                              suggestion.display_name
+                            }
+                          </button>
+                        ),
+                      )
+                    ) : !locationLoading ? (
+                      <div className="experience-credentials-section__location-empty">
+                        No locations found.
+                      </div>
+                    ) : null}
+                  </div>
                 )}
-              />
-
-              {errors.county && (
-                <p className="experience-credentials-section__error">
-                  {errors.county}
-                </p>
-              )}
             </div>
 
-            {/* State */}
-            <div className="experience-credentials-section__field">
-              <label
-                htmlFor="current-state"
-                className="experience-credentials-section__label"
+            {locationError && (
+              <p
+                className="experience-credentials-section__error"
+                role="alert"
               >
-                State
-              </label>
+                {locationError}
+              </p>
+            )}
 
-              <input
-                id="current-state"
-                type="text"
-                maxLength={100}
-                value={data.state}
-                disabled={disabled}
-                onChange={(event) =>
-                  updateField(
-                    "state",
-                    event.target.value,
-                  )
-                }
-                className="experience-credentials-section__input"
-                aria-invalid={Boolean(
-                  errors.state,
-                )}
-              />
-
-              {errors.state && (
-                <p className="experience-credentials-section__error">
-                  {errors.state}
-                </p>
-              )}
-            </div>
-
-            {/* ZIP */}
-            <div className="experience-credentials-section__field">
-              <label
-                htmlFor="current-zip-code"
-                className="experience-credentials-section__label"
-              >
-                ZIP Code
-              </label>
-
-              <input
-                id="current-zip-code"
-                type="text"
-                maxLength={20}
-                value={data.zipCode}
-                disabled={disabled}
-                onChange={(event) =>
-                  updateField(
-                    "zipCode",
-                    event.target.value,
-                  )
-                }
-                className="experience-credentials-section__input"
-                aria-invalid={Boolean(
-                  errors.zipCode,
-                )}
-              />
-
-              {errors.zipCode && (
-                <p className="experience-credentials-section__error">
-                  {errors.zipCode}
-                </p>
-              )}
-            </div>
-
+            {(data.city ||
+              data.county ||
+              data.state ||
+              data.zipCode) && (
+              <p className="experience-credentials-section__location-selected">
+                {[
+                  data.city,
+                  data.county,
+                  data.state,
+                  data.zipCode,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            )}
           </div>
         </fieldset>
       </div>
@@ -754,47 +1052,52 @@ export default function ExperienceCredentialsEdit({
           Navigation
          ================================================= */}
 
-      <div className="experience-credentials-section__navigation">
-        <button
-          type="button"
-          className="experience-credentials-section__navigation-button"
-          onClick={onBack}
-          disabled={disabled}
-          aria-label="Back to overview"
-        >
-          <ArrowLeft
-            size={20}
-            strokeWidth={2}
-          />
-        </button>
-        {mode === "onboarding" ? (
-          <button
-            type="button"
-            className="experience-credentials-section__continue-button"
-            onClick={handleContinue}
-            disabled={disabled}
-          >
-            Save & Continue
-            <ArrowRight
-              size={18}
-              strokeWidth={2}
-            />
-          </button>
-        ) : (
+      {showActions && (
+        <div className="experience-credentials-section__navigation">
           <button
             type="button"
             className="experience-credentials-section__navigation-button"
-            onClick={handleContinue}
+            onClick={onBack}
             disabled={disabled}
-            aria-label="Continue to acquisition preferences"
+            aria-label="Back to overview"
           >
-            <ArrowRight
+            <ArrowLeft
               size={20}
               strokeWidth={2}
             />
           </button>
-        )}
-      </div>
+
+          {mode === "onboarding" ? (
+            <button
+              type="button"
+              className="experience-credentials-section__continue-button"
+              onClick={handleContinue}
+              disabled={disabled}
+            >
+              Save & Continue
+              <ArrowRight
+                size={18}
+                strokeWidth={2}
+              />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="experience-credentials-section__navigation-button"
+              onClick={handleContinue}
+              disabled={disabled}
+              aria-label="Continue to acquisition preferences"
+            >
+              <ArrowRight
+                size={20}
+                strokeWidth={2}
+              />
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
-}
+});
+
+export default ExperienceCredentialsEdit;

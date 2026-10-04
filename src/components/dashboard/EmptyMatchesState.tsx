@@ -6,6 +6,7 @@ import './dashboard.css';
 /* ------------------------------------------------------------------ */
 
 interface EmptyMatchesStateProps {
+  profileReady?: boolean;
   /** Button label */
   buttonLabel?: string;
   /** Button click handler */
@@ -30,6 +31,7 @@ const MagnifyingGlassIcon: React.FC = () => (
 );
 
 const EmptyMatchesState: React.FC<EmptyMatchesStateProps> = ({
+  profileReady = false,
   buttonLabel = 'Finish your profile',
   onButtonClick,
 }) => {
@@ -45,8 +47,9 @@ const EmptyMatchesState: React.FC<EmptyMatchesStateProps> = ({
 
       {/* Subtitle */}
       <p className="empty-matches__subtitle">
-        We&apos;ll start matching you once your profile is complete. Finish the remaining
-        sections to view matches.
+        {profileReady
+          ? 'Your acquisition preferences are saved. No matching businesses are available yet.'
+          : 'We will start matching you once your profile is complete. Finish the remaining sections to view matches.'}
       </p>
 
       {/* Secondary Button */}
