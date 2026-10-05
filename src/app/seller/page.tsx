@@ -8,6 +8,10 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import {
+  BriefcaseBusiness,
+  FileText,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   getCurrentUser,
@@ -38,6 +42,59 @@ type SellerTab =
   | "documents"
   | "messages"
   | "account";
+
+const tabTitle: Record<SellerTab, string> = {
+  listings: "Listings",
+  deals: "Deals",
+  documents: "Documents",
+  messages: "Messages",
+  account: "Account",
+};
+
+function ComingSoon({
+  type,
+}: {
+  type: "deals" | "documents";
+}) {
+  const isDeals = type === "deals";
+
+  return (
+    <section
+      className="seller-coming-soon"
+      aria-labelledby={`${type}-coming-soon-title`}
+    >
+      <div className="seller-coming-soon__icon">
+        {isDeals ? (
+          <BriefcaseBusiness
+            size={28}
+            aria-hidden="true"
+          />
+        ) : (
+          <FileText
+            size={28}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+
+      <span className="seller-coming-soon__eyebrow">
+        Coming soon
+      </span>
+
+      <h2 id={`${type}-coming-soon-title`}>
+        {isDeals
+          ? "Seller deals are on the way"
+          : "Seller documents are on the way"}
+      </h2>
+
+      <p>
+        {isDeals
+          ? "This is where you’ll manage active buyer opportunities and follow each transaction as it moves through the MatchBook deal process."
+          : "This is where you’ll manage business and transaction documents used during verification and due diligence."}
+      </p>
+    </section>
+  );
+}
 
 export default function SellerPage() {
   const router = useRouter();
@@ -309,13 +366,7 @@ export default function SellerPage() {
 
         <div className="seller-listings-header">
           {!editingBusiness && (
-            <h1>
-              {tab === "messages"
-                ? "Messages"
-                : tab === "account"
-                  ? "Account"
-                  : "Listings"}
-            </h1>
+            <h1>{tabTitle[tab]}</h1>
           )}
 
           {tab === "listings" &&
@@ -540,6 +591,18 @@ export default function SellerPage() {
             )}
           </div>
         )}
+
+        {!loading &&
+          user &&
+          tab === "deals" && (
+            <ComingSoon type="deals" />
+          )}
+
+        {!loading &&
+          user &&
+          tab === "documents" && (
+            <ComingSoon type="documents" />
+          )}
 
         {!loading &&
           user &&
