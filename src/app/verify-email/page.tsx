@@ -114,6 +114,7 @@ export default function VerifyEmailPage() {
 
       try {
         const {
+          data: verificationData,
           error,
         } =
           await supabase.auth.verifyOtp(
@@ -139,10 +140,44 @@ export default function VerifyEmailPage() {
           return;
         }
 
-        setOtpPurpose(null);
+        /*
+         * OTP verification establishes the authenticated Supabase session.
+         * Do not begin role/profile routing until that session is available
+         * to the shared API client.
+         */
+        let session =
+          verificationData.session;
+
+        if (!session?.access_token) {
+          const {
+            data: sessionData,
+            error: sessionError,
+          } =
+            await supabase.auth.getSession();
+
+          if (
+            sessionError ||
+            !sessionData.session?.access_token
+          ) {
+            setErrorMessage(
+              "Your email was verified, but your sign-in session could not be established. Please sign in.",
+            );
+
+            return;
+          }
+
+          session = sessionData.session;
+        }
 
         const destination =
           await getPostSignInPath();
+
+        /*
+         * Keep the verification context until post-sign-in routing has
+         * completed. Clearing it earlier can make this page render its
+         * expired/missing-session state during the transition.
+         */
+        setOtpPurpose(null);
 
         router.replace(
           destination,
