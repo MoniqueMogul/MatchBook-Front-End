@@ -58,7 +58,6 @@ export interface ApiDocumentUploadRequest {
   original_filename: string;
   mime_type: "application/pdf";
   file_size: number;
-  buyer_financials_id: string;
   declaration_signed?: boolean;
 }
 
@@ -66,6 +65,11 @@ export interface ApiDocumentUploadResponse {
   document_id: string;
   upload_url: string;
   required_headers: Record<string, string>;
+  expires_in_seconds: number;
+}
+
+export interface ApiDocumentDownloadResponse {
+  download_url: string;
   expires_in_seconds: number;
 }
 
@@ -80,10 +84,6 @@ export interface ApiDocumentResponse {
   verified_at: string | null;
   document_metadata: Record<string, unknown> | null;
   uploaded_at: string;
-}
-
-export interface BuyerFinancialsReference {
-  id: string;
 }
 
 export interface DocumentUploadInput {
