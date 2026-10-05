@@ -315,6 +315,28 @@
   color: #b42318;
 }
 
+/* =========================================
+   Phone Error Border
+   ========================================= */
+
+.edit-overview-section__field
+  .phone-input:has(.phone-input__error) .phone-input__code-select,
+.edit-overview-section__field
+  .phone-input:has(.phone-input__error) .phone-input__number {
+  border-color: #b42318;
+}
+
+.edit-overview-section__field
+  .phone-input:has(.phone-input__error) .phone-input__code-select {
+  border-right: 0;
+}
+
+.edit-overview-section__field
+  .phone-input:has(.phone-input__error)
+  .phone-input__number {
+  box-shadow: inset 0 0 0 1px #b42318;
+}
+
 
 /* =========================================
    Continue Button

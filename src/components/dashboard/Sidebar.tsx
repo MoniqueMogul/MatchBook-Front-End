@@ -333,6 +333,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const pathname = usePathname();
 
   const [searchValue, setSearchValue] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   /* ---------------------------------------------------------------- */
   /*  Automatically determine active navigation item                  */
@@ -404,7 +405,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Link href={href} className={`sidebar__nav-link${isActive ? " sidebar__nav-link--active" : ""}`}
           style={{ textDecoration: "none" }} aria-current={isActive ? "page" : undefined}
           onClick={(event) => { if (onNavigate?.(item.id) === false) event.preventDefault(); }}>
-          {item.icon}{item.id === "profile" ? profileLabel : item.label}
+          {item.icon}
+          <span className="sidebar__nav-label">
+            {item.id === "profile" ? profileLabel : item.label}
+          </span>
         </Link>
       </li>;
     }
@@ -421,14 +425,20 @@ const Sidebar: React.FC<SidebarProps> = ({
           aria-current={isActive ? "page" : undefined}
         >
           {item.icon}
-          {item.id === "profile" ? profileLabel : item.label}
+          <span className="sidebar__nav-label">
+            {item.id === "profile" ? profileLabel : item.label}
+          </span>
         </button>
       </li>
     );
   };
 
   return (
-    <aside className="sidebar" aria-label="Main navigation">
+  <>
+    <aside
+      className={`sidebar${isCollapsed ? " sidebar--collapsed" : ""}`}
+      aria-label="Main navigation"
+    >
       {/* Header: Logo + Collapse */}
       <div className="sidebar__header">
         <div className="sidebar__logo" aria-label="Matchbook">
@@ -452,8 +462,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           className="sidebar__collapse-btn"
-          aria-label="Collapse sidebar"
-          title="Collapse sidebar"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          onClick={() => setIsCollapsed((previous) => !previous)}
         >
           <svg
             width="16"
@@ -505,7 +516,34 @@ const Sidebar: React.FC<SidebarProps> = ({
         </ul>
       </nav>
     </aside>
-  );
+
+    {isCollapsed && (
+      <button
+        type="button"
+        className="sidebar__mobile-toggle"
+        aria-label="Open sidebar"
+        title="Open sidebar"
+        onClick={() => setIsCollapsed(false)}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            d="M3 5.5H17M3 10H17M3 14.5H17"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+    )}
+  </>
+);
 };
 
 export default Sidebar;
