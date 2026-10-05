@@ -3,7 +3,6 @@
 import ContentSkeleton from "@/components/common/ContentSkeleton";
 import { useEffect, useState } from "react";
 import {
-  Banknote,
   Check,
   Clock3,
   FileText,
@@ -15,8 +14,9 @@ import {
 } from "lucide-react";
 
 import {
-  listBuyerDocuments,
-  uploadAndVerifyBuyerDocuments,
+  getDocumentDownloadUrl,
+  listBusinessDocuments,
+  uploadAndConfirmBusinessDocument,
 } from "@/lib/api/documents/documents";
 import type {
   DocumentsViewData,
@@ -31,6 +31,7 @@ import "./DocumentsDashboard.css";
 
 interface DocumentsDashboardProps {
   data: DocumentsViewData;
+  businessId?: string;
 }
 
 const statusCopy: Record<
@@ -44,11 +45,14 @@ const statusCopy: Record<
 
 export default function DocumentsDashboard({
   data,
+  businessId,
 }: DocumentsDashboardProps) {
   const [documents, setDocuments] = useState<VerifiedDocument[]>(
     data.documents,
   );
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadModalMode, setUploadModalMode] = useState<
+    "official" | "tax" | null
+  >(null);
   const [isLoadingDocuments, setIsLoadingDocuments] =
     useState(true);
   const [loadError, setLoadError] = useState("");
@@ -58,7 +62,7 @@ export default function DocumentsDashboard({
 
     async function loadDocuments(): Promise<void> {
       try {
-        const existingDocuments = await listBuyerDocuments();
+        const existingDocuments = await listBusinessDocuments(businessId);
 
         if (isActive) {
           setDocuments(existingDocuments);
@@ -84,32 +88,69 @@ export default function DocumentsDashboard({
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [businessId]);
 
-  const isVerified = documents.length > 0;
+  const hasDocuments = documents.length > 0;
 
-  async function handleVerifiedDocuments(
+  const hasPendingDocuments = documents.some(
+    (document) => document.status === "pending",
+  );
+
+  async function handleDocumentUpload(
     uploads: DocumentUploadInput[],
   ): Promise<Array<{ file: File; error?: Error }>> {
-    const outcomes = await uploadAndVerifyBuyerDocuments(uploads);
+    const outcomes = await Promise.allSettled(
+      uploads.map((input) =>
+        uploadAndConfirmBusinessDocument(
+          businessId,
+          input,
+        ),
+      ),
+    );
 
     const succeeded = outcomes
-      .map((outcome) => outcome.document)
       .filter(
-        (document): document is VerifiedDocument =>
-          document !== undefined,
-      );
+        (
+          outcome,
+        ): outcome is PromiseFulfilledResult<VerifiedDocument> =>
+          outcome.status === "fulfilled",
+      )
+      .map((outcome) => outcome.value);
 
     if (succeeded.length > 0) {
       setDocuments((current) => [...succeeded, ...current]);
       setLoadError("");
     }
 
-    return outcomes.map((outcome) => ({
-      file: outcome.input.file,
-      error: outcome.error,
+    return outcomes.map((outcome, index) => ({
+      file: uploads[index].file,
+      error:
+        outcome.status === "rejected"
+          ? outcome.reason instanceof Error
+            ? outcome.reason
+            : new Error("The document could not be uploaded.")
+          : undefined,
     }));
   }
+
+  async function handleDownload(documentId: string): Promise<void> {
+  try {
+    const { download_url } =
+      await getDocumentDownloadUrl(documentId);
+
+    window.open(
+      download_url,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  } catch (error) {
+    setLoadError(
+      error instanceof Error
+        ? error.message
+        : "Unable to download the document.",
+    );
+  }
+}
 
   return (
     <main className="documents-dashboard">
@@ -128,32 +169,31 @@ export default function DocumentsDashboard({
         </div>
       )}
 
-      {!isLoadingDocuments && isVerified ? (
+      {!isLoadingDocuments && hasPendingDocuments && (
         <div className="documents-dashboard__pending-banner">
           <Clock3 size={20} />
           <div>
-            <strong>Pending Verification</strong>
+            <strong>Documents Under Review</strong>
             <span>
-              We are in the process of verifying the documents you
-              submitted. Thank you for your patience! In the
-              meanwhile feel free to explore some of our other
-              features.
+              Your business documents have been submitted and are
+              currently being reviewed by our team.
             </span>
           </div>
         </div>
-      ) : (
+      )}
+
+      {!isLoadingDocuments && !hasDocuments && (
         <div className="documents-dashboard__verify-banner">
           <div className="documents-dashboard__verify-copy">
             <span className="documents-dashboard__verify-icon">
               <ShieldCheck size={20} />
             </span>
+
             <div>
-              <strong>Verify Your Funds</strong>
+              <strong>Verify Your Business</strong>
               <p>
-                Use one of our secure methods to verify your
-                purchasing power. This helps build trust with
-                sellers and gives you access to more business
-                listings.
+                Upload your business tax reports so our team can
+                review and verify your business information.
               </p>
             </div>
           </div>
@@ -161,25 +201,30 @@ export default function DocumentsDashboard({
           <ul className="documents-dashboard__verify-benefits">
             <li>
               <Check size={13} />
-              Build credibility
+              Keep your documents secure
             </li>
             <li>
               <Check size={13} />
-              Unlock more business listings
+              Help verify your business
             </li>
             <li>
               <Check size={13} />
-              Speed up the deal process
+              Build trust with buyers
             </li>
           </ul>
         </div>
       )}
 
-      {isLoadingDocuments ? <ContentSkeleton shape="documents" label="Loading documents" /> : isVerified ? (
+      {isLoadingDocuments ? (
+        <ContentSkeleton
+          shape="documents"
+          label="Loading documents"
+        />
+      ) : loadError ? null : hasDocuments ? (
         <section className="documents-dashboard__table-section">
           <div className="documents-dashboard__table-header">
             <div>
-              <h2>Upload Official Documents</h2>
+              <h2>Business Documents</h2>
               <p>
                 These files are private and will only be visible to
                 you and our team.
@@ -189,10 +234,10 @@ export default function DocumentsDashboard({
             <button
               type="button"
               className="documents-dashboard__upload-button"
-              onClick={() => setIsUploadModalOpen(true)}
+              onClick={() => setUploadModalMode("tax")}
             >
               <Plus size={16} />
-              Upload Documents
+              Upload Tax Reports
             </button>
           </div>
 
@@ -204,6 +249,7 @@ export default function DocumentsDashboard({
                 <th>Status</th>
                 <th>Visibility</th>
                 <th>Uploaded On</th>
+                <th>Action</th>
               </tr>
             </thead>
 
@@ -234,7 +280,7 @@ export default function DocumentsDashboard({
                         <Lock size={13} />
                         {document.visibility === "private"
                           ? "Private to you"
-                          : "Visible to sellers who signed an NDA"}
+                          : "Shared with authorized users"}
                       </span>
                     </td>
                     <td>
@@ -244,6 +290,14 @@ export default function DocumentsDashboard({
                         year: "numeric",
                       }).format(new Date(document.uploadedAt))}
                     </td>
+                    <td>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(document.id)}
+                    >
+                      Download
+                    </button>
+                  </td>
                   </tr>
                 );
               })}
@@ -253,7 +307,7 @@ export default function DocumentsDashboard({
       ) : (
         <>
           <h2 className="documents-dashboard__choose-heading">
-            Choose A Verification Method
+            Upload Your Business Documents
           </h2>
 
           <div className="documents-dashboard__methods">
@@ -268,7 +322,7 @@ export default function DocumentsDashboard({
               </p>
               <button
                 type="button"
-                onClick={() => setIsUploadModalOpen(true)}
+                onClick={() => setUploadModalMode("official")}
               >
                 Upload Documents
               </button>
@@ -276,15 +330,18 @@ export default function DocumentsDashboard({
 
             <article className="documents-dashboard__method-card">
               <span className="documents-dashboard__method-icon">
-                <Banknote size={22} strokeWidth={1.5} />
+                <FileText size={22} strokeWidth={1.5} />
               </span>
-              <h3>Connect Bank Account</h3>
+              <h3>Upload Tax Reports</h3>
               <p>
-                Securely link your bank account to verify your
-                account in minutes.
+                Upload your business tax reports for verification
+                by our team.
               </p>
-              <button type="button" disabled>
-                Get Started
+              <button
+                type="button"
+                onClick={() => setUploadModalMode("tax")}
+              >
+                Upload Tax Reports
               </button>
             </article>
 
@@ -305,10 +362,11 @@ export default function DocumentsDashboard({
         </>
       )}
 
-      {isUploadModalOpen && (
+      {uploadModalMode && (
         <DocumentUploadModal
-          onClose={() => setIsUploadModalOpen(false)}
-          onVerify={handleVerifiedDocuments}
+          mode={uploadModalMode}
+          onClose={() => setUploadModalMode(null)}
+          onUpload={handleDocumentUpload}
         />
       )}
     </main>

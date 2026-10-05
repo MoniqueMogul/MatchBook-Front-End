@@ -6,7 +6,9 @@ import type {
   ApiDocumentResponse,
   ApiDocumentUploadRequest,
   ApiDocumentUploadResponse,
+  BusinessDocumentUploadRequest,
   BuyerFinancialsReference,
+  DocumentDownloadResponse,
   DocumentsViewData,
   DocumentStatus,
   DocumentUploadInput,
@@ -69,6 +71,32 @@ export async function initiateDocumentUpload(
   try {
     const response = await api.post<ApiDocumentUploadResponse>(
       "/verification/documents",
+      payload,
+    );
+
+    return response.data;
+  } catch (error) {
+    throw createDocumentError(
+      error,
+      `Unable to initialize the upload for ${input.file.name}.`,
+    );
+  }
+}
+
+export async function initiateBusinessDocumentUpload(
+  businessId: string,
+  input: DocumentUploadInput,
+): Promise<ApiDocumentUploadResponse> {
+  const payload: BusinessDocumentUploadRequest = {
+    expected_document_type: input.documentType,
+    original_filename: input.file.name,
+    mime_type: input.file.type || "application/pdf",
+    file_size: input.file.size,
+  };
+
+  try {
+    const response = await api.post<ApiDocumentUploadResponse>(
+      `/verification/documents/businesses/${businessId}`,
       payload,
     );
 
@@ -149,6 +177,23 @@ export async function getDocument(
   }
 }
 
+export async function getDocumentDownloadUrl(
+  documentId: string,
+): Promise<DocumentDownloadResponse> {
+  try {
+    const response = await api.get<DocumentDownloadResponse>(
+      `/verification/documents/${documentId}/download`,
+    );
+
+    return response.data;
+  } catch (error) {
+    throw createDocumentError(
+      error,
+      "Unable to generate the document download link.",
+    );
+  }
+}
+
 export async function listBuyerDocuments(): Promise<
   VerifiedDocument[]
 > {
@@ -174,6 +219,28 @@ export async function listBuyerDocuments(): Promise<
     throw createDocumentError(
       error,
       "Unable to load your existing documents.",
+    );
+  }
+}
+
+export async function listBusinessDocuments(
+  businessId: string,
+): Promise<VerifiedDocument[]> {
+  try {
+    const response = await api.get<ApiDocumentResponse[]>(
+      `/verification/documents/businesses/${businessId}`,
+    );
+
+    return response.data.map((document) =>
+      mapApiDocument(
+        document,
+        getDocumentTypeLabel(document.document_type),
+      ),
+    );
+  } catch (error) {
+    throw createDocumentError(
+      error,
+      "Unable to load your business documents.",
     );
   }
 }
@@ -222,6 +289,27 @@ export async function uploadAndVerifyBuyerDocuments(
       ),
     };
   });
+}
+
+export async function uploadAndConfirmBusinessDocument(
+  businessId: string,
+  input: DocumentUploadInput,
+): Promise<VerifiedDocument> {
+  const upload = await initiateBusinessDocumentUpload(
+    businessId,
+    input,
+  );
+
+  await uploadToPresignedUrl(upload, input.file);
+
+  const confirmed = await confirmDocumentUpload(
+    upload.document_id,
+  );
+
+  return mapApiDocument(
+    confirmed,
+    input.displayType,
+  );
 }
 
 function mapApiDocument(

@@ -33,6 +33,7 @@ import SellerMessages from "@/components/seller/SellerMessages";
 import BusinessEditor from "@/components/seller/BusinessEditor";
 import BusinessProfile from "@/components/seller/BusinessProfile";
 import BusinessImage from "@/components/seller/BusinessImage";
+import DocumentsDashboard from "@/components/buyer/documents/DocumentsDashboard";
 import "@/components/buyer/account/AccountDetails.css";
 import "./page.css";
 
@@ -116,6 +117,9 @@ export default function SellerPage() {
 
   const [selected, setSelected] =
     useState<SellerBusiness | null>(null);
+
+  const [documentsBusinessId, setDocumentsBusinessId] =
+    useState<string | null>(null);
 
   const [editingBusiness, setEditingBusiness] =
     useState(false);
@@ -308,6 +312,13 @@ export default function SellerPage() {
         setActiveNavigation("documents");
         setSelected(null);
         setEditingBusiness(false);
+
+        if (businesses.length === 1) {
+          setDocumentsBusinessId(businesses[0].id);
+        } else {
+          setDocumentsBusinessId(null);
+        }
+
         break;
 
       case "messages":
@@ -365,7 +376,7 @@ export default function SellerPage() {
         )}
 
         <div className="seller-listings-header">
-          {!editingBusiness && (
+           {!editingBusiness && tab !== "documents" && (
             <h1>{tabTitle[tab]}</h1>
           )}
 
@@ -601,7 +612,49 @@ export default function SellerPage() {
         {!loading &&
           user &&
           tab === "documents" && (
-            <ComingSoon type="documents" />
+            <>
+              {documentsBusinessId ? (
+                <DocumentsDashboard
+                  key={documentsBusinessId}
+                  data={{
+                    isVerified: false,
+                    documents: [],
+                  }}
+                  businessId={documentsBusinessId}
+                />
+              ) : businesses.length > 1 ? (
+                <section>
+                  <h2>Select a Business</h2>
+                  <p>
+                    Choose the business whose documents you want to manage.
+                  </p>
+
+                  <div>
+                    {businesses.map((business) => (
+                      <Button
+                        key={business.id}
+                        type="button"
+                        onClick={() =>
+                          setDocumentsBusinessId(business.id)
+                        }
+                      >
+                        {business.dba ||
+                          business.legal_name ||
+                          "Untitled business"}
+                      </Button>
+                    ))}
+                  </div>
+                </section>
+              ) : (
+                <section>
+                  <h2>No Business Available</h2>
+                  <p>
+                    Create a business first before uploading verification
+                    documents.
+                  </p>
+                </section>
+              )}
+            </>
           )}
 
         {!loading &&

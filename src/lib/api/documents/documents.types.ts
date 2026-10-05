@@ -62,6 +62,14 @@ export interface ApiDocumentUploadRequest {
   declaration_signed?: boolean;
 }
 
+export interface BusinessDocumentUploadRequest {
+  expected_document_type: ApiDocumentType;
+  original_filename: string;
+  mime_type: string;
+  file_size: number;
+  declaration_signed?: boolean;
+}
+
 export interface ApiDocumentUploadResponse {
   document_id: string;
   upload_url: string;
@@ -80,6 +88,11 @@ export interface ApiDocumentResponse {
   verified_at: string | null;
   document_metadata: Record<string, unknown> | null;
   uploaded_at: string;
+}
+
+export interface DocumentDownloadResponse {
+  download_url: string;
+  expires_in_seconds: number;
 }
 
 export interface BuyerFinancialsReference {

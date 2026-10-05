@@ -37,25 +37,21 @@ interface SlotState {
 }
 
 interface DocumentUploadModalProps {
+  mode: "official" | "tax";
   onClose: () => void;
-  onVerify: (
+  onUpload: (
     documents: DocumentUploadInput[],
   ) => Promise<Array<{ file: File; error?: Error }>>;
 }
 
 export default function DocumentUploadModal({
+  mode,
   onClose,
-  onVerify,
+  onUpload,
 }: DocumentUploadModalProps) {
   const fileInputRefs = useRef<
     Partial<Record<UploadSlotKey, HTMLInputElement | null>>
   >({});
-
-  const [fundingSources, setFundingSources] = useState<
-    FundingSource[]
-  >([]);
-  const [isFundingMenuOpen, setIsFundingMenuOpen] =
-    useState(false);
   const [slots, setSlots] = useState<
     Record<UploadSlotKey, SlotState>
   >(() =>
@@ -67,6 +63,8 @@ export default function DocumentUploadModal({
       {} as Record<UploadSlotKey, SlotState>,
     ),
   );
+  const [fundingSources, setFundingSources] = useState<FundingSource[]>([]);
+  const [isFundingMenuOpen, setIsFundingMenuOpen] = useState(false);
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,14 +83,6 @@ export default function DocumentUploadModal({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [onClose]);
-
-  function toggleFundingSource(value: FundingSource) {
-    setFundingSources((current) =>
-      current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value],
-    );
-  }
 
   function setSlotFile(slotKey: UploadSlotKey, file: File | null) {
     if (!file) {
@@ -131,6 +121,14 @@ export default function DocumentUploadModal({
     }));
   }
 
+  function toggleFundingSource(source: FundingSource) {
+    setFundingSources((current) =>
+      current.includes(source)
+        ? current.filter((item) => item !== source)
+        : [...current, source],
+    );
+  }
+
   function handleInputChange(
     slotKey: UploadSlotKey,
     event: ChangeEvent<HTMLInputElement>,
@@ -147,11 +145,14 @@ export default function DocumentUploadModal({
     setSlotFile(slotKey, event.dataTransfer.files?.[0] ?? null);
   }
 
-  async function handleVerify() {
+  async function handleUpload() {
     const filledSlots = uploadSlotDefinitions.filter(
-      (slot) => slots[slot.key].file,
+      (slot) =>
+        slots[slot.key].file &&
+        (mode === "official"
+          ? slot.documentType !== "tax_return"
+          : slot.documentType === "tax_return"),
     );
-
     if (filledSlots.length === 0) {
       setFormError("Please upload at least one document.");
       return;
@@ -184,7 +185,7 @@ export default function DocumentUploadModal({
     setFormError("");
 
     try {
-      const outcomes = await onVerify(uploads);
+      const outcomes = await onUpload(uploads);
       const failures = outcomes.filter(
         (outcome) => outcome.error,
       );
@@ -237,13 +238,15 @@ export default function DocumentUploadModal({
         <header className="document-upload-modal__header">
           <div>
             <h2 id="document-upload-modal-title">
-              Upload Official Documents
-            </h2>
-            <p>
-              Please provide official documentation to verify your
-              funds. These files are private and will only be
-              visible to you and our team.
-            </p>
+            {mode === "official"
+              ? "Upload Official Documents"
+              : "Upload Tax Reports"}
+          </h2>
+          <p>
+            {mode === "official"
+              ? "Please provide official documentation to verify your funds. These files are private and will only be visible to you and our team."
+              : "Upload your business tax reports. These files are private and will only be visible to you and our team."}
+          </p>
           </div>
 
           <button
@@ -256,62 +259,51 @@ export default function DocumentUploadModal({
         </header>
 
         <div className="document-upload-modal__body">
-          <div className="document-upload-modal__field">
-            <label htmlFor="document-upload-funding-source">
-              How do you plan to fund your acquisition?
-            </label>
+          {mode === "official" && (
+            <div className="document-upload-modal__funding">
+              <label>How do you plan to fund your acquisition?</label>
 
-            <div className="document-upload-modal__multiselect">
-              <button
-                id="document-upload-funding-source"
-                type="button"
-                className="document-upload-modal__multiselect-trigger"
-                aria-haspopup="listbox"
-                aria-expanded={isFundingMenuOpen}
-                onClick={() =>
-                  setIsFundingMenuOpen((current) => !current)
-                }
-              >
-                {fundingSources.length === 0
-                  ? "Select all that apply"
-                  : fundingSourceOptions
-                      .filter((option) =>
-                        fundingSources.includes(option.value),
-                      )
-                      .map((option) => option.label)
-                      .join(", ")}
-
-                <ChevronDown size={16} />
-              </button>
-
-              {isFundingMenuOpen && (
-                <ul
-                  className="document-upload-modal__multiselect-menu"
-                  role="listbox"
-                  aria-multiselectable="true"
+              <div className="document-upload-modal__funding-dropdown">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsFundingMenuOpen((current) => !current)
+                  }
                 >
-                  {fundingSourceOptions.map((option) => (
-                    <li key={option.value}>
-                      <label>
+                  <span>
+                    {fundingSources.length > 0
+                      ? `${fundingSources.length} selected`
+                      : "Select funding sources"}
+                  </span>
+                  <ChevronDown size={16} />
+                </button>
+
+                {isFundingMenuOpen && (
+                  <div className="document-upload-modal__funding-options">
+                    {fundingSourceOptions.map((option) => (
+                      <label key={option.value}>
                         <input
                           type="checkbox"
-                          checked={fundingSources.includes(
-                            option.value,
-                          )}
+                          checked={fundingSources.includes(option.value)}
                           onChange={() =>
                             toggleFundingSource(option.value)
                           }
                         />
-                        {option.label}
+                        <span>{option.label}</span>
                       </label>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-
-          {uploadSlotDefinitions.map((slot) => {
+          )}
+          {uploadSlotDefinitions
+            .filter((slot) =>
+              mode === "official"
+                ? slot.documentType !== "tax_return"
+                : slot.documentType === "tax_return",
+            )
+            .map((slot) => {
             const slotState = slots[slot.key];
 
             return (
@@ -413,11 +405,13 @@ export default function DocumentUploadModal({
             type="button"
             className="document-upload-modal__verify-button"
             disabled={isSubmitting}
-            onClick={handleVerify}
+            onClick={handleUpload}
           >
             {isSubmitting
-              ? "Uploading and verifying..."
-              : "Verify Documents"}
+              ? "Uploading..."
+              : mode === "official"
+                ? "Verify Documents"
+                : "Upload Tax Reports"}
           </button>
         </footer>
       </section>

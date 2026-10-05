@@ -113,6 +113,10 @@
   display: none;
 }
 
+.sidebar--collapsed .sidebar__logo {
+  display: none;
+}
+
 .sidebar__collapse-btn {
   display: flex;
   align-items: center;
