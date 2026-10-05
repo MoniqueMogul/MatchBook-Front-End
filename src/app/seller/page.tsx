@@ -8,10 +8,6 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import {
-  BriefcaseBusiness,
-  FileText,
-} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   getCurrentUser,
@@ -42,59 +38,6 @@ type SellerTab =
   | "documents"
   | "messages"
   | "account";
-
-const tabTitle: Record<SellerTab, string> = {
-  listings: "Listings",
-  deals: "Deals",
-  documents: "Documents",
-  messages: "Messages",
-  account: "Account",
-};
-
-function ComingSoon({
-  type,
-}: {
-  type: "deals" | "documents";
-}) {
-  const isDeals = type === "deals";
-
-  return (
-    <section
-      className="seller-coming-soon"
-      aria-labelledby={`${type}-coming-soon-title`}
-    >
-      <div className="seller-coming-soon__icon">
-        {isDeals ? (
-          <BriefcaseBusiness
-            size={28}
-            aria-hidden="true"
-          />
-        ) : (
-          <FileText
-            size={28}
-            aria-hidden="true"
-          />
-        )}
-      </div>
-
-      <span className="seller-coming-soon__eyebrow">
-        Coming soon
-      </span>
-
-      <h2 id={`${type}-coming-soon-title`}>
-        {isDeals
-          ? "Seller deals are on the way"
-          : "Seller documents are on the way"}
-      </h2>
-
-      <p>
-        {isDeals
-          ? "This is where you’ll manage active buyer opportunities and follow each transaction as it moves through the MatchBook deal process."
-          : "This is where you’ll manage business and transaction documents used during verification and due diligence."}
-      </p>
-    </section>
-  );
-}
 
 export default function SellerPage() {
   const router = useRouter();
@@ -260,8 +203,8 @@ export default function SellerPage() {
     business: SellerBusiness,
   ) => {
     /*
-     * BusinessEditor now supplies the canonical record returned by
-     * GET /intake/sellers/businesses/{id}.
+     * BusinessEditor supplies the canonical record returned by
+     * the backend after the business is saved.
      */
     setBusinesses((current) => [
       business,
@@ -338,68 +281,271 @@ export default function SellerPage() {
     return false;
   };
 
-  return <div className="seller-page dashboard-shell">
-    <Sidebar profileLabel="Listings" activeItem={tab === "listings" && (selected || editingBusiness) ? "profile" : activeNavigation} onNavigate={navigateSeller} />
-    <main className={`seller-content${tab === "messages" ? " seller-content--messages" : ""}`}>
-      {navigationMessage && <p role="status">{navigationMessage}</p>}
-      <div className="seller-listings-header">
-      {!editingBusiness && (
-        <h1>
-          {tab === "messages" ? "Messages" : tab === "account" ? "Account" : "Listings"}
-        </h1>
-      )}
+  return (
+    <div className="seller-page dashboard-shell">
+      <Sidebar
+        profileLabel="Listings"
+        activeItem={
+          tab === "listings" &&
+          (selected || editingBusiness)
+            ? "profile"
+            : activeNavigation
+        }
+        onNavigate={navigateSeller}
+      />
 
-      {tab === "listings" && !editingBusiness && !selected && (
-        <Button
-          type="button"
-          disabled={busy || !!error}
-          onClick={() => {
-            setSelected(null);
-            setEditingBusiness(true);
-          }}
-        >
-          Create New Business
-        </Button>
-      )}
-    </div>
-      {loading && <ContentSkeleton shape={tab === "messages" ? "messages" : tab === "account" ? "account" : "listings"} label="Loading your seller account" />}
-      {error && <div role="alert"><p>{error}</p><Button type="button" disabled={busy} onClick={() => {
-        setError(null); setLoading(true); setRetry((value) => value + 1);
-      }}>Retry</Button></div>}
-      {!loading && user && <div hidden={tab !== "account"}>
-        <section aria-label="Personal information">
-          <h2>Personal information</h2>
-          <dl><dt>Name</dt><dd>{user.first_name} {user.last_name}</dd>
-            <dt>Email</dt><dd>{user.email || "Not available"}</dd>
-            <dt>Phone</dt><dd>{user.phone || "Not provided"}</dd></dl>
-          {editingAccount ? <form onSubmit={saveAccount}>
-            <label>Phone<input name="phone" type="tel" required maxLength={30} defaultValue={user.phone ?? ""} disabled={busy} /></label>
-            <div className="seller-actions"><Button type="submit" disabled={busy}>{busy ? "Savingâ€¦" : "Save"}</Button>
-              <Button type="button" variant="secondary" disabled={busy} onClick={() => setEditingAccount(false)}>Cancel</Button></div>
-          </form> : <div className="seller-actions"><Button type="button" onClick={() => setEditingAccount(true)}>Edit</Button><LogoutButton /></div>}
-        </section>
-        <AccountSecurity />
-      </div>}
-      {!loading && user && <div hidden={tab !== "listings"}>
-        {editingBusiness ? <BusinessEditor key={selected?.id ?? "new"} business={selected} onSaved={savedBusiness} onCancel={() => setEditingBusiness(false)} />
-          : selected ? <BusinessProfile key={selected.id} business={selected} onBack={() => setSelected(null)}
-            onEdit={() => setEditingBusiness(true)} onUpdated={savedBusiness} onBusyChange={setBusy} /> : <>
-            {!error && !businesses.length && <p>You have no businesses yet. Create your first business to get started.</p>}
-            <ul className="seller-listings">{businesses.map((business) => <li key={business.id}>
-              <button type="button" disabled={busy} onClick={() => selectBusiness(business.id)}>
-                <BusinessImage business={business} thumbnail />
-                <strong>{business.dba || business.legal_name || "Untitled business"}</strong>
-                <span>{business.city}, {business.state}</span><span>{business.status}</span>
-              </button>
-            </li>)}</ul>
-            {busy && <ContentSkeleton shape="options" label="Loading business" />}
-          </>}
-      </div>}
-      {!loading && user && tab === "messages" && <SellerMessages user={user} />}
-      {!loading && !user && <LogoutButton />}
-    </main>
-  </div>;
-}
+      <main
+        className={`seller-content${
+          tab === "messages"
+            ? " seller-content--messages"
+            : ""
+        }`}
+      >
+        {navigationMessage && (
+          <p role="status">
+            {navigationMessage}
+          </p>
+        )}
+
+        <div className="seller-listings-header">
+          {!editingBusiness && (
+            <h1>
+              {tab === "messages"
+                ? "Messages"
+                : tab === "account"
+                  ? "Account"
+                  : "Listings"}
+            </h1>
+          )}
+
+          {tab === "listings" &&
+            !editingBusiness &&
+            !selected && (
+              <Button
+                type="button"
+                disabled={busy || !!error}
+                onClick={() => {
+                  setSelected(null);
+                  setEditingBusiness(true);
+                }}
+              >
+                Create New Business
+              </Button>
+            )}
+        </div>
+
+        {loading && (
+          <ContentSkeleton
+            shape={
+              tab === "messages"
+                ? "messages"
+                : tab === "account"
+                  ? "account"
+                  : "listings"
+            }
+            label="Loading your seller account"
+          />
+        )}
+
+        {error && (
+          <div role="alert">
+            <p>{error}</p>
+
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                setRetry(
+                  (value) => value + 1,
+                );
+              }}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {!loading && user && (
+          <div hidden={tab !== "account"}>
+            <section aria-label="Personal information">
+              <h2>Personal information</h2>
+
+              <dl>
+                <dt>Name</dt>
+                <dd>
+                  {user.first_name}{" "}
+                  {user.last_name}
+                </dd>
+
+                <dt>Email</dt>
+                <dd>
+                  {user.email ||
+                    "Not available"}
+                </dd>
+
+                <dt>Phone</dt>
+                <dd>
+                  {user.phone ||
+                    "Not provided"}
+                </dd>
+              </dl>
+
+              {editingAccount ? (
+                <form onSubmit={saveAccount}>
+                  <label>
+                    Phone
+
+                    <input
+                      name="phone"
+                      type="tel"
+                      required
+                      maxLength={30}
+                      defaultValue={
+                        user.phone ?? ""
+                      }
+                      disabled={busy}
+                    />
+                  </label>
+
+                  <div className="seller-actions">
+                    <Button
+                      type="submit"
+                      disabled={busy}
+                    >
+                      {busy
+                        ? "Saving…"
+                        : "Save"}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={() =>
+                        setEditingAccount(
+                          false,
+                        )
+                      }
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="seller-actions">
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      setEditingAccount(
+                        true,
+                      )
+                    }
+                  >
+                    Edit
+                  </Button>
+
+                  <LogoutButton />
+                </div>
+              )}
+            </section>
+
+            <AccountSecurity />
+          </div>
+        )}
+
+        {!loading && user && (
+          <div hidden={tab !== "listings"}>
+            {editingBusiness ? (
+              <BusinessEditor
+                key={selected?.id ?? "new"}
+                business={selected}
+                onSaved={savedBusiness}
+                onCancel={() =>
+                  setEditingBusiness(false)
+                }
+              />
+            ) : selected ? (
+              <BusinessProfile
+                key={selected.id}
+                business={selected}
+                onBack={() =>
+                  setSelected(null)
+                }
+                onEdit={() =>
+                  setEditingBusiness(true)
+                }
+                onUpdated={savedBusiness}
+                onBusyChange={setBusy}
+              />
+            ) : (
+              <>
+                {!error &&
+                  !businesses.length && (
+                    <p>
+                      You have no businesses
+                      yet. Create your first
+                      business to get started.
+                    </p>
+                  )}
+
+                <ul className="seller-listings">
+                  {businesses.map(
+                    (business) => (
+                      <li key={business.id}>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            selectBusiness(
+                              business.id,
+                            )
+                          }
+                        >
+                          <BusinessImage
+                            business={business}
+                            thumbnail
+                          />
+
+                          <strong>
+                            {business.dba ||
+                              business.legal_name ||
+                              "Untitled business"}
+                          </strong>
+
+                          <span>
+                            {business.city}
+                            {business.state
+                              ? `, ${business.state}`
+                              : ""}
+                          </span>
+
+                          <span>
+                            {business.status}
+                          </span>
+                        </button>
+                      </li>
+                    ),
+                  )}
+                </ul>
+
+                {busy && (
+                  <ContentSkeleton
+                    shape="options"
+                    label="Loading business"
+                  />
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {!loading &&
+          user &&
+          tab === "messages" && (
+            <SellerMessages user={user} />
+          )}
 
         {!loading && !user && (
           <LogoutButton />
