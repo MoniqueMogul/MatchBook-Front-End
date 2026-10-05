@@ -34,19 +34,34 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const { data, error: refreshError } =
+        const { data: refreshData } =
           await supabase.auth.refreshSession();
 
-        if (refreshError || !data.session) {
-          await supabase.auth.signOut();
+        let session = refreshData.session;
+
+        /*
+         * A backend request can race with Supabase immediately after OTP
+         * verification. Re-read the auth client's current session before
+         * treating the user as unauthenticated.
+         */
+        if (!session?.access_token) {
+          const { data: sessionData } =
+            await supabase.auth.getSession();
+
+          session = sessionData.session;
+        }
+
+        if (!session?.access_token) {
           return Promise.reject(error);
         }
 
+        originalRequest.headers =
+          originalRequest.headers ?? {};
         originalRequest.headers.Authorization =
-          `Bearer ${data.session.access_token}`;
+          `Bearer ${session.access_token}`;
+
         return api(originalRequest);
       } catch (refreshError) {
-        await supabase.auth.signOut();
         return Promise.reject(refreshError);
       }
     }
