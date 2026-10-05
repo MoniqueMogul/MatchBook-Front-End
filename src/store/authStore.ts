@@ -1,23 +1,78 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+
+export type AuthOtpPurpose =
+  | "signup"
+  | "signin"
+  | null;
 
 interface AuthState {
   email: string;
   userId: string | null;
-  setUser: (userId: string | null) => void;
-  role: 'buyer' | 'seller' | null;
+  role: "buyer" | "seller" | null;
   step: number;
-  setEmail: (email: string) => void;
-  setRole: (role: 'buyer' | 'seller' | null) => void;
-  setStep: (step: number) => void;
+  otpPurpose: AuthOtpPurpose;
+
+  setUser: (
+    userId: string | null,
+  ) => void;
+
+  setEmail: (
+    email: string,
+  ) => void;
+
+  setRole: (
+    role:
+      | "buyer"
+      | "seller"
+      | null,
+  ) => void;
+
+  setStep: (
+    step: number,
+  ) => void;
+
+  setOtpPurpose: (
+    purpose: AuthOtpPurpose,
+  ) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  email: '',
-  userId: null,
-  setUser: (userId) => set(state => state.userId === userId ? state : { userId, role: null }),
-  role: null,
-  step: 1,
-  setEmail: (email) => set({ email }),
-  setRole: (role) => set({ role }),
-  setStep: (step) => set({ step }),
-}));
+export const useAuthStore =
+  create<AuthState>((set) => ({
+    email: "",
+    userId: null,
+    role: null,
+    step: 1,
+    otpPurpose: null,
+
+    setUser: (userId) =>
+      set((state) =>
+        state.userId === userId
+          ? state
+          : {
+              userId,
+              role: null,
+            },
+      ),
+
+    setEmail: (email) =>
+      set({
+        email,
+      }),
+
+    setRole: (role) =>
+      set({
+        role,
+      }),
+
+    setStep: (step) =>
+      set({
+        step,
+      }),
+
+    setOtpPurpose: (
+      otpPurpose,
+    ) =>
+      set({
+        otpPurpose,
+      }),
+  }));
