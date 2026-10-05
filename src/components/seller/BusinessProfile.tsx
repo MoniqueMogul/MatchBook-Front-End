@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/common/Button";
-import type { SellerBusiness } from "@/lib/api/seller";
+import {
+  listSellerBusiness,
+  sellerErrorMessage,
+  unlistSellerBusiness,
+  type SellerBusiness,
+} from "@/lib/api/seller";
 import BusinessImage from "./BusinessImage";
 
 type Tab = "overview" | "information" | "goals" | "finances";
@@ -22,6 +27,30 @@ export default function BusinessProfile({ business, onBack, onEdit, onUpdated, o
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [imageBusy, setImageBusy] = useState(false);
+  const [listingBusy, setListingBusy] = useState(false);
+  const [listingError, setListingError] = useState<string | null>(null);
+
+  const isListed = business.status === "active";
+  const isBusy = imageBusy || listingBusy;
+
+  const toggleListing = async () => {
+    setListingBusy(true);
+    setListingError(null);
+    onBusyChange(true);
+
+    try {
+      const updated = isListed
+        ? await unlistSellerBusiness(business.id)
+        : await listSellerBusiness(business.id);
+
+      onUpdated(updated);
+    } catch (error) {
+      setListingError(sellerErrorMessage(error));
+    } finally {
+      setListingBusy(false);
+      onBusyChange(false);
+    }
+  };
   // Only business fields are selected. Personal and KYC records never enter this view.
   const information = [
     ["Legal business name", text(business.legal_name)], ["Doing business as", text(business.dba)],
@@ -47,9 +76,24 @@ export default function BusinessProfile({ business, onBack, onEdit, onUpdated, o
 
   return <section className="business-profile">
     <div className="business-profile__actions">
-      <Button type="button" variant="secondary" disabled={imageBusy} onClick={onBack}>Back to Listings</Button>
-      <Button type="button" disabled={imageBusy} onClick={onEdit}>Edit Business Profile</Button>
+      <Button type="button" variant="secondary" disabled={isBusy} onClick={onBack}>Back to Listings</Button>
+      <Button type="button" disabled={isBusy} onClick={onEdit}>Edit Business Profile</Button>
+      <Button
+        type="button"
+        variant={isListed ? "secondary" : undefined}
+        disabled={isBusy}
+        onClick={() => void toggleListing()}
+      >
+        {listingBusy
+          ? isListed
+            ? "Unlisting…"
+            : "Listing…"
+          : isListed
+            ? "Unlist Business"
+            : "List Business"}
+      </Button>
     </div>
+    {listingError && <p role="alert">{listingError}</p>}
     <BusinessImage key={business.id} business={business} onUpdated={onUpdated}
       onBusyChange={(busy) => { setImageBusy(busy); onBusyChange(busy); }} />
     <div className="business-profile__summary">

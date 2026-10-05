@@ -84,6 +84,21 @@ export async function createSellerBusiness(fields: BusinessFields, key: string):
 export async function updateSellerBusiness(id: string, fields: BusinessFields): Promise<SellerBusiness> {
   return (await api.put<SellerBusiness>(`/intake/sellers/businesses/${encodeURIComponent(id)}`, fields)).data;
 }
+export async function listSellerBusiness(id: string): Promise<SellerBusiness> {
+  return (
+    await api.post<SellerBusiness>(
+      `/intake/sellers/businesses/${encodeURIComponent(id)}/list`,
+    )
+  ).data;
+}
+
+export async function unlistSellerBusiness(id: string): Promise<SellerBusiness> {
+  return (
+    await api.post<SellerBusiness>(
+      `/intake/sellers/businesses/${encodeURIComponent(id)}/unlist`,
+    )
+  ).data;
+}
 export function sellerErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const detail = error.response?.data?.detail;
