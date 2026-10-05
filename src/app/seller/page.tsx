@@ -1,12 +1,30 @@
 "use client";
 
 import ContentSkeleton from "@/components/common/ContentSkeleton";
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import {
+  BriefcaseBusiness,
+  FileText,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { getCurrentUser, updateUserPhone, type UserPersonal } from "@/lib/api/user";
-import { getSellerProfile, listSellerBusinesses, getSellerBusiness, sellerErrorMessage, type SellerBusiness } from "@/lib/api/seller";
+import {
+  getCurrentUser,
+  updateUserPhone,
+  type UserPersonal,
+} from "@/lib/api/user";
+import {
+  getSellerProfile,
+  listSellerBusinesses,
+  getSellerBusiness,
+  sellerErrorMessage,
+  type SellerBusiness,
+} from "@/lib/api/seller";
 import { Button } from "@/components/common/Button";
 import LogoutButton from "@/components/common/LogoutButton";
 import AccountSecurity from "@/components/common/AccountSecurity";
@@ -18,72 +36,305 @@ import BusinessImage from "@/components/seller/BusinessImage";
 import "@/components/buyer/account/AccountDetails.css";
 import "./page.css";
 
+type SellerTab =
+  | "listings"
+  | "deals"
+  | "documents"
+  | "messages"
+  | "account";
+
+const tabTitle: Record<SellerTab, string> = {
+  listings: "Listings",
+  deals: "Deals",
+  documents: "Documents",
+  messages: "Messages",
+  account: "Account",
+};
+
+function ComingSoon({
+  type,
+}: {
+  type: "deals" | "documents";
+}) {
+  const isDeals = type === "deals";
+
+  return (
+    <section
+      className="seller-coming-soon"
+      aria-labelledby={`${type}-coming-soon-title`}
+    >
+      <div className="seller-coming-soon__icon">
+        {isDeals ? (
+          <BriefcaseBusiness
+            size={28}
+            aria-hidden="true"
+          />
+        ) : (
+          <FileText
+            size={28}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+
+      <span className="seller-coming-soon__eyebrow">
+        Coming soon
+      </span>
+
+      <h2 id={`${type}-coming-soon-title`}>
+        {isDeals
+          ? "Seller deals are on the way"
+          : "Seller documents are on the way"}
+      </h2>
+
+      <p>
+        {isDeals
+          ? "This is where you’ll manage active buyer opportunities and follow each transaction as it moves through the MatchBook deal process."
+          : "This is where you’ll manage business and transaction documents used during verification and due diligence."}
+      </p>
+    </section>
+  );
+}
+
 export default function SellerPage() {
   const router = useRouter();
-  const [navigationMessage, setNavigationMessage] = useState<string | null>(null);
-  const [activeNavigation, setActiveNavigation] = useState("profile");
-  const [tab, setTab] = useState<"listings" | "account" | "messages">("listings");
-  const [user, setUser] = useState<UserPersonal | null>(null);
-  const [businesses, setBusinesses] = useState<SellerBusiness[]>([]);
-  const [selected, setSelected] = useState<SellerBusiness | null>(null);
-  const [editingBusiness, setEditingBusiness] = useState(false);
-  const [editingAccount, setEditingAccount] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [retry, setRetry] = useState(0);
+
+  const [navigationMessage, setNavigationMessage] =
+    useState<string | null>(null);
+
+  const [activeNavigation, setActiveNavigation] =
+    useState("profile");
+
+  const [tab, setTab] =
+    useState<SellerTab>("listings");
+
+  const [user, setUser] =
+    useState<UserPersonal | null>(null);
+
+  const [businesses, setBusinesses] =
+    useState<SellerBusiness[]>([]);
+
+  const [selected, setSelected] =
+    useState<SellerBusiness | null>(null);
+
+  const [editingBusiness, setEditingBusiness] =
+    useState(false);
+
+  const [editingAccount, setEditingAccount] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [busy, setBusy] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [retry, setRetry] =
+    useState(0);
 
   useEffect(() => {
     let cancelled = false;
+
     const load = async () => {
       try {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) { router.replace("/signin"); return; }
-        const account = await getCurrentUser();
-        if (cancelled) return;
-        setUser(account);
-        try { await getSellerProfile(); }
-        catch (error) {
-          if (axios.isAxiosError(error) && error.response?.status === 404) return;
-          throw error;
+        const {
+          data,
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError || !data.user) {
+          router.replace("/signin");
+          return;
         }
-        const items = await listSellerBusinesses();
-        if (!cancelled) setBusinesses(items);
-      } catch (error) { if (!cancelled) setError(sellerErrorMessage(error)); }
-      finally { if (!cancelled) setLoading(false); }
+
+        const account = await getCurrentUser();
+
+        if (cancelled) {
+          return;
+        }
+
+        setUser(account);
+
+        /*
+         * A seller profile may not exist until the user creates their
+         * first business. A 404 here is therefore not a fatal page error.
+         */
+        try {
+          await getSellerProfile();
+        } catch (profileError) {
+          if (
+            !axios.isAxiosError(profileError) ||
+            profileError.response?.status !== 404
+          ) {
+            throw profileError;
+          }
+        }
+
+        /*
+         * Always ask for the user's businesses, even when the seller
+         * ownership profile has not been created yet. This keeps the
+         * page load behavior separate from profile creation.
+         */
+        const items =
+          await listSellerBusinesses();
+
+        if (!cancelled) {
+          setBusinesses(items);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            sellerErrorMessage(loadError),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     };
+
     void load();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [router, retry]);
 
   const selectBusiness = async (id: string) => {
-    setBusy(true); setError(null);
-    try { setSelected(await getSellerBusiness(id)); }
-    catch (error) { setError(sellerErrorMessage(error)); }
-    finally { setBusy(false); }
-  };
-  const saveAccount = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const phone = String(new FormData(event.currentTarget).get("phone") ?? "").trim();
-    if (!phone) { setError("Phone is required."); return; }
-    setBusy(true); setError(null);
-    try { setUser(await updateUserPhone(phone)); setEditingAccount(false); }
-    catch (error) { setError(sellerErrorMessage(error)); }
-    finally { setBusy(false); }
-  };
-  const savedBusiness = (business: SellerBusiness) => {
-    setBusinesses((current) => [business, ...current.filter((item) => item.id !== business.id)]);
-    setSelected(business); setEditingBusiness(false); setTab("listings"); setActiveNavigation("profile");
+    setBusy(true);
+    setError(null);
+
+    try {
+      const business =
+        await getSellerBusiness(id);
+
+      setSelected(business);
+    } catch (selectError) {
+      setError(
+        sellerErrorMessage(selectError),
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const navigateSeller = (id: string) => {
-    if (["home", "profile", "account", "settings", "messages"].includes(id)) {
-      setNavigationMessage(null);
-      setTab(id === "messages" ? "messages" : id === "account" || id === "settings" ? "account" : "listings");
-      setActiveNavigation(id === "settings" ? "account" : id);
-    } else {
-      setNavigationMessage(`${id.charAt(0).toUpperCase()}${id.slice(1)} is not yet available for seller accounts.`);
+  const saveAccount = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    const phone = String(
+      new FormData(
+        event.currentTarget,
+      ).get("phone") ?? "",
+    ).trim();
+
+    if (!phone) {
+      setError("Phone is required.");
+      return;
     }
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const updated =
+        await updateUserPhone(phone);
+
+      setUser(updated);
+      setEditingAccount(false);
+    } catch (accountError) {
+      setError(
+        sellerErrorMessage(accountError),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const savedBusiness = (
+    business: SellerBusiness,
+  ) => {
+    /*
+     * BusinessEditor now supplies the canonical record returned by
+     * GET /intake/sellers/businesses/{id}.
+     */
+    setBusinesses((current) => [
+      business,
+      ...current.filter(
+        (item) =>
+          item.id !== business.id,
+      ),
+    ]);
+
+    setSelected(business);
+    setEditingBusiness(false);
+    setTab("listings");
+    setActiveNavigation("profile");
+    setError(null);
+  };
+
+  const navigateSeller = (
+    id: string,
+  ) => {
+    setNavigationMessage(null);
+
+    switch (id) {
+      case "home":
+        setTab("listings");
+        setActiveNavigation("home");
+        setSelected(null);
+        setEditingBusiness(false);
+        break;
+
+      case "profile":
+        setTab("listings");
+        setActiveNavigation("profile");
+        break;
+
+      case "deals":
+        setTab("deals");
+        setActiveNavigation("deals");
+        setSelected(null);
+        setEditingBusiness(false);
+        break;
+
+      case "documents":
+        setTab("documents");
+        setActiveNavigation("documents");
+        setSelected(null);
+        setEditingBusiness(false);
+        break;
+
+      case "messages":
+        setTab("messages");
+        setActiveNavigation("messages");
+        setSelected(null);
+        setEditingBusiness(false);
+        break;
+
+      case "account":
+      case "settings":
+        setTab("account");
+        setActiveNavigation("account");
+        setSelected(null);
+        setEditingBusiness(false);
+        break;
+
+      default:
+        setNavigationMessage(
+          `${
+            id.charAt(0).toUpperCase() +
+            id.slice(1)
+          } is not yet available for seller accounts.`,
+        );
+        break;
+    }
+
     return false;
   };
 
@@ -150,3 +401,10 @@ export default function SellerPage() {
   </div>;
 }
 
+        {!loading && !user && (
+          <LogoutButton />
+        )}
+      </main>
+    </div>
+  );
+}
