@@ -1164,3 +1164,10 @@
     width: 100%;
   }
 }
+
+.match-detail__ai-explanation { margin: 16px 0 24px; padding: 16px 20px; border: 1px solid #e5e7eb; border-radius: 10px; }
+.match-detail__ai-explanation button { border: 1px solid #d8e3d6; border-radius: 6px; background: #f4f8f3; color: #2f542a; padding: 10px 14px; font: inherit; cursor: pointer; }
+.match-detail__ai-explanation button:disabled { opacity: .65; cursor: wait; }
+.match-detail__ai-explanation h3 { font-size: 14px; margin: 0 0 8px; }
+.match-detail__ai-explanation p { font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.match-detail__ai-explanation small { color: #667085; font-size: 12px; }

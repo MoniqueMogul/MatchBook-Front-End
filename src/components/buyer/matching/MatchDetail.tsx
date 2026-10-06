@@ -11,9 +11,11 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import MatchExplanation from "./MatchExplanation";
 import WarmIntroductionTrigger from "@/components/buyer/introduction/WarmIntroductionTrigger";
 import {
   createNdaSigningSession,
+  getNdaForMatch,
   getOrInitializeNdaForMatch,
 } from "@/lib/api/nda/nda";
 import type { NdaAccessResponse } from "@/lib/api/nda/nda.types";
@@ -168,17 +170,13 @@ export default function MatchDetail({
   const refreshNda = useCallback(
     async (): Promise<NdaAccessResponse | null> => {
       try {
-        const access = await getOrInitializeNdaForMatch(matchId);
+        const access = await getNdaForMatch(matchId);
         setNdaAccess(access);
         setNdaError("");
         return access;
-      } catch (error) {
+      } catch {
         setNdaAccess(null);
-        setNdaError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load the NDA.",
-        );
+        setNdaError("");
         return null;
       } finally {
         setIsNdaLoading(false);
@@ -190,7 +188,7 @@ export default function MatchDetail({
   useEffect(() => {
     let isActive = true;
 
-    getOrInitializeNdaForMatch(matchId)
+    getNdaForMatch(matchId)
       .then((access) => {
         if (!isActive) {
           return;
@@ -199,17 +197,13 @@ export default function MatchDetail({
         setNdaAccess(access);
         setNdaError("");
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (!isActive) {
           return;
         }
 
         setNdaAccess(null);
-        setNdaError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load the NDA.",
-        );
+        setNdaError("");
       })
       .finally(() => {
         if (isActive) {
@@ -244,10 +238,24 @@ export default function MatchDetail({
 
     setNdaError("");
 
-    const access = ndaAccess ?? (await refreshNda());
+    let access = ndaAccess;
 
     if (!access) {
-      return;
+      setIsNdaLoading(true);
+
+      try {
+        access = await getOrInitializeNdaForMatch(matchId);
+        setNdaAccess(access);
+      } catch (error) {
+        setNdaError(
+          error instanceof Error
+            ? error.message
+            : "Unable to initialize the NDA.",
+        );
+        return;
+      } finally {
+        setIsNdaLoading(false);
+      }
     }
 
     if (access.completed) {
@@ -475,6 +483,8 @@ export default function MatchDetail({
             ))}
           </div>
         </section>
+
+        <MatchExplanation key={data.matchId} matchId={data.matchId} />
 
         <section className="match-detail__section">
           <h2>Match Highlights</h2>
