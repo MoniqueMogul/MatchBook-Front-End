@@ -225,3 +225,22 @@ function formatDimensionLabel(
     )
     .join(" ");
 }
+
+
+export async function explainBuyerMatch(matchId: string): Promise<string> {
+  try {
+    const response = await api.post<{ match_id: string; explanation: string }>(
+      `/api/matches/${encodeURIComponent(matchId)}/ai-explanation`,
+    );
+    return response.data.explanation;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status === 401) throw new Error("Please sign in again to explain this match.");
+      if (status === 404) throw new Error("This match is no longer available.");
+      if (status === 409) throw new Error("This match does not have enough stored evidence to explain.");
+      if (status === 429) throw new Error("AI generation is busy or your limit has been reached. Please try again later.");
+    }
+    throw new Error("The AI explanation is temporarily unavailable. Please try again.");
+  }
+}
