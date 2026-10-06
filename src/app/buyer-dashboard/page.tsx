@@ -6,6 +6,7 @@ import axios from 'axios';
 import { getBuyerProfile } from '@/lib/api/buyer';
 import { getCurrentUser, getProfileImage } from '@/lib/api/user';
 import { getBuyerPreferences } from '@/lib/api/buyerPreferences';
+import type { BuyerPreferences } from '@/lib/api/buyerPreferences';
 import { getBuyerReadiness } from '@/lib/api/buyerPreferences';
 import { useRouter } from 'next/navigation';
 
@@ -99,10 +100,53 @@ function mapMatchToListing(
 /*  Page Component                                                     */
 /* ------------------------------------------------------------------ */
 
+function formatPreferenceLabel(value: unknown): string {
+  if (typeof value !== 'string' || !value.trim()) return 'Not set';
+
+  return value
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function formatPreferenceList(value: unknown): string {
+  if (!Array.isArray(value) || value.length === 0) return 'Not set';
+
+  const labels = value
+    .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+    .map(formatPreferenceLabel);
+
+  if (labels.length <= 2) return labels.join(', ');
+
+  return `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`;
+}
+
+function formatPreferenceLocations(value: BuyerPreferences['target_locations']): string {
+  if (!value?.length) return 'Not set';
+
+  const labels = value
+    .map((location) => location.display_name?.trim())
+    .filter((label): label is string => Boolean(label));
+
+  if (labels.length <= 2) return labels.join(' · ') || 'Not set';
+
+  return `${labels.slice(0, 2).join(' · ')} +${labels.length - 2}`;
+}
+
 export default function BuyerDashboardNewUser() {
   const router = useRouter();
+  const [buyerPreferences, setBuyerPreferences] = React.useState<BuyerPreferences | null>(null);
+
   React.useEffect(() => {
-    void Promise.allSettled([getCurrentUser(), getBuyerProfile(), getBuyerPreferences(), getProfileImage()]);
+    void Promise.allSettled([
+      getCurrentUser(),
+      getBuyerProfile(),
+      getBuyerPreferences().then((preferences) => {
+        setBuyerPreferences(preferences);
+        return preferences;
+      }),
+      getProfileImage(),
+    ]);
   }, []);
 
   const completedSections =
@@ -404,6 +448,8 @@ export default function BuyerDashboardNewUser() {
               : ''}
           </h1>
 
+          <div className="dashboard-workspace">
+            <div className="dashboard-workspace__primary">
           {/* Step Tracker Card */}
           {readinessError ? <p role="alert">{readinessError}</p> : preferencesReady === null ? (
             <ContentSkeleton shape="progress" label="Loading your saved preferences" />
@@ -449,6 +495,45 @@ export default function BuyerDashboardNewUser() {
               onButtonClick={handleContinueProfile}
             />
           ) : null}
+            </div>
+
+            <aside className="dashboard-context-rail" aria-label="Acquisition profile summary">
+              <section className="dashboard-context-card">
+                <div className="dashboard-context-card__header">
+                  <div>
+                    <span className="dashboard-context-card__eyebrow">Your criteria</span>
+                    <h2>Acquisition Profile</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="dashboard-context-card__link"
+                    onClick={handleContinueProfile}
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                <dl className="dashboard-context-card__list">
+                  <div>
+                    <dt>Industries</dt>
+                    <dd>{formatPreferenceList(buyerPreferences?.target_industry_preferences?.map((item) => item.industry))}</dd>
+                  </div>
+                  <div>
+                    <dt>Locations</dt>
+                    <dd>{formatPreferenceLocations(buyerPreferences?.target_locations)}</dd>
+                  </div>
+                  <div>
+                    <dt>Maximum budget</dt>
+                    <dd>{formatCurrency(buyerPreferences?.maximum_purchase_price == null ? null : String(buyerPreferences.maximum_purchase_price))}</dd>
+                  </div>
+                  <div>
+                    <dt>Minimum SDE</dt>
+                    <dd>{formatCurrency(buyerPreferences?.minimum_required_sde == null ? null : String(buyerPreferences.minimum_required_sde))}</dd>
+                  </div>
+                </dl>
+              </section>
+            </aside>
+          </div>
         </div>
       </main>
     </div>

@@ -1171,3 +1171,39 @@
 .match-detail__ai-explanation h3 { font-size: 14px; margin: 0 0 8px; }
 .match-detail__ai-explanation p { font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .match-detail__ai-explanation small { color: #667085; font-size: 12px; }
+
+
+/* =========================================================
+   MATCH DETAIL VISUAL POLISH
+   ========================================================= */
+.match-detail__container { max-width: 1240px; padding: 40px 56px 104px; }
+.match-detail__hero, .match-detail__match-card, .match-detail__section, .match-detail__nda-lock { border-radius: 6px; }
+.match-detail__highlight, .match-detail__intro-button, .match-detail__nda-lock > button { border-radius: 6px; }
+@media (max-width: 1000px) { .match-detail__container { padding-left: 36px; padding-right: 36px; } }
+@media (max-width: 640px) { .match-detail__container { padding-left: 18px; padding-right: 18px; } }
+
+
+/* =========================================================
+   RESPONSIVE MATCH DETAIL GUTTERS
+   ========================================================= */
+
+.match-detail__container {
+  width: 100%;
+  max-width: none;
+  padding-left: clamp(24px, 10vw, 176px);
+  padding-right: clamp(24px, 10vw, 176px);
+  box-sizing: border-box;
+}
+
+.match-detail__container > * {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .match-detail__container {
+    padding-left: clamp(16px, 5vw, 32px);
+    padding-right: clamp(16px, 5vw, 32px);
+  }
+}

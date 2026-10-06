@@ -349,6 +349,11 @@ export default function SellerPage() {
     return false;
   };
 
+  const listedBusinesses = businesses.filter(
+    (business) => business.status === "active",
+  ).length;
+  const unlistedBusinesses = businesses.length - listedBusinesses;
+
   return (
     <div className="seller-page dashboard-shell">
       <Sidebar
@@ -542,63 +547,94 @@ export default function SellerPage() {
                 onBusyChange={setBusy}
               />
             ) : (
-              <>
-                {!error &&
-                  !businesses.length && (
+              <div className="seller-listings-workspace">
+                <div className="seller-listings-workspace__primary">
+                  {!error &&
+                    !businesses.length && (
+                      <p>
+                        You have no businesses
+                        yet. Create your first
+                        business to get started.
+                      </p>
+                    )}
+
+                  <ul className="seller-listings">
+                    {businesses.map(
+                      (business) => (
+                        <li key={business.id}>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              selectBusiness(
+                                business.id,
+                              )
+                            }
+                          >
+                            <BusinessImage
+                              business={business}
+                              thumbnail
+                            />
+
+                            <span className="seller-listing-card__copy">
+                              <strong>
+                                {business.dba ||
+                                  business.legal_name ||
+                                  "Untitled business"}
+                              </strong>
+
+                              <span>
+                                {business.city}
+                                {business.state
+                                  ? `, ${business.state}`
+                                  : ""}
+                              </span>
+
+                              <span className="seller-listing-card__status">
+                                {business.status}
+                              </span>
+                            </span>
+                          </button>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+
+                  {busy && (
+                    <ContentSkeleton
+                      shape="options"
+                      label="Loading business"
+                    />
+                  )}
+                </div>
+
+                <aside className="seller-context-rail" aria-label="Listing status summary">
+                  <section className="seller-context-card">
+                    <span className="seller-context-card__eyebrow">Portfolio</span>
+                    <h2>Listing Status</h2>
+
+                    <dl className="seller-context-card__stats">
+                      <div>
+                        <dt>Total businesses</dt>
+                        <dd>{businesses.length}</dd>
+                      </div>
+                      <div>
+                        <dt>Listed</dt>
+                        <dd>{listedBusinesses}</dd>
+                      </div>
+                      <div>
+                        <dt>Not listed</dt>
+                        <dd>{unlistedBusinesses}</dd>
+                      </div>
+                    </dl>
+
                     <p>
-                      You have no businesses
-                      yet. Create your first
-                      business to get started.
+                      Open a business to review its profile, edit its information,
+                      or change whether it is listed.
                     </p>
-                  )}
-
-                <ul className="seller-listings">
-                  {businesses.map(
-                    (business) => (
-                      <li key={business.id}>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() =>
-                            selectBusiness(
-                              business.id,
-                            )
-                          }
-                        >
-                          <BusinessImage
-                            business={business}
-                            thumbnail
-                          />
-
-                          <strong>
-                            {business.dba ||
-                              business.legal_name ||
-                              "Untitled business"}
-                          </strong>
-
-                          <span>
-                            {business.city}
-                            {business.state
-                              ? `, ${business.state}`
-                              : ""}
-                          </span>
-
-                          <span>
-                            {business.status}
-                          </span>
-                        </button>
-                      </li>
-                    ),
-                  )}
-                </ul>
-
-                {busy && (
-                  <ContentSkeleton
-                    shape="options"
-                    label="Loading business"
-                  />
-                )}
-              </>
+                  </section>
+                </aside>
+              </div>
             )}
           </div>
         )}

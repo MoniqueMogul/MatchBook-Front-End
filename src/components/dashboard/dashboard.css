@@ -107,14 +107,21 @@
   font-weight: 700;
   color: var(--color-neutral-700);
   letter-spacing: -0.025em;
+  max-width: 100px;
+  opacity: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, opacity 0.14s ease;
 }
 
 .sidebar--collapsed .sidebar__logo-wordmark {
-  display: none;
+  max-width: 0;
+  opacity: 0;
 }
 
 .sidebar--collapsed .sidebar__logo {
-  display: none;
+  width: 24px;
+  overflow: hidden;
 }
 
 .sidebar__collapse-btn {
@@ -206,11 +213,14 @@
 }
 
 .sidebar--collapsed .sidebar__search-input {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .sidebar--collapsed .sidebar__search-shortcut {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
 }
 
 .sidebar--collapsed .sidebar__search-icon {
@@ -290,8 +300,17 @@
 }
 
 /* Collapsed navigation */
+.sidebar__nav-label {
+  max-width: 120px;
+  opacity: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, opacity 0.14s ease;
+}
+
 .sidebar--collapsed .sidebar__nav-label {
-  display: none;
+  max-width: 0;
+  opacity: 0;
 }
 
 .sidebar--collapsed .sidebar__nav-link {
@@ -1022,5 +1041,1198 @@
 
 .sidebar__mobile-toggle:hover {
     background-color: var(--color-neutral-50);
+  }
+}
+
+/* =========================================================
+   DASHBOARD VISUAL POLISH
+   ========================================================= */
+.dashboard-main { padding: 32px 48px 48px; }
+.dashboard-main__inner { max-width: 1120px; }
+.dashboard-heading { margin: 0 0 20px; font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.025em; }
+.step-tracker, .empty-matches, .match-card { max-width: 1120px; border-radius: 6px; }
+.deal-card { border-radius: 6px; }
+.match-card { min-height: 184px; align-items: stretch; }
+.match-card__thumbnail { width: 210px; min-width: 210px; height: 156px; min-height: 156px; align-self: center; border-radius: 5px; }
+.match-card__image { width: 100%; height: 156px; object-fit: cover; object-position: center; }
+@media (max-width: 1100px) { .dashboard-main { padding-left: 32px; padding-right: 32px; } }
+@media (max-width: 768px) { .dashboard-main { padding: 72px 20px 32px; } .match-card { flex-direction: column; min-height: 0; } .match-card__thumbnail { width: 100%; min-width: 0; height: 190px; min-height: 190px; } .match-card__image { height: 190px; } .match-card__stats { padding-left: 0; padding-top: 12px; border-left: 0; border-top: 1px solid var(--color-neutral-200); } }
+
+
+/* =========================================================
+   RESPONSIVE WORKSPACE GUTTERS
+   Desktop approaches sidebar-sized breathing room; smaller
+   screens progressively reduce the gutter automatically.
+   ========================================================= */
+
+.dashboard-main {
+  padding-left: clamp(24px, 10vw, 176px);
+  padding-right: clamp(24px, 10vw, 176px);
+}
+
+.dashboard-main__inner {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .dashboard-main {
+    padding-left: clamp(16px, 5vw, 32px);
+    padding-right: clamp(16px, 5vw, 32px);
+  }
+}
+
+
+/* =========================================================
+   BALANCED BUYER WORKSPACE
+   ========================================================= */
+
+.dashboard-main {
+  padding-left: clamp(28px, 5vw, 88px);
+  padding-right: clamp(28px, 5vw, 88px);
+}
+
+.dashboard-main__inner {
+  max-width: 1440px;
+}
+
+.dashboard-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 2.65fr) minmax(250px, 1fr);
+  gap: clamp(24px, 2.4vw, 34px);
+  align-items: start;
+}
+
+.dashboard-workspace__primary {
+  min-width: 0;
+}
+
+.dashboard-workspace__primary .step-tracker,
+.dashboard-workspace__primary .empty-matches,
+.dashboard-workspace__primary .match-card {
+  max-width: none;
+}
+
+.dashboard-context-rail {
+  display: grid;
+  gap: 16px;
+  position: sticky;
+  top: 24px;
+}
+
+.dashboard-context-card {
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 6px;
+  padding: 20px;
+}
+
+.dashboard-context-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.dashboard-context-card__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-neutral-700);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.dashboard-context-card h2 {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.dashboard-context-card__link {
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-600, #315d80);
+}
+
+.dashboard-context-card__list,
+.dashboard-context-card__stats {
+  margin: 0;
+}
+
+.dashboard-context-card__list > div {
+  padding: 12px 0;
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+.dashboard-context-card__list dt {
+  margin-bottom: 4px;
+  color: var(--color-neutral-700);
+  font-size: 12px;
+}
+
+.dashboard-context-card__list dd {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-context-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 10px;
+}
+
+.dashboard-context-stat strong {
+  font-size: 28px;
+  line-height: 34px;
+}
+
+.dashboard-context-stat span,
+.dashboard-context-card--activity p {
+  color: var(--color-neutral-700);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.dashboard-context-card--activity p {
+  margin: 0;
+}
+
+@media (max-width: 1120px) {
+  .dashboard-main {
+    padding-left: clamp(24px, 4vw, 48px);
+    padding-right: clamp(24px, 4vw, 48px);
+  }
+
+  .dashboard-workspace {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-context-rail {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-main {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .dashboard-context-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-context-card {
+    padding: 16px;
+  }
+}
+
+
+
+/* =========================================================
+   MATCH FINANCIALS — HORIZONTAL ROW
+   The current desktop width is better served by placing the
+   three financial values below the match copy instead of
+   squeezing them into a narrow vertical end column.
+   ========================================================= */
+
+.dashboard-workspace__primary .match-card {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: start;
+  min-height: 0;
+}
+
+.dashboard-workspace__primary .match-card__thumbnail {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 190px;
+  min-width: 190px;
+  height: 150px;
+  min-height: 150px;
+  align-self: start;
+}
+
+.dashboard-workspace__primary .match-card__content {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-workspace__primary .match-card__stats {
+  grid-column: 2;
+  grid-row: 2;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding: 12px 0 0;
+  border-left: 0;
+  border-top: 1px solid var(--color-neutral-200);
+  box-sizing: border-box;
+}
+
+.dashboard-workspace__primary .match-card__stat {
+  min-width: 0;
+  padding: 0 14px;
+  border-left: 1px solid var(--color-neutral-200);
+}
+
+.dashboard-workspace__primary .match-card__stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.dashboard-workspace__primary .match-card__stat:last-child {
+  padding-right: 0;
+}
+
+.dashboard-workspace__primary .match-card__stat-value,
+.dashboard-workspace__primary .match-card__stat-label {
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+@media (max-width: 700px) {
+  .dashboard-workspace__primary .match-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dashboard-workspace__primary .match-card__thumbnail {
+    width: 100%;
+    min-width: 0;
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 180px;
+  }
+
+  .dashboard-workspace__primary .match-card__stats {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================================
+   FINAL SCROLLING MODEL
+   Normal document scrolling. Only the acquisition rail is sticky.
+   These rules intentionally override obsolete internal-scroll rules.
+   ========================================================= */
+
+html,
+body {
+  min-height: 100%;
+}
+
+.dashboard-shell {
+  min-height: 100vh;
+  height: auto;
+  overflow: visible;
+}
+
+.dashboard-main {
+  height: auto;
+  min-height: 100vh;
+  max-height: none;
+  overflow: visible;
+  overflow-y: visible;
+  padding-bottom: 48px;
+}
+
+.dashboard-main__inner {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.dashboard-workspace {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  align-items: start;
+}
+
+.dashboard-workspace__primary {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  overflow-y: visible;
+}
+
+.top-matches__container {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.dashboard-context-rail {
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  align-self: start;
+}
+
+@media (max-width: 1180px) {
+  .dashboard-context-rail {
+    position: static;
+    top: auto;
+  }
+}
+
+
+/* =========================================================
+   FINAL SIDEBAR MOTION + MATCH SCROLL STABILITY
+   ========================================================= */
+
+@media (min-width: 769px) {
+  .sidebar {
+    flex: 0 0 176px;
+    width: 176px;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transition: flex-basis 0.2s ease, width 0.2s ease;
+    will-change: width;
+  }
+
+  .sidebar--collapsed {
+    flex-basis: 64px;
+    width: 64px;
+    min-width: 0;
+  }
+
+  .sidebar__header,
+  .sidebar__logo,
+  .sidebar__search,
+  .sidebar__nav-link {
+    min-width: 0;
+  }
+
+  .sidebar__search-input,
+  .sidebar__search-shortcut {
+    transition:
+      opacity 0.12s ease,
+      visibility 0s linear 0.12s,
+      border-color 0.2s ease;
+  }
+
+  .sidebar:not(.sidebar--collapsed) .sidebar__search-input,
+  .sidebar:not(.sidebar--collapsed) .sidebar__search-shortcut {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.08s, 0s, 0s;
+  }
+}
+
+/* One browser/page scroll only. This avoids nested scrolling and the blank
+   repaint region that could appear while moving through the match list. */
+.dashboard-shell,
+.dashboard-main,
+.dashboard-main__inner,
+.dashboard-workspace,
+.dashboard-workspace__primary,
+.top-matches__container {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.dashboard-shell {
+  min-height: 100vh;
+  align-items: flex-start;
+}
+
+.dashboard-main {
+  min-height: 100vh;
+}
+
+.dashboard-context-rail {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+/* Keep already-loaded match images painted as the document scrolls. */
+.match-card,
+.match-card__thumbnail {
+  contain: layout paint;
+}
+
+.match-card__image {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  backface-visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  .sidebar__logo-wordmark,
+  .sidebar--collapsed .sidebar__logo-wordmark,
+  .sidebar__nav-label,
+  .sidebar--collapsed .sidebar__nav-label {
+    max-width: none;
+    opacity: 1;
+  }
+
+  .sidebar--collapsed .sidebar__logo {
+    width: auto;
+    overflow: visible;
+  }
+
+  .sidebar--collapsed .sidebar__search-input,
+  .sidebar--collapsed .sidebar__search-shortcut {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .dashboard-context-rail {
+    position: static;
+  }
+}
+
+
+/* =========================================================
+   FINAL COLLAPSED SIDEBAR GEOMETRY
+   ========================================================= */
+
+@media (min-width: 769px) {
+  .sidebar,
+  .sidebar * {
+    box-sizing: border-box;
+  }
+
+  .sidebar {
+    flex: 0 0 176px;
+    width: 176px;
+    min-width: 176px;
+    transition: width 0.2s ease, flex-basis 0.2s ease, min-width 0.2s ease;
+  }
+
+  .sidebar--collapsed {
+    flex: 0 0 64px;
+    width: 64px;
+    min-width: 64px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  /* The collapsed rail is navigation-only. Do not leave the MatchBook
+     mark/wordmark competing with the collapse control. */
+  .sidebar--collapsed .sidebar__logo {
+    display: none;
+  }
+
+  .sidebar--collapsed .sidebar__header {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .sidebar--collapsed .sidebar__collapse-btn {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar--collapsed .sidebar__collapse-btn svg {
+    transform: rotate(180deg);
+  }
+
+  /* Search is not useful in a 64px rail and was one of the elements
+     compressing/skewing the collapsed geometry. */
+  .sidebar--collapsed .sidebar__search {
+    display: none;
+  }
+
+  .sidebar--collapsed .sidebar__nav {
+    width: 100%;
+  }
+
+  .sidebar--collapsed .sidebar__nav-group {
+    width: 100%;
+  }
+
+  .sidebar--collapsed .sidebar__nav-item {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .sidebar--collapsed .sidebar__nav-link {
+    flex: 0 0 40px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    gap: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .sidebar--collapsed .sidebar__nav-icon {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+  }
+
+  .sidebar--collapsed .sidebar__nav-label {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   WIDER MATCHES / COMPACT CONTEXT RAIL
+   ========================================================= */
+
+.dashboard-main {
+  padding-left: clamp(22px, 2.5vw, 40px);
+  padding-right: clamp(22px, 2.5vw, 40px);
+}
+
+.dashboard-main__inner {
+  width: 100%;
+  max-width: 1560px;
+}
+
+.dashboard-workspace {
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 20px;
+}
+
+.dashboard-workspace__primary {
+  min-width: 0;
+  width: 100%;
+}
+
+.dashboard-context-rail {
+  width: 210px;
+  min-width: 210px;
+}
+
+.dashboard-context-card {
+  padding: 14px;
+}
+
+.dashboard-context-card__header {
+  margin-bottom: 8px;
+}
+
+.dashboard-context-card h2 {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.dashboard-context-card__list > div {
+  padding: 8px 0;
+}
+
+.dashboard-context-card__list dt {
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.dashboard-context-card__list dd {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-workspace {
+    grid-template-columns: minmax(0, 1fr) 190px;
+    gap: 16px;
+  }
+
+  .dashboard-context-rail {
+    width: 190px;
+    min-width: 190px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-context-rail {
+    width: 100%;
+    min-width: 0;
+    position: static;
+  }
+}
+
+
+/* =========================================================
+   LEANER MATCH CARDS / NARROWER CONTEXT RAIL
+   ========================================================= */
+
+.dashboard-workspace {
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 18px;
+}
+
+.dashboard-context-rail {
+  width: 190px;
+  min-width: 190px;
+}
+
+.dashboard-context-card {
+  padding: 12px;
+}
+
+/* Reduce vertical bulk while preserving the approved horizontal
+   financial row and fixed image proportions. */
+.dashboard-workspace__primary .match-card {
+  padding: 11px 12px;
+  column-gap: 14px;
+  row-gap: 8px;
+}
+
+.dashboard-workspace__primary .match-card__thumbnail {
+  width: 170px;
+  min-width: 170px;
+  height: 128px;
+  min-height: 128px;
+}
+
+.dashboard-workspace__primary .match-card__image {
+  height: 128px;
+}
+
+.dashboard-workspace__primary .match-card__stats {
+  padding-top: 8px;
+}
+
+.dashboard-workspace__primary .match-card__stat {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.top-matches__container {
+  gap: 10px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-workspace {
+    grid-template-columns: minmax(0, 1fr) 175px;
+    gap: 14px;
+  }
+
+  .dashboard-context-rail {
+    width: 175px;
+    min-width: 175px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-context-rail {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-workspace__primary .match-card__thumbnail {
+    width: 100%;
+    min-width: 0;
+    height: 165px;
+    min-height: 165px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 165px;
+  }
+}
+
+
+/* =========================================================
+   FINAL BUYER MATCH LAYOUT — FULL WIDTH, NO RIGHT RAIL
+   ========================================================= */
+
+/* The acquisition/context rail is intentionally removed from the visual
+   layout so matches receive the full available dashboard width. */
+.dashboard-context-rail {
+  display: none !important;
+}
+
+.dashboard-workspace {
+  display: block;
+  width: 100%;
+}
+
+.dashboard-workspace__primary {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+/* Keep the lean card proportions while letting the card span the
+   available content area. */
+.dashboard-workspace__primary .match-card {
+  width: 100%;
+}
+
+/* Financial values stay in one horizontal row underneath the main
+   match information. */
+.dashboard-workspace__primary .match-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  align-items: center;
+  gap: 0;
+  padding-top: 8px;
+}
+
+.dashboard-workspace__primary .match-card__stat {
+  min-width: 0;
+  padding: 0 16px;
+}
+
+.dashboard-workspace__primary .match-card__stat:first-child {
+  padding-left: 0;
+}
+
+.dashboard-workspace__primary .match-card__stat:last-child {
+  padding-right: 0;
+}
+
+@media (max-width: 640px) {
+  .dashboard-workspace__primary .match-card__stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dashboard-workspace__primary .match-card__stat,
+  .dashboard-workspace__primary .match-card__stat:first-child,
+  .dashboard-workspace__primary .match-card__stat:last-child {
+    padding: 0;
+  }
+}
+
+
+/* =========================================================
+   MATCH CARD — INLINE FINANCIAL COLUMN
+   Image | business content | financials
+   ========================================================= */
+
+.dashboard-workspace__primary .match-card {
+  display: grid;
+  grid-template-columns: 285px minmax(0, 1fr) 405px;
+  grid-template-rows: auto;
+  align-items: stretch;
+  column-gap: 20px;
+  row-gap: 0;
+  padding: 20px;
+  min-height: 0;
+}
+
+.dashboard-workspace__primary .match-card__thumbnail {
+  grid-column: 1;
+  grid-row: 1;
+  width: 285px;
+  min-width: 285px;
+  height: 190px;
+  min-height: 190px;
+  align-self: center;
+}
+
+.dashboard-workspace__primary .match-card__image {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+}
+
+.dashboard-workspace__primary .match-card__content {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Put the three financial values beside the business information.
+   The left border creates the divider shown in the reference image. */
+.dashboard-workspace__primary .match-card__stats {
+  grid-column: 3;
+  grid-row: 1;
+  width: 100%;
+  min-width: 0;
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 0 0 0 22px;
+  border-left: 1px solid var(--color-neutral-200);
+}
+
+.dashboard-workspace__primary .match-card__stat,
+.dashboard-workspace__primary .match-card__stat:first-child,
+.dashboard-workspace__primary .match-card__stat:last-child {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.dashboard-workspace__primary .match-card__stat-label {
+  display: block;
+  margin-bottom: 5px;
+  white-space: nowrap;
+}
+
+.dashboard-workspace__primary .match-card__stat-value {
+  display: block;
+  white-space: nowrap;
+}
+
+/* Keep the desktop layout usable before switching to the stacked
+   mobile card. */
+@media (max-width: 1250px) {
+  .dashboard-workspace__primary .match-card {
+    grid-template-columns: 220px minmax(0, 1fr) 340px;
+    column-gap: 16px;
+  }
+
+  .dashboard-workspace__primary .match-card__thumbnail {
+    width: 220px;
+    min-width: 220px;
+    height: 160px;
+    min-height: 160px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 160px;
+  }
+
+  .dashboard-workspace__primary .match-card__stats {
+    gap: 10px;
+    padding-left: 16px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .dashboard-workspace__primary .match-card {
+    grid-template-columns: 190px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .dashboard-workspace__primary .match-card__thumbnail {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 190px;
+    min-width: 190px;
+    height: 150px;
+    min-height: 150px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 150px;
+  }
+
+  .dashboard-workspace__primary .match-card__content {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .dashboard-workspace__primary .match-card__stats {
+    grid-column: 2;
+    grid-row: 2;
+    border-left: 0;
+    border-top: 1px solid var(--color-neutral-200);
+    padding: 10px 0 0;
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-workspace__primary .match-card {
+    display: block;
+    padding: 14px;
+  }
+
+  .dashboard-workspace__primary .match-card__thumbnail {
+    width: 100%;
+    min-width: 0;
+    height: 170px;
+    min-height: 170px;
+    margin-bottom: 14px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 170px;
+  }
+
+  .dashboard-workspace__primary .match-card__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-left: 0;
+    border-top: 1px solid var(--color-neutral-200);
+    padding-top: 12px;
+    margin-top: 12px;
+    gap: 8px;
+  }
+
+  .dashboard-workspace__primary .match-card__stat-label,
+  .dashboard-workspace__primary .match-card__stat-value {
+    white-space: normal;
+  }
+}
+
+
+/* =========================================================
+   COMPACT INLINE MATCH CARD
+   Keep only the vertical divider before financials.
+   ========================================================= */
+
+.dashboard-workspace__primary .match-card {
+  grid-template-columns: 220px minmax(0, 1fr) 405px;
+  padding: 12px 14px;
+  column-gap: 16px;
+  min-height: 0;
+  height: auto;
+}
+
+.dashboard-workspace__primary .match-card__thumbnail {
+  width: 220px;
+  min-width: 220px;
+  height: 132px;
+  min-height: 132px;
+}
+
+.dashboard-workspace__primary .match-card__image {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+}
+
+.dashboard-workspace__primary .match-card__content {
+  min-height: 132px;
+}
+
+/* Financials stay beside the image/content.
+   Explicitly remove every horizontal divider. */
+.dashboard-workspace__primary .match-card__stats {
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  border-right: 0 !important;
+  border-left: 1px solid var(--color-neutral-200) !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 18px;
+  min-height: 132px;
+}
+
+.dashboard-workspace__primary .match-card__stat {
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+}
+
+/* Reduce extra vertical space inside the middle section. */
+.dashboard-workspace__primary .match-card__content > * {
+  margin-top: 0;
+}
+
+.dashboard-workspace__primary .match-card__actions {
+  margin-top: auto;
+}
+
+.top-matches__container {
+  gap: 10px;
+}
+
+@media (max-width: 1250px) {
+  .dashboard-workspace__primary .match-card {
+    grid-template-columns: 190px minmax(0, 1fr) 350px;
+    padding: 11px 12px;
+    column-gap: 14px;
+  }
+
+  .dashboard-workspace__primary .match-card__thumbnail {
+    width: 190px;
+    min-width: 190px;
+    height: 124px;
+    min-height: 124px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 124px;
+  }
+
+  .dashboard-workspace__primary .match-card__content,
+  .dashboard-workspace__primary .match-card__stats {
+    min-height: 124px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .dashboard-workspace__primary .match-card {
+    grid-template-columns: 170px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .dashboard-workspace__primary .match-card__thumbnail {
+    width: 170px;
+    min-width: 170px;
+    height: 120px;
+    min-height: 120px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 120px;
+  }
+
+  .dashboard-workspace__primary .match-card__content {
+    min-height: 0;
+  }
+
+  .dashboard-workspace__primary .match-card__stats {
+    min-height: 0;
+    border-left: 0 !important;
+    border-top: 0 !important;
+    padding: 8px 0 0 !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-workspace__primary .match-card__thumbnail {
+    width: 100%;
+    min-width: 0;
+    height: 145px;
+    min-height: 145px;
+  }
+
+  .dashboard-workspace__primary .match-card__image {
+    height: 145px;
+  }
+
+  .dashboard-workspace__primary .match-card__stats {
+    border: 0 !important;
+    padding-top: 10px !important;
+  }
+}
+
+
+/* =========================================================
+   MATCH CARD — KEEP PRIMARY TEXT ON ONE LINE
+   Preserve the approved compact card height.
+   ========================================================= */
+
+.dashboard-workspace__primary .match-card {
+  /* Give the business-information column more room and trim the
+     financial block slightly without changing card height. */
+  grid-template-columns: 220px minmax(0, 1fr) 360px;
+  column-gap: 14px;
+}
+
+.dashboard-workspace__primary .match-card__content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Match metadata/title/description should read horizontally rather
+   than wrapping and making the middle of the card feel cramped. */
+.dashboard-workspace__primary .match-card__content h1,
+.dashboard-workspace__primary .match-card__content h2,
+.dashboard-workspace__primary .match-card__content h3,
+.dashboard-workspace__primary .match-card__title,
+.dashboard-workspace__primary .match-card__description,
+.dashboard-workspace__primary .match-card__location {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Keep the top match/location metadata itself on one row where the
+   component uses a flex wrapper. */
+.dashboard-workspace__primary .match-card__content > div:first-child {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.dashboard-workspace__primary .match-card__stats {
+  padding-left: 16px;
+  gap: 12px;
+}
+
+@media (max-width: 1250px) {
+  .dashboard-workspace__primary .match-card {
+    grid-template-columns: 190px minmax(0, 1fr) 320px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .dashboard-workspace__primary .match-card {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+
+  /* Once the responsive card stacks, wrapping is preferable to
+     clipping important text on narrow screens. */
+  .dashboard-workspace__primary .match-card__content h1,
+  .dashboard-workspace__primary .match-card__content h2,
+  .dashboard-workspace__primary .match-card__content h3,
+  .dashboard-workspace__primary .match-card__title,
+  .dashboard-workspace__primary .match-card__description,
+  .dashboard-workspace__primary .match-card__location {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
