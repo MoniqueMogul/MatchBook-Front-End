@@ -3,12 +3,11 @@ import axios from "axios";
 import api from "@/lib/api/client";
 
 import type {
+  ApiDocumentDownloadResponse,
   ApiDocumentResponse,
   ApiDocumentUploadRequest,
   ApiDocumentUploadResponse,
   BusinessDocumentUploadRequest,
-  BuyerFinancialsReference,
-  DocumentDownloadResponse,
   DocumentsViewData,
   DocumentStatus,
   DocumentUploadInput,
@@ -22,55 +21,20 @@ export function getInitialDocumentsViewData(): DocumentsViewData {
   };
 }
 
-export async function ensureBuyerFinancialsId(): Promise<string> {
-  try {
-    const response = await api.get<BuyerFinancialsReference>(
-      "/intake/buyers/financials",
-    );
-
-    return response.data.id;
-  } catch (error) {
-    if (
-      !axios.isAxiosError(error) ||
-      error.response?.status !== 404
-    ) {
-      throw createDocumentError(
-        error,
-        "Unable to load your financial profile.",
-      );
-    }
-  }
-
-  try {
-    const response = await api.put<BuyerFinancialsReference>(
-      "/intake/buyers/financials",
-      {},
-    );
-
-    return response.data.id;
-  } catch (error) {
-    throw createDocumentError(
-      error,
-      "Unable to create your financial profile.",
-    );
-  }
-}
-
-export async function initiateDocumentUpload(
+export async function initiateBuyerDocumentUpload(
   input: DocumentUploadInput,
-  buyerFinancialsId: string,
 ): Promise<ApiDocumentUploadResponse> {
   const payload: ApiDocumentUploadRequest = {
     expected_document_type: input.documentType,
     original_filename: input.file.name,
     mime_type: "application/pdf",
     file_size: input.file.size,
-    buyer_financials_id: buyerFinancialsId,
+    declaration_signed: false,
   };
 
   try {
     const response = await api.post<ApiDocumentUploadResponse>(
-      "/verification/documents",
+      "/verification/documents/buyer",
       payload,
     );
 
@@ -179,9 +143,9 @@ export async function getDocument(
 
 export async function getDocumentDownloadUrl(
   documentId: string,
-): Promise<DocumentDownloadResponse> {
+): Promise<ApiDocumentDownloadResponse> {
   try {
-    const response = await api.get<DocumentDownloadResponse>(
+    const response = await api.get<ApiDocumentDownloadResponse>(
       `/verification/documents/${documentId}/download`,
     );
 
@@ -189,24 +153,33 @@ export async function getDocumentDownloadUrl(
   } catch (error) {
     throw createDocumentError(
       error,
-      "Unable to generate the document download link.",
+      "Unable to open this document.",
     );
+  }
+}
+
+export async function openDocument(
+  documentId: string,
+): Promise<void> {
+  const download = await getDocumentDownloadUrl(documentId);
+
+  const openedWindow = window.open(
+    download.download_url,
+    "_blank",
+    "noopener,noreferrer",
+  );
+
+  if (!openedWindow) {
+    window.location.assign(download.download_url);
   }
 }
 
 export async function listBuyerDocuments(): Promise<
   VerifiedDocument[]
 > {
-  const buyerFinancialsId = await ensureBuyerFinancialsId();
-
   try {
     const response = await api.get<ApiDocumentResponse[]>(
-      "/verification/documents",
-      {
-        params: {
-          buyer_financials_id: buyerFinancialsId,
-        },
-      },
+      "/verification/documents/buyer",
     );
 
     return response.data.map((document) =>
@@ -251,26 +224,26 @@ export interface DocumentUploadOutcome {
   error?: Error;
 }
 
-export async function uploadAndVerifyBuyerDocuments(
+export async function uploadBuyerDocuments(
   inputs: DocumentUploadInput[],
 ): Promise<DocumentUploadOutcome[]> {
-  const buyerFinancialsId = await ensureBuyerFinancialsId();
-
   const settled = await Promise.allSettled(
     inputs.map(async (input) => {
-      const upload = await initiateDocumentUpload(
-        input,
-        buyerFinancialsId,
+      const upload = await initiateBuyerDocumentUpload(input);
+
+      await uploadToPresignedUrl(
+        upload,
+        input.file,
       );
 
-      await uploadToPresignedUrl(upload, input.file);
-      await confirmDocumentUpload(upload.document_id);
-
-      const verified = await triggerDocumentVerification(
+      const confirmed = await confirmDocumentUpload(
         upload.document_id,
       );
 
-      return mapApiDocument(verified, input.displayType);
+      return mapApiDocument(
+        confirmed,
+        input.displayType,
+      );
     }),
   );
 
@@ -278,7 +251,10 @@ export async function uploadAndVerifyBuyerDocuments(
     const input = inputs[index];
 
     if (result.status === "fulfilled") {
-      return { input, document: result.value };
+      return {
+        input,
+        document: result.value,
+      };
     }
 
     return {
@@ -300,7 +276,10 @@ export async function uploadAndConfirmBusinessDocument(
     input,
   );
 
-  await uploadToPresignedUrl(upload, input.file);
+  await uploadToPresignedUrl(
+    upload,
+    input.file,
+  );
 
   const confirmed = await confirmDocumentUpload(
     upload.document_id,
@@ -358,7 +337,10 @@ function mapVerificationStatus(
     return "approved";
   }
 
-  if (status === "rejected" || status === "failed") {
+  if (
+    status === "rejected" ||
+    status === "failed"
+  ) {
     return "rejected";
   }
 
@@ -372,12 +354,18 @@ function createDocumentError(
   if (axios.isAxiosError<{ detail?: string }>(error)) {
     const detail = error.response?.data?.detail;
 
-    if (typeof detail === "string" && detail.trim()) {
+    if (
+      typeof detail === "string" &&
+      detail.trim()
+    ) {
       return new Error(detail);
     }
   }
 
-  if (error instanceof Error && error.message) {
+  if (
+    error instanceof Error &&
+    error.message
+  ) {
     return error;
   }
 
